@@ -546,6 +546,14 @@ export class ExperimentsClient {
     this.disabledExperiments = this.loadDisabledExperiments();
     this.forceEnrolledExperiments = this.loadForceEnrolledExperiments();
 
+    // Opted-out users never contact the experiments server. Without a
+    // manifest no experiment is enrolled, so features use their defaults.
+    if (this.getPrefString(PARTICIPATION_POLICY_PREF, "default") === "never") {
+      this.experiments = [];
+      this.assignments = {};
+      return this;
+    }
+
     const timeoutMs = options.timeoutMs || 5000;
     try {
       const data = await this.fetchJsonWithTimeout(

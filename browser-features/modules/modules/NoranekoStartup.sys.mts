@@ -144,6 +144,10 @@ export function onFinalUIStartup(): void {
     .then(showReleaseNotesChoice)
     .catch(console.error);
 
+  applyPrivateSearchDefault().catch((error) => {
+    console.error("[PrivateSearchDefault]", error);
+  });
+
   // int OS Modules
   ChromeUtils.importESModule(
     "resource://noraneko/modules/os-apis/OSGlue.sys.mjs",
@@ -528,6 +532,45 @@ function registerSsbCommandLineHandler(): void {
       true,
     );
   });
+}
+
+const PRIVATE_SEARCH_ENGINE_PREF = "floorp.search.privateDefault";
+const PRIVATE_SEARCH_APPLIED_PREF = "floorp.search.privateDefaultApplied";
+
+/**
+ * Switch the default search engine (normal and private windows) to the engine
+ * named by `floorp.search.privateDefault` once per profile. A default the user
+ * already changed away from the app default is left alone; an empty pref
+ * disables this.
+ */
+async function applyPrivateSearchDefault(): Promise<void> {
+  if (Services.prefs.getBoolPref(PRIVATE_SEARCH_APPLIED_PREF, false)) return;
+  const engineName = Services.prefs.getStringPref(
+    PRIVATE_SEARCH_ENGINE_PREF,
+    "",
+  );
+  if (!engineName) return;
+
+  const { SearchService } = ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+  );
+  await SearchService.init();
+  const engine = SearchService.getEngineByName(engineName);
+  if (!engine) {
+    console.error("[PrivateSearchDefault] Engine not found:", engineName);
+    return;
+  }
+  const reason = SearchService.CHANGE_REASON.UNKNOWN;
+  if (SearchService.defaultEngine === SearchService.appDefaultEngine) {
+    await SearchService.setDefault(engine, reason);
+  }
+  if (
+    SearchService.defaultPrivateEngine ===
+      SearchService.appPrivateDefaultEngine
+  ) {
+    await SearchService.setDefaultPrivate(engine, reason);
+  }
+  Services.prefs.setBoolPref(PRIVATE_SEARCH_APPLIED_PREF, true);
 }
 
 async function initializeExperiments() {
