@@ -10,7 +10,10 @@
  *   3. install it to ~/.local/opt/floorp-archwave (previous build kept as
  *      floorp-archwave.prev) and re-apply the archwave app icon.
  *
- * Usage: deno task archwave:update [--no-pull] [--no-install]
+ * Usage: deno task archwave:update [--no-pull] [--no-install] [--auto-resolve]
+ *
+ * --auto-resolve lets headless Claude Code resolve merge conflicts (see
+ * tools/src/merge_resolver.ts); the merge is undone if the build then fails.
  */
 
 import * as path from "@std/path";
@@ -23,6 +26,7 @@ import * as Symlinker from "./src/symlinker.ts";
 import * as Update from "./src/update.ts";
 import * as Builder from "./src/builder.ts";
 import * as Injector from "./src/injector.ts";
+import { resolveConflicts } from "./src/merge_resolver.ts";
 import { BIN_DIR, PROJECT_ROOT } from "./src/defines.ts";
 import {
   exists,
@@ -43,7 +47,8 @@ function git(...args: string[]): string {
   return runCommand("git", args, PROJECT_ROOT).stdout.trim();
 }
 
-function pullUpstream(): void {
+/** Returns true when the merge only went through thanks to --auto-resolve. */
+function pullUpstream(autoResolve: boolean): boolean {
   const remotes = git("remote").split("\n");
   if (!remotes.includes("upstream")) {
     logger.info(`Adding remote "upstream" -> ${UPSTREAM_URL}`);
@@ -54,7 +59,7 @@ function pullUpstream(): void {
   const behind = Number(git("rev-list", "--count", `HEAD..${UPSTREAM_BRANCH}`));
   if (behind === 0) {
     logger.info("Already up to date with upstream.");
-    return;
+    return false;
   }
   logger.info(`${behind} new upstream commit(s); merging.`);
 
@@ -66,12 +71,27 @@ function pullUpstream(): void {
     ["merge", "--no-edit", UPSTREAM_BRANCH],
     PROJECT_ROOT,
   );
+  let autoResolved = false;
   if (!merge.success) {
-    runCommandChecked("git", ["merge", "--abort"], PROJECT_ROOT);
-    if (dirty) git("stash", "pop");
-    throw new Error(
-      `Merging ${UPSTREAM_BRANCH} conflicts with local commits; resolve it manually.\n${merge.stdout}${merge.stderr}`,
-    );
+    try {
+      if (!autoResolve) throw new Error("--auto-resolve not given");
+      const files = resolveConflicts(PROJECT_ROOT);
+      git("commit", "--no-edit");
+      // The auto-update script greps the log for this line.
+      logger.info(
+        `Auto-resolved conflicts with Claude in: ${files.join(", ")}`,
+      );
+      autoResolved = true;
+    } catch (reason) {
+      runCommandChecked("git", ["merge", "--abort"], PROJECT_ROOT);
+      if (dirty) git("stash", "pop");
+      throw new Error(
+        `Merging ${UPSTREAM_BRANCH} conflicts with local commits; resolve it manually.\n` +
+          `Not auto-resolved: ${
+            reason instanceof Error ? reason.message : String(reason)
+          }\n${merge.stdout}${merge.stderr}`,
+      );
+    }
   }
 
   if (dirty) {
@@ -85,6 +105,7 @@ function pullUpstream(): void {
     }
   }
   logger.success("Merged upstream.");
+  return autoResolved;
 }
 
 async function assemble(): Promise<void> {
@@ -162,14 +183,22 @@ async function main(): Promise<void> {
     throw new Error("archwave-update only supports Linux.");
   }
   const args = parseArgs(Deno.args, {
-    boolean: ["pull", "install"],
+    boolean: ["pull", "install", "auto-resolve"],
     default: { pull: true, install: true },
     negatable: ["pull", "install"],
   });
 
   if (args.install) assertNotRunning(installDir());
-  if (args.pull) pullUpstream();
-  await assemble();
+  const before = git("rev-parse", "HEAD");
+  const autoResolved = args.pull && pullUpstream(args["auto-resolve"]);
+  try {
+    await assemble();
+  } catch (error) {
+    // An auto-resolved merge that does not build must not stick, or every
+    // later run rebuilds the same broken tree. --keep preserves local edits.
+    if (autoResolved) git("reset", "--keep", before);
+    throw error;
+  }
   if (args.install) install();
 }
 
