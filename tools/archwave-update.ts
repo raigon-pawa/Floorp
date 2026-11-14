@@ -133,6 +133,15 @@ function install(): void {
   // -L resolves the dev symlinks so the install does not depend on the repo.
   runCommand("cp", ["-rL", BIN_DIR, target]);
 
+  // Gecko's own updater only knows official Floorp releases: here it fails and
+  // points at floorp.app. floorp-update.timer updates this build instead.
+  const policyDir = path.join(target, "distribution");
+  Deno.mkdirSync(policyDir, { recursive: true });
+  Deno.writeTextFileSync(
+    path.join(policyDir, "policies.json"),
+    JSON.stringify({ policies: { DisableAppUpdate: true } }),
+  );
+
   const iconDir = path.join(target, "browser", "chrome", "icons", "default");
   const backupDir = path.join(iconDir, "orig");
   Deno.mkdirSync(backupDir, { recursive: true });
