@@ -9,13 +9,15 @@ const HELP =
   "Usage: fdh qa collect --source-run-id N --source-attempt N --source-head SHA\n" +
   "  --qa-run-id N --qa-attempt N --qa-head SHA\n" +
   "  --windows-policy require-success|shadow-observation --max-age-ms N\n\n" +
+  "Optional --mode signed-prepublication|published-release; default retains protected signed-pending eligibility. Unsigned collection is not supported.\n" +
   "All eight options are required. IDs/attempts and max age are canonical positive\n" +
   "safe integers; heads are 40 lowercase hex characters. Run IDs must differ.\n" +
   "Max age is at most 86400000 ms (24 hours). No repository, host, URL, token,\n" +
   "executable, clock, or transport override is supported. Output is stdout only.\n" +
   "Exit: 0 matched, 1 not ready/collection failed, 2 invalid arguments.\n" +
   "Matching is nonauthorizing: native QA/live approval/publication remain unverified.\n" +
-  "Use fdh qa discover --help for bounded source-bound QA run discovery.\n";
+  "Use fdh qa discover --help for bounded source-bound QA run discovery.\n" +
+  "Use fdh qa plan --help for zero-effect assignment plans and explicit dispatch/reconcile.\n";
 const KEYS = [
   "source-run-id",
   "source-attempt",
@@ -63,7 +65,7 @@ function positiveInteger(value: string | undefined): number | undefined {
 /** Deliberately parses raw tokens, retaining duplicates even across =/space forms. */
 function parseOptions(argv: readonly string[]): QaCollectorOptions | undefined {
   if (
-    argv.length < 10 || argv.length > 18 || argv[0] !== "qa" ||
+    argv.length < 10 || argv.length > 20 || argv[0] !== "qa" ||
     argv[1] !== "collect"
   ) return;
   const values = new Map<string, string>();
@@ -74,7 +76,10 @@ function parseOptions(argv: readonly string[]): QaCollectorOptions | undefined {
     ) return;
     const equal = token.indexOf("=");
     const key = token.slice(2, equal === -1 ? undefined : equal);
-    if (!KEYS.some((known) => known === key) || values.has(key)) return;
+    if (
+      (!KEYS.some((known) => known === key) && key !== "mode") ||
+      values.has(key)
+    ) return;
     const value = equal === -1 ? argv[++i] : token.slice(equal + 1);
     if (
       typeof value !== "string" || value.length === 0 || value.length > 256 ||
@@ -82,7 +87,12 @@ function parseOptions(argv: readonly string[]): QaCollectorOptions | undefined {
     ) return;
     values.set(key, value);
   }
-  if (values.size !== KEYS.length) return;
+  if (!KEYS.every((key) => values.has(key))) return;
+  const mode = values.get("mode");
+  if (
+    mode !== undefined && mode !== "signed-prepublication" &&
+    mode !== "published-release"
+  ) return;
   const sourceRunId = positiveInteger(values.get("source-run-id"));
   const sourceAttempt = positiveInteger(values.get("source-attempt"));
   const qaRunId = positiveInteger(values.get("qa-run-id"));
@@ -102,6 +112,7 @@ function parseOptions(argv: readonly string[]): QaCollectorOptions | undefined {
       windowsPolicy !== "shadow-observation")
   ) return;
   return Object.freeze({
+    ...(mode === undefined ? {} : { mode }),
     sourceRunId,
     sourceAttempt,
     sourceHead,
@@ -167,6 +178,16 @@ export async function runQaCli(
   rawArgv: readonly string[],
   testDeps?: QaCliTestDependencies,
 ): Promise<QaCliResult> {
+  if (
+    rawArgv[0] === "qa" &&
+    ["plan", "dispatch", "reconcile"].includes(rawArgv[1])
+  ) {
+    const { runQaDispatchCli } = await import("./fdh_qa_dispatch_cli.ts");
+    return await runQaDispatchCli(
+      rawArgv,
+      testDeps?.assignment ? { execute: testDeps.assignment } : undefined,
+    );
+  }
   if (rawArgv[0] === "qa" && rawArgv[1] === "discover") {
     const { runQaDiscoveryCli } = await import("./fdh_qa_discovery_cli.ts");
     return await runQaDiscoveryCli(

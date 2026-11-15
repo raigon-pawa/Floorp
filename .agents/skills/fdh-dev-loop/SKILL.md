@@ -106,6 +106,21 @@ deno run -A tools/fdh.ts dev down --task-id <task-id>
 
 `deno task fdh <command>` is equivalent to `deno run -A tools/fdh.ts <command>`.
 
+## Prepared Runtime startup
+
+`task prepare` installs or verifies only the existing BrowserGlue startup patch.
+The setup result includes local patch/target byte hashes; the persisted task
+setup is a summary, not the full bootstrap receipt. These hashes are not native
+compiler, signature or authorization evidence. The unrelated full
+patcher guard remains `FLOORP_SKIP_PATCHER=1`. Incompatible, partial or conflicting
+hooks are refused; prepare does not change the supplied registry source.
+
+Host contracts retain no run/env permission using filesystem-only Git DI. The
+separate `tools/integration/prepared-runtime-bootstrap.test.ts` exercises real
+Git with `--allow-read --allow-write --allow-run=git` on existing Native Runtime
+CI runners. Browser qualification must observe automatic startup before any
+manual server-module import; an import-triggered result is a narrower claim.
+
 ## OS API authentication (separate from browser verification)
 
 The TypeScript OS API verifier accepts an explicit token-file path using
@@ -113,7 +128,8 @@ The TypeScript OS API verifier accepts an explicit token-file path using
 profile credentials and never accepts a raw-token argument. An authenticated target
 must be a literal HTTP loopback root origin; redirects are refused and responses
 are redacted before reporting. HTTP 401 in the wrapper proves reachability only,
-not successful authentication. Python verifier parity is not implemented.
+not successful authentication. The Python client has token-file transport parity
+and synthetic host coverage; confirm the checked-out wrapper flags before use.
 
 Only use the verifier against an explicitly owned test browser: its main routine
 creates fixture pages and mutates browser state. Do not run it merely to typecheck
@@ -122,14 +138,17 @@ validation, use the synthetic host/integration tests below instead.
 
 Dev/test HTTP-loader profiles opt into a separate token advertisement. On supported
 POSIX hosts its fixed location is `ProfD/floorp-os-server/os-server-token`.
-**Windows dev-profile advertisement is intentionally unavailable** until a reviewed
-native reparse-safe implementation exists. Initial refusal with no prior ownership
+Windows dev-profile advertisement requires the ABI 1 native private-profile
+bridge `@floorp.app/private-profile-token;1` in the selected Debug Runtime.
+Runtimes without that capability deliberately refuse; there is no Node/Home
+fallback. A prepared-runtime receipt is selection metadata, not native behavior
+or default-publication proof. Initial refusal with no prior ownership
 performs no dirsvc/IO and never falls back to Home. If this lifecycle already owns
 a legacy advertisement or has a queued/in-flight write, refusal first awaits its
 generation-bumping cleanup using the captured owned path; this withdrawal may do
 IO and must settle before rejection. Live MCP token preference is not cleared.
 Product-default opt-out profiles retain the legacy location. POSIX preexisting-link checks are not atomic no-follow guards;
-malicious same-user replacement races and native runtime validation remain open.
+same-user replacement races are not prevented; native packaged/default delivery remains separate.
 
 Synthetic checks (no credential files or browser are used):
 
@@ -145,8 +164,11 @@ deno test --allow-read tools/integration/os-server-token.test.ts
 `validateFinalPackageQaConsistency` checks caller-observed metadata/attestations
 against trusted expectations; it does not authenticate the API or archive bytes.
 `verifyFinalPackageQaArchive` separately hashes supplied bytes, validates a narrow
-bounded ZIP32 profile, verifies every entry and returns only the two required
-canonical JSON objects. Its successful integrity result still refuses publication,
+bounded ZIP32 profile and verifies every entry. Its default signed-prepublication
+policy requires both canonical input and post-QA JSON. Explicit completed-source
+policy may return a null post-QA observation when the workflow did not create one;
+no observation or timestamp is synthesized. Its successful integrity result still
+refuses publication,
 API-authenticity, native-QA and live-approval claims. Do not override the older
 consistency result's false proof fields or wire either helper alone into publishing.
 `verifyFinalPackageQaEvidence` now composes them offline: bounded immutable JSON
@@ -172,6 +194,13 @@ eight options are mandatory; source/probe heads are independent, run IDs must
 differ, and freshness is explicit (positive, at most 86400000 ms). Unknown or
 duplicate options reject before collector import/I/O. There are no repository,
 host, URL, header, token, executable or clock overrides.
+
+The default is `--mode signed-prepublication`, preserving protected pending-source
+conditions. Explicit `--mode published-release` collects completed canonical
+package QA, not approval of an unfinished source. Unsigned collection is
+unsupported. The completed workflow may omit its prepublication-only post-QA
+entry; byte/CRC/path/size/digest verification still applies and the collector
+performs its real final API readback. All authority flags remain false.
 
 ```sh
 deno task fdh qa collect --source-run-id N --source-attempt N --source-head SOURCE_SHA \
@@ -266,9 +295,9 @@ receipt with a `request_changes` verdict or `blocking=true` fails the gate. This
 MEMBER policy is unchanged; it means any organisation member and is not limited
 to repository write access.
 
-## Trusted receipt-check preparation (not active policy)
+## Trusted receipt-check boundary
 
-`.github/workflows/fdh-trusted-review-gate.yml` is a preparatory receipt-only
+`.github/workflows/fdh-trusted-review-gate.yml` is a default-branch receipt-only
 checker. GitHub evaluates `pull_request_target` workflow definitions from the
 PR's base branch (and `issue_comment` workflow definitions from the default
 branch); after a trusted activation/merge, the checker explicitly checks out
@@ -288,19 +317,19 @@ from the custom `fdh-trusted-receipts` check name. This check does **not** run t
 candidate host tests or build, and it does not replace the legacy `review-gate`. The legacy `pull_request` workflow still
 checks out and executes PR-controlled code (with its restricted read-only
 permissions); its checker can be changed by the candidate. Do not treat it as a
-trusted receipt validator. The preparatory Check Run is not required by current repository settings, and
-a unique name alone is not a security boundary. Before relying on it,
-maintainers must enable and require the trusted workflow itself (a required
-workflow/ruleset enforcement bound to its trusted workflow identity), not only
-require the custom check name: another check from the same GitHub App may spoof
-that name. Protect the target base workflow and verify minimal Actions
+trusted receipt validator. In this rollout, the approved protection binding requires
+the real `trusted-receipt-publication` Actions job context from App 15368, alongside
+the legacy review/test/build checks. The custom `fdh-trusted-receipts` Check Run
+remains diagnostic, not the required context. This job-name/App binding is not a
+workflow-identity ruleset guarantee: another job from the same App may spoof a
+name. Do not claim stronger isolation or change protection without approval. Protect the target base workflow and verify minimal Actions
 permissions (`checks:write`, PR/issue reads only). The pending Check Run is
 created after checkout/setup and initial PR API reads; failures before creation
 can leave an older successful Check Run visible. This preparatory code therefore
 does not claim transactional fail-closed behavior for every infrastructure
 outage. Keep the existing required test/build gate until an explicitly reviewed
-replacement preserves those validations. No live settings or activation are
-claimed here.
+replacement preserves those validations. The approved context binding above does
+not add publication authority or remove any required test/build validation.
 
 A created comment triggers revalidation only when it contains a receipt
 marker; edited or deleted comments from a trusted associated author trigger a
