@@ -490,6 +490,43 @@ const JS_WINDOW_ACTORS: {
     safeForUntrustedWebProcess: true,
     allFrames: true,
   },
+  // Chrome API emulation for converted Chrome extensions: this pair is the
+  // bridge in their own pages, the Target pair acts on the tabs they debug.
+  NRChromeCompat: {
+    parent: {
+      esModuleURI: localPathToResourceURI(
+        "../actors/NRChromeCompatParent.sys.mts",
+      ),
+    },
+    child: {
+      esModuleURI: localPathToResourceURI(
+        "../actors/NRChromeCompatChild.sys.mts",
+      ),
+      events: {
+        DOMDocElementInserted: {},
+      },
+    },
+    matches: ["moz-extension://*/*"],
+    remoteTypes: ["extension"],
+    allFrames: true,
+  },
+  NRChromeCompatTarget: {
+    parent: {
+      esModuleURI: localPathToResourceURI(
+        "../actors/NRChromeCompatTargetParent.sys.mts",
+      ),
+    },
+    child: {
+      esModuleURI: localPathToResourceURI(
+        "../actors/NRChromeCompatTargetChild.sys.mts",
+      ),
+    },
+    matches: ["http://*/*", "https://*/*"],
+    // The child only answers queries from the parent actor, so it gives a
+    // compromised web process nothing it does not already have.
+    remoteTypes: WEB_REMOTE_TYPES,
+    safeForUntrustedWebProcess: true,
+  },
   NRPluginStore: {
     parent: {
       esModuleURI: localPathToResourceURI(

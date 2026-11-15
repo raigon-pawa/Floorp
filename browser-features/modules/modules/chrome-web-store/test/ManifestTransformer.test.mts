@@ -197,6 +197,68 @@ function testTransformScriptingDocumentIdPolyfill(): void {
   );
 }
 
+function testChromeCompatSidePanelAndDebugger(): void {
+  const manifest = makeMinimalManifest({
+    permissions: ["sidePanel", "debugger", "scripting", "offscreen"],
+    background: { service_worker: "sw.js" },
+    side_panel: { default_path: "panel.html" },
+  });
+  const result = transformManifest(manifest, TEST_ID);
+  const scripts = result.background?.scripts ?? [];
+  assertEquals(
+    scripts[0],
+    "__floorp_polyfills__/ChromeCompatCore.js",
+    "core polyfill runs first",
+  );
+  assert(scripts.includes("__floorp_polyfills__/SidePanelPolyfill.js"), "side panel polyfill");
+  assert(scripts.includes("__floorp_polyfills__/DebuggerPolyfill.js"), "debugger polyfill");
+  assertEquals(scripts[scripts.length - 1], "sw.js", "extension code runs last");
+  const sidebar = result.sidebar_action as { default_panel: string };
+  assertEquals(
+    sidebar.default_panel,
+    "panel.html",
+    "the default side panel is the sidebar page",
+  );
+  assert(result.permissions?.includes("webRequest") ?? false, "webRequest for Network events");
+  assert(!(result.permissions?.includes("sidePanel") ?? false), "sidePanel permission removed");
+}
+
+function testChromeCompatExternallyConnectable(): void {
+  const manifest = makeMinimalManifest({
+    background: { scripts: ["bg.js"] },
+    content_scripts: [{ matches: ["<all_urls>"], js: ["cs.js"] }],
+    externally_connectable: { matches: ["https://example.com/*"] },
+  });
+  const result = transformManifest(manifest, TEST_ID);
+  assert(
+    result.background?.scripts?.includes("__floorp_polyfills__/ExternallyConnectablePolyfill.js") ?? false,
+    "background relay injected",
+  );
+  assertDeepEquals(
+    result.content_scripts?.[0],
+    {
+      js: ["__floorp_polyfills__/ExternallyConnectableContent.js"],
+      matches: ["https://example.com/*"],
+      run_at: "document_start",
+      all_frames: true,
+    },
+    "page shim runs first on the listed sites",
+  );
+  assertEquals(result.content_scripts?.length, 2, "extension content script kept");
+  assert(result.permissions?.includes("webRequestFilterResponse") ?? false, "script rewrite permission");
+  assert(result.sidebar_action === undefined, "no sidebar without sidePanel");
+}
+
+function testChromeCompatNotNeeded(): void {
+  const manifest = makeMinimalManifest({
+    permissions: ["storage"],
+    background: { scripts: ["bg.js"] },
+  });
+  const result = transformManifest(manifest, TEST_ID);
+  assertDeepEquals(result.background?.scripts, ["bg.js"], "no polyfills added");
+  assertDeepEquals(result.permissions, ["storage"], "no permissions added");
+}
+
 // ---------------------------------------------------------------------------
 // Tests — checkCompatibility
 // ---------------------------------------------------------------------------
@@ -303,6 +365,15 @@ export async function runAllTests(): Promise<void> {
       name: "transform documentId polyfill",
       fn: testTransformScriptingDocumentIdPolyfill,
     },
+    {
+      name: "chrome compat: sidePanel + debugger",
+      fn: testChromeCompatSidePanelAndDebugger,
+    },
+    {
+      name: "chrome compat: externally_connectable",
+      fn: testChromeCompatExternallyConnectable,
+    },
+    { name: "chrome compat: not needed", fn: testChromeCompatNotNeeded },
     { name: "compatibility clean", fn: testCompatibilityClean },
     {
       name: "compatibility unsupported perms",
