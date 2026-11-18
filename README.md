@@ -165,6 +165,44 @@ For more detailed information and guidance, check out our [Floorp Documentation 
 
 - [Floorp Privacy Policy](https://floorp.app/privacy)
 
+### 🔒 Privacy Configuration of This Copy
+
+This copy of Floorp makes **no privacy changes of its own** beyond upstream [Floorp-Projects/Floorp](https://github.com/Floorp-Projects/Floorp). Its privacy behavior comes from the default preference overrides that upstream ships in [`static/gecko/pref/override.ini`](static/gecko/pref/override.ini), which are applied on top of Firefox's defaults at build time. They are user-changeable defaults, not locked:
+
+**Telemetry and data reporting are off**
+
+- Firefox telemetry is fully disabled: `toolkit.telemetry.enabled`, `toolkit.telemetry.unified` and `toolkit.telemetry.archive.enabled` are `false`, and `toolkit.telemetry.server` is empty
+- New-profile, update, shutdown, first-shutdown and background-hang (BHR) pings are disabled
+- Health reports and data submission are off: `datareporting.healthreport.uploadEnabled`, `datareporting.policy.dataSubmissionEnabled`
+- Sync telemetry payloads are disabled: `services.sync.telemetry.*` = `0`
+- Origin telemetry for tracking protection is off: `privacy.trackingprotection.origin_telemetry.enabled`
+- Privacy-preserving ad attribution submission is off: `dom.private-attribution.submission.enabled`
+
+**No studies, experiments or recommendations**
+
+- Shield/Normandy opt-out studies are disabled: `app.shield.optoutstudies.enabled`
+- Pioneer study notifications and Trailhead first-run experiments are disabled
+- Add-on recommendations, the "Get Add-ons" pane and "More from Mozilla" are hidden
+- The Web Compatibility Reporter is disabled
+- Sponsored new-tab content is never synced: `showSponsored`, `showSponsoredTopSites` and snippets are excluded from Sync
+
+**Isolation features are on**
+
+- Container tabs are enabled: `privacy.userContext.enabled`, `privacy.userContext.ui.enabled`
+- Private windows can use a separate default search engine: `browser.search.separatePrivateDefault`
+
+**Experimental remote-control features are off**
+
+- Floorp OS and the MCP server are disabled by default: `floorp.os.enabled`, `floorp.mcp.enabled`
+
+**Trade-offs to be aware of**
+
+- `xpinstall.signatures.required = false`: Unsigned extensions can be installed. This gives more flexibility but less protection against tampered add-ons.
+- `toolkit.legacyUserProfileCustomizations.stylesheets = true`: `userChrome.css` / `userContent.css` are loaded from the profile.
+- Firefox Sync is not disabled. If you sign in, prefs, workspaces and notes are synced through Mozilla's Sync service.
+
+To check these defaults in a running browser, open `about:config` or `about:telemetry`. Also see the upstream [Floorp Privacy Policy](https://floorp.app/privacy).
+
 ### 📜 About Forks
 
 - Floorp is independent of Mozilla Firefox. Floorp is not affiliated with Mozilla & Mozilla Firefox.
@@ -192,6 +230,43 @@ To build and run Floorp, follow the [Building section of the documentation](http
 - `deno task feles-build stage` (build production assets, run browser in dev mode)
 - `deno task feles-build build --phase before-mach` (production assets step)
 - `deno task feles-build build --phase after-mach` (post-build injection step)
+- `tools/build.sh` (local build script, see below)
+
+#### 🔨 Local build script (`tools/build.sh`)
+
+`tools/build.sh` runs the same build steps as CI (`.github/workflows/package.yml`) on your own machine. It supports Linux and macOS; Windows builds still go through CI.
+
+```bash
+tools/build.sh                                   # Production assets only → _dist/
+tools/build.sh --full --gecko ~/src/floorp-runtime # Full build
+tools/build.sh --full --artifact runtime.tar.xz  # Full build from a prebuilt runtime artifact
+tools/build.sh --full --package                  # Full build, then `mach package`
+```
+
+| Option                   | Effect                                                                                  |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| `--full`                 | Run the whole pipeline, not just the assets                                             |
+| `--gecko DIR`            | Firefox/runtime source tree containing `mach` (default: parent dir, if it has `mach`)   |
+| `--artifact FILE`        | Build in artifact mode from `FILE` (`MOZ_ARTIFACT_FILE`; macOS: `dmg:framework.zip`)    |
+| `--package`              | Run `mach package` at the end                                                           |
+| `--skip-install`         | Skip `deno install`                                                                     |
+| `--skip-runtime-patches` | Don't apply `.github/patches/floorp-runtime/common/*.patch` to the Gecko tree           |
+
+A full build runs these steps:
+
+1. `deno install`, then applies the runtime patches to the Gecko tree (skipping patches that are already applied)
+2. `feles-build build --phase before-mach` (production assets)
+3. `mach configure` and `mach build`
+4. `feles-build build --phase after-mach` (injects Noraneko)
+5. On Linux, replaces the symlinks in `dist/bin` with real files and applies `tools/patches/*.patch`. On macOS, the patch step is skipped. On both, `buildid2` is copied into place.
+6. `mach package` (only with `--package`)
+
+Requirements for `--full`:
+
+- **Folder layout:** This repository must sit at `<gecko>/noraneko` (a clone or a symlink). The injection step writes to `../obj-artifact-build-output`.
+- **mozconfig:** `<gecko>/mozconfig` must exist and set `mk_add_options MOZ_OBJDIR=./obj-artifact-build-output`. Templates are in `.github/workflows/mozconfigs/`.
+
+The script checks these requirements before starting anything slow and stops with an error if one is missing. It does not perform CI's provenance verification or macOS signing/DMG steps.
 
 ### 🐛 Reporting Bugs
 
