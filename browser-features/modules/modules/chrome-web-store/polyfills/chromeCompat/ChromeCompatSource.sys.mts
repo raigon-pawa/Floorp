@@ -106,17 +106,35 @@ export const CHROME_COMPAT_CORE = String.raw`(function () {
     Object.keys(values).forEach(function (key) { result[key] = values[key]; });
     namespace[name] = result;
   }
-  function selfNamed(names) {
-    var result = {};
-    names.forEach(function (name) { result[name] = name; });
-    return result;
-  }
   var dnr = api.declarativeNetRequest;
   defineEnum(dnr, "RuleActionType", { BLOCK: "block", REDIRECT: "redirect", ALLOW: "allow", UPGRADE_SCHEME: "upgradeScheme", MODIFY_HEADERS: "modifyHeaders", ALLOW_ALL_REQUESTS: "allowAllRequests" });
   defineEnum(dnr, "HeaderOperation", { APPEND: "append", SET: "set", REMOVE: "remove" });
   defineEnum(dnr, "DomainType", { FIRST_PARTY: "firstParty", THIRD_PARTY: "thirdParty" });
   defineEnum(dnr, "RequestMethod", { CONNECT: "connect", DELETE: "delete", GET: "get", HEAD: "head", OPTIONS: "options", PATCH: "patch", POST: "post", PUT: "put", OTHER: "other" });
-  defineEnum(api.offscreen, "Reason", selfNamed(["TESTING", "AUDIO_PLAYBACK", "IFRAME_SCRIPTING", "DOM_SCRAPING", "BLOBS", "DOM_PARSER", "USER_MEDIA", "DISPLAY_MEDIA", "WEB_RTC", "CLIPBOARD", "LOCAL_STORAGE", "WORKERS", "BATTERY_STATUS", "MATCH_MEDIA", "GEOLOCATION"]));
+
+  // Gecko refuses chrome://newtab ("Illegal URL"); without a url, tabs and
+  // windows open on the browser's own new tab page / home page instead.
+  function dropNewTabUrl(namespace, name) {
+    var native = namespace && namespace[name];
+    if (typeof native !== "function") return;
+    namespace[name] = function (properties) {
+      var args = Array.prototype.slice.call(arguments);
+      if (properties && /^chrome:\/\/newtab\/?$/.test(properties.url)) {
+        args[0] = Object.assign({}, properties);
+        delete args[0].url;
+      }
+      return native.apply(namespace, args);
+    };
+  }
+  dropNewTabUrl(api.tabs, "create");
+  dropNewTabUrl(api.windows, "create");
+
+  // The background runs as an event page here, not a service worker. Chrome
+  // extensions gate their background-only setup (alarms, keepalives, bridge
+  // pairing) on this global, so mark the background page with it.
+  if (location.pathname.indexOf("/_generated_background_page.html") === 0 && !("ServiceWorkerGlobalScope" in globalThis)) {
+    globalThis.ServiceWorkerGlobalScope = function ServiceWorkerGlobalScope() {};
+  }
 
   // window.close() in a side panel closes the panel, as it does in Chrome.
   var nativeClose = window.close.bind(window);
@@ -135,13 +153,33 @@ export const CHROME_COMPAT_CORE = String.raw`(function () {
 
 export const SIDE_PANEL_POLYFILL = String.raw`(function () {
   "use strict";
-  // chrome.sidePanel on top of the extension's Firefox sidebar. Each panel
-  // path becomes the sidebar page for its tab (sidebarAction.setPanel), so the
-  // panel is a top-level document as in Chrome (extensions refuse to run
-  // framed). Firefox reloads the sidebar when the active tab's panel changes,
-  // where Chrome keeps one live panel per tab.
+  // chrome.sidePanel on top of the extension's Firefox sidebar. A panel path
+  // becomes the sidebar page (sidebarAction.setPanel), so the panel is a
+  // top-level document as in Chrome (extensions refuse to run framed).
+  // Firefox has one sidebar per window and reloads it whenever the active
+  // tab's panel URL differs, which extensions read as the panel closing. So a
+  // tab's panel is set for its whole window and stays loaded across tab
+  // switches, until its tab closes.
+  // shortcut: one live panel per window; Chrome keeps one per tab.
   var core = globalThis.__floorpCompat;
   if (!core || chrome.sidePanel || !browser.sidebarAction) return;
+
+  var panelTabs = new Map(); // window ID -> tab ID whose panel it shows
+  function setPanel(path, tabId) {
+    var panel = browser.runtime.getURL(path);
+    if (typeof tabId !== "number") return browser.sidebarAction.setPanel({ panel: panel });
+    return browser.tabs.get(tabId).then(function (tab) {
+      panelTabs.set(tab.windowId, tabId);
+      return browser.sidebarAction.setPanel({ windowId: tab.windowId, panel: panel });
+    });
+  }
+  if (browser.tabs && location.pathname.indexOf("/_generated_background_page.html") === 0) {
+    browser.tabs.onRemoved.addListener(function (tabId, info) {
+      if (panelTabs.get(info.windowId) !== tabId) return;
+      panelTabs.delete(info.windowId);
+      if (!info.isWindowClosing) browser.sidebarAction.setPanel({ windowId: info.windowId, panel: null }).catch(function () {});
+    });
+  }
 
   function done() { return undefined; }
   function call(name) {
@@ -157,11 +195,7 @@ export const SIDE_PANEL_POLYFILL = String.raw`(function () {
     setOptions: core.asyncApi(function (options) {
       options = options || {};
       var applied = Promise.resolve();
-      if (typeof options.path === "string") {
-        var details = { panel: browser.runtime.getURL(options.path) };
-        if (typeof options.tabId === "number") details.tabId = options.tabId;
-        applied = browser.sidebarAction.setPanel(details);
-      }
+      if (typeof options.path === "string") applied = setPanel(options.path, options.tabId);
       // shortcut: enabled:false is remembered (getOptions) but does not hide
       // the panel; Firefox has no per-tab switch for an extension's sidebar.
       return applied.then(function () { return core.call("sidePanel.setOptions", options); }).then(done);

@@ -313,6 +313,16 @@ export class CRXConverterClass {
         }
       }
 
+      if (isJavaScriptFile(filename)) {
+        const content = new TextDecoder().decode(data);
+        const rewritten = rewriteOwnOrigin(content);
+        if (rewritten !== content) {
+          outputFiles[filename] = new TextEncoder().encode(rewritten);
+          processedCount++;
+          continue;
+        }
+      }
+
       // Sanitize DNR rules if needed
       if (this.options.sanitizeDNR && dnrRuleFiles.has(filename)) {
         try {
@@ -430,6 +440,28 @@ export const CRXConverter = {
     return result.xpiData ?? null;
   },
 };
+
+/**
+ * Points code that builds the extension's own origin from its ID
+ * ("chrome-extension://" + chrome.runtime.id) at the real origin. Firefox
+ * serves extension pages from moz-extension://<uuid>, so checks such as
+ * sender.url.startsWith(`chrome-extension://${chrome.runtime.id}/`) would
+ * reject the extension's own pages. Rewriting the code, not sender.url,
+ * keeps checks against chrome.runtime.getURL("") working too.
+ */
+export function rewriteOwnOrigin(source: string): string {
+  if (!source.includes("chrome-extension://")) return source;
+  const origin = (ns: string) => `${ns}.runtime.getURL("").slice(0, -1)`;
+  return source
+    .replace(
+      /chrome-extension:\/\/\$\{\s*(chrome|browser)\.runtime\.id\s*\}/g,
+      (_, ns: string) => "${" + origin(ns) + "}",
+    )
+    .replace(
+      /(["'])chrome-extension:\/\/\1\s*\+\s*(chrome|browser)\.runtime\.id(?![\w$.])/g,
+      (_, _quote: string, ns: string) => `(${origin(ns)})`,
+    );
+}
 
 /**
  * Returns a function that adds the polyfill <script> tags at the top of an

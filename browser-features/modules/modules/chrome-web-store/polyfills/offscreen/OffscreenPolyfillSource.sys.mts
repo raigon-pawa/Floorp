@@ -144,7 +144,11 @@ export const OFFSCREEN_POLYFILL_SOURCE = `
       createDocument: polyfill.createDocument.bind(polyfill),
       closeDocument: polyfill.closeDocument.bind(polyfill),
       hasDocument: polyfill.hasDocument.bind(polyfill),
+      Reason: {},
     };
+    ["TESTING", "AUDIO_PLAYBACK", "IFRAME_SCRIPTING", "DOM_SCRAPING", "BLOBS", "DOM_PARSER", "USER_MEDIA", "DISPLAY_MEDIA", "WEB_RTC", "CLIPBOARD", "LOCAL_STORAGE", "WORKERS", "BATTERY_STATUS", "MATCH_MEDIA", "GEOLOCATION"].forEach((reason) => {
+      chrome.offscreen.Reason[reason] = reason;
+    });
 
     if (typeof browser !== "undefined") {
       browser.offscreen = chrome.offscreen;

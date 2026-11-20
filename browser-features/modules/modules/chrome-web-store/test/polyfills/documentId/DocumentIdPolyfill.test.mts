@@ -21,7 +21,6 @@ import {
   runTests,
   type TestCase,
 } from "../../../../../../chrome/test/utils/test_harness.ts";
-import { assertRejects } from "../../../polyfills/test-helpers/assertions.mts";
 
 function createPolyfill(): DocumentIdPolyfill {
   return new DocumentIdPolyfill({ debug: true });
@@ -207,26 +206,31 @@ async function testWrapScriptingAPI() {
 }
 
 /**
- * Test: Should reject when all documentIds are invalid
+ * Test: Gecko's native documentIds pass through to the native API
  */
-async function testWrapScriptingRejectsInvalidDocumentIds() {
+async function testWrapScriptingPassesNativeDocumentIds() {
   const polyfill = createPolyfill();
+  let captured: unknown = null;
   const mockScripting = {
-    executeScript: () => Promise.resolve([] as unknown[]),
+    executeScript: (details: unknown) => {
+      captured = details;
+      return Promise.resolve([] as unknown[]);
+    },
   };
   const wrapped = wrapScriptingAPI(polyfill, mockScripting);
-
-  await assertRejects(
-    () =>
-      wrapped.executeScript({
-        target: { documentIds: ["invalid-document-id"] },
-        func: () => {},
-      }),
-    "No valid documentIds provided",
-    "Invalid documentIds should cause rejection",
+  const nativeId = "196962ba-a609-dcaf-b353-26d1205063b1";
+  await wrapped.executeScript({
+    target: { documentIds: [nativeId] },
+    func: () => {},
+  });
+  assertEquals(
+    // deno-lint-ignore no-explicit-any
+    (captured as any).target.documentIds[0],
+    nativeId,
+    "Native documentIds should reach executeScript unchanged",
   );
 
-  console.log("✓ testWrapScriptingRejectsInvalidDocumentIds passed");
+  console.log("✓ testWrapScriptingPassesNativeDocumentIds passed");
 }
 
 /**
@@ -264,22 +268,27 @@ async function testWrapTabsAPI() {
 }
 
 /**
- * Test: Should reject tabs.sendMessage when documentId is invalid
+ * Test: tabs.sendMessage passes Gecko's native documentId through
  */
-async function testWrapTabsRejectsInvalidDocumentId() {
+async function testWrapTabsPassesNativeDocumentId() {
   const polyfill = createPolyfill();
+  let captured: unknown = null;
   const mockTabs = {
-    sendMessage: () => Promise.resolve({ ok: true }),
+    sendMessage: (_tabId: number, _message: unknown, options: unknown) => {
+      captured = options;
+      return Promise.resolve({ ok: true });
+    },
   };
   const wrapped = wrapTabsAPI(polyfill, mockTabs);
-
-  await assertRejects(
-    () => wrapped.sendMessage(1, { ping: true }, { documentId: "invalid" }),
-    "Invalid documentId",
-    "Invalid documentId should reject wrapped tabs API",
+  await wrapped.sendMessage(1, { ping: true }, { documentId: "native-uuid" });
+  assertEquals(
+    // deno-lint-ignore no-explicit-any
+    (captured as any).documentId,
+    "native-uuid",
+    "Native documentId should reach tabs.sendMessage unchanged",
   );
 
-  console.log("✓ testWrapTabsRejectsInvalidDocumentId passed");
+  console.log("✓ testWrapTabsPassesNativeDocumentId passed");
 }
 
 /**
@@ -337,13 +346,13 @@ async function runAllTests(): Promise<void> {
     // API Wrapping
     { name: "Wrap scripting API", fn: testWrapScriptingAPI },
     {
-      name: "Wrap scripting API invalid input",
-      fn: testWrapScriptingRejectsInvalidDocumentIds,
+      name: "Wrap scripting API passes native documentIds",
+      fn: testWrapScriptingPassesNativeDocumentIds,
     },
     { name: "Wrap tabs API", fn: testWrapTabsAPI },
     {
-      name: "Wrap tabs API invalid input",
-      fn: testWrapTabsRejectsInvalidDocumentId,
+      name: "Wrap tabs API passes native documentId",
+      fn: testWrapTabsPassesNativeDocumentId,
     },
     {
       name: "Pass through without documentId",
@@ -366,9 +375,9 @@ export {
   testUniqueDocumentIds,
   testCachePruning,
   testWrapScriptingAPI,
-  testWrapScriptingRejectsInvalidDocumentIds,
+  testWrapScriptingPassesNativeDocumentIds,
   testWrapTabsAPI,
-  testWrapTabsRejectsInvalidDocumentId,
+  testWrapTabsPassesNativeDocumentId,
   testPassThroughWithoutDocumentId,
   runAllTests,
 };

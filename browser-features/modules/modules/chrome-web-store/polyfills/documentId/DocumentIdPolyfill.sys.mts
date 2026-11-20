@@ -227,6 +227,11 @@ export class DocumentIdPolyfill implements DocumentIdAPI {
 // API Wrappers
 // =============================================================================
 
+/** documentIds this polyfill made; Gecko's own (UUIDs) need no translation. */
+function isOwnId(documentId: unknown): boolean {
+  return typeof documentId === "string" && documentId.startsWith(DOCUMENT_ID_PREFIX);
+}
+
 /**
  * Wrap chrome.scripting.executeScript to handle documentIds
  */
@@ -243,7 +248,8 @@ export function wrapScriptingAPI(polyfill: DocumentIdPolyfill, originalScripting
 
   // deno-lint-ignore no-explicit-any
   const wrappedExecuteScript = async (details: any) => {
-    if (details.target?.documentIds && Array.isArray(details.target.documentIds)) {
+    // Gecko's own documentIds (UUIDs) go to the native API unchanged.
+    if (Array.isArray(details.target?.documentIds) && details.target.documentIds.every(isOwnId)) {
       const targets = polyfill.documentIdsToTargets(details.target.documentIds);
 
       if (targets.length === 0) {
@@ -294,7 +300,7 @@ export function wrapTabsAPI(polyfill: DocumentIdPolyfill, originalTabs: any): an
 
   // deno-lint-ignore no-explicit-any
   const wrappedSendMessage = (tabId: number, message: any, options?: any) => {
-    if (options?.documentId) {
+    if (options?.documentId && isOwnId(options.documentId)) {
       const parsed = polyfill.parseDocumentId(options.documentId);
 
       if (!parsed) {

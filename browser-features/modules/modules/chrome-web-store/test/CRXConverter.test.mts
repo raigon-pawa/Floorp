@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 // @colocated-env browser
 
-import { CRXConverterClass, injectCompatScripts } from "../CRXConverter.sys.mts";
+import {
+  CRXConverterClass,
+  injectCompatScripts,
+  rewriteOwnOrigin,
+} from "../CRXConverter.sys.mts";
 import {
   assert,
   assertEquals,
@@ -10,6 +14,34 @@ import {
 } from "../../../../chrome/test/utils/test_harness.ts";
 
 const tests: TestCase[] = [
+  // --- Own-origin rewrite ---
+  {
+    name: "rewriteOwnOrigin points chrome-extension://<id> at the real origin",
+    fn() {
+      const own = 'chrome.runtime.getURL("").slice(0, -1)';
+      assertEquals(
+        rewriteOwnOrigin(
+          "e.url.startsWith(`chrome-extension://${chrome.runtime.id}/`)",
+        ),
+        "e.url.startsWith(`${" + own + "}/`)",
+        "template literal (Claude's sender check)",
+      );
+      assertEquals(
+        rewriteOwnOrigin("x='chrome-extension://'+browser.runtime.id+'/'"),
+        'x=(browser.runtime.getURL("").slice(0, -1))+\'/\'',
+        "concatenation keeps the namespace",
+      );
+      const untouched = [
+        "`chrome-extension://${otherId}/cb.html`",
+        '"chrome-extension://"+chrome.runtime.id.length',
+        "u.startsWith(chrome.runtime.getURL(''))",
+      ];
+      for (const source of untouched) {
+        assertEquals(rewriteOwnOrigin(source), source, `unchanged: ${source}`);
+      }
+    },
+  },
+
   // --- Chrome compat page injection ---
   {
     name: "injectCompatScripts adds page polyfills at the top of <head>",
