@@ -18,8 +18,6 @@
     <!-- Preference for settings related to changing the default browser -->
     <string name="preferences_make_default_browser">Make default browser</string>
 
-    <string name="preferences_compose_ui">Use experimental Jetpack Compose UI</string>
-
     <!-- Preference enables sync for history -->
     <string name="preferences_sync_history">History</string>
 

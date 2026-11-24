@@ -34,7 +34,6 @@ class SettingsViewTest {
                 verifyPrivacySummary()
                 verifyOpenLinksInApps()
                 verifyMakeDefaultBrowserButton()
-                verifyJetpackComposeButton()
                 verifyDeveloperToolsHeading()
                 verifyRemoteDebugging()
                 verifyCustomAddonCollectionButton()

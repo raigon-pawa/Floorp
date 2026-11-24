@@ -19,11 +19,6 @@
             android:key="@string/pref_key_make_default_browser"
             android:title="@string/preferences_make_default_browser"/>
 
-    <androidx.preference.SwitchPreferenceCompat
-        android:key="@string/pref_key_compose_ui"
-        android:defaultValue="false"
-        android:title="@string/preferences_compose_ui"/>
-
     <PreferenceCategory
         android:title="@string/developer_tools_category">
 
