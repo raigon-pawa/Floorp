@@ -14,8 +14,8 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
 /**
- * Tells [onTabCrashedChanged] whether any tab is waiting to be restored after its content process crashed. It reads
- * the store, so a crash that happened while the owner was stopped is reported when it starts again.
+ * Tells [onTabCrashedChanged] whether any tab is waiting to be restored after its content process crashed. It reads the
+ * store, so a crash that happened while the owner was stopped is reported when it starts again.
  */
 class CrashIntegration(
     private val store: BrowserStore,
