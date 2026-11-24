@@ -61,8 +61,6 @@ open class BrowserActivity : AppCompatActivity() {
         }
 
         lifecycle.addObserver(CrashIntegration(components.core.store, ::onTabCrashedChanged))
-
-        NotificationManager.checkAndNotifyPolicy(this)
         lifecycle.addObserver(webExtensionPopupObserver)
 
         onBackPressedDispatcher.addCallback(
