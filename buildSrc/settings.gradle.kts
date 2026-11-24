@@ -6,26 +6,7 @@ pluginManagement {
     repositories {
         // buildSrc resolves its plugins separately from the root project, and
         // the Kotlin DSL plugin is only published to the plugin portal.
-        val pluginRepo = providers.gradleProperty("pluginRepo")
-        if (pluginRepo.isPresent) {
-            maven {
-                name = "GradlePlugins"
-                url = uri(pluginRepo.get())
-                isAllowInsecureProtocol = true // Local Nexus in CI uses HTTP
-            }
-        } else {
-            gradlePluginPortal()
-        }
-
-        val centralRepo = providers.gradleProperty("centralRepo")
-        if (centralRepo.isPresent) {
-            maven {
-                name = "MavenCentral"
-                url = uri(centralRepo.get())
-                isAllowInsecureProtocol = true // Local Nexus in CI uses HTTP
-            }
-        } else {
-            mavenCentral()
-        }
+        gradlePluginPortal()
+        mavenCentral()
     }
 }

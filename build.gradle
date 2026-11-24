@@ -9,25 +9,8 @@ buildscript {
     }
 
     repositories {
-        if (project.hasProperty("googleRepo")) {
-            maven {
-                name "Google"
-                url project.property("googleRepo")
-                allowInsecureProtocol true // Local Nexus in CI uses HTTP
-            }
-        } else {
-            google()
-        }
-
-        if (project.hasProperty("centralRepo")) {
-            maven {
-                name "MavenCentral"
-                url project.property("centralRepo")
-                allowInsecureProtocol true // Local Nexus in CI uses HTTP
-            }
-        } else {
-            mavenCentral()
-        }
+        google()
+        mavenCentral()
     }
 }
 
@@ -41,15 +24,7 @@ plugins {
 
 allprojects {
     repositories {
-        if (project.hasProperty("googleRepo")) {
-            maven {
-                name "Google"
-                url project.property("googleRepo")
-                allowInsecureProtocol true // Local Nexus in CI uses HTTP
-            }
-        } else {
-            google()
-        }
+        google()
 
         // Release-channel Android Components and GeckoView.
         maven {
@@ -57,15 +32,7 @@ allprojects {
             url = "https://maven.mozilla.org/maven2"
         }
 
-        if (project.hasProperty("centralRepo")) {
-            maven {
-                name "MavenCentral"
-                url project.property("centralRepo")
-                allowInsecureProtocol true // Local Nexus in CI uses HTTP
-            }
-        } else {
-            mavenCentral()
-        }
+        mavenCentral()
     }
 }
 
@@ -193,14 +160,4 @@ tasks.register('ktfmtFormat') {
     group = "formatting"
     description = "Format Kotlin code with ktfmt."
     dependsOn 'spotlessKotlinApply'
-}
-
-tasks.register('listRepositories') {
-    doLast {
-        println "Repositories:"
-        project.repositories.each { println "Name: " + it.name + "; url: " + it.url }
-        // Plugin repositories have no url to report, being wrappers.
-        println "Buildscript repositories:"
-        buildscript.repositories.each { println "Name: " + it.name }
-    }
 }
