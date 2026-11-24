@@ -75,9 +75,7 @@ class AddonsManagerRobot {
 
     fun dismissAddonDownloadCompletedPrompt(addonName: String) {
         mDevice.waitForWindowUpdate(packageName, waitingTime)
-        mDevice
-            .findObject(UiSelector().text("$addonName was added"))
-            .waitForExists(waitingTime)
+        mDevice.findObject(UiSelector().text("$addonName was added")).waitForExists(waitingTime)
         mDevice.waitAndInteract(
             Until.findObject(
                 By.text(getStringResource(addonsR.string.mozac_feature_addons_installed_dialog_okay_button_2))
