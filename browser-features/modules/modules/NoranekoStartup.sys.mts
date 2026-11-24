@@ -6,10 +6,15 @@
 
 import {
   effectiveReleaseNotesMode,
-  releaseNotesAudience,
   RELEASE_NOTES_PREFS,
+  releaseNotesAudience,
   shouldShowReleaseNotesChoice,
 } from "../common/release-notes.ts";
+import { launchDevPorts } from "../common/dev-port-offset.ts";
+
+/** Launch-local dev port resolver (FDH Gate 2 task 2-B): dev/test URLs of
+ * this launch resolve to the ports actually in use, not the base table. */
+const launchDevPort = launchDevPorts();
 
 // Floorp's mode-aware startup opens the versioned release notes. Firefox's
 // separate milestone-update page ignores that choice and can open a second tab.
@@ -77,7 +82,9 @@ function getComponentRegistrar(): nsIComponentRegistrar | null {
       return null;
     }
     // Components.manager has QueryInterface at runtime but TypeScript defs don't reflect it
-    const maybeQI = (cm as unknown as { QueryInterface?: (iid: nsIID) => unknown }).QueryInterface;
+    const maybeQI =
+      (cm as unknown as { QueryInterface?: (iid: nsIID) => unknown })
+        .QueryInterface;
     if (typeof maybeQI !== "function") {
       return null;
     }
@@ -89,7 +96,8 @@ function getComponentRegistrar(): nsIComponentRegistrar | null {
 }
 
 const executedFunctions = new Set<string>();
-const RELEASE_NOTES_URL = `https://blog.floorp.app/release/${NoranekoConstants.version2}`;
+const RELEASE_NOTES_URL =
+  `https://blog.floorp.app/release/${NoranekoConstants.version2}`;
 
 export function executeOnce(id: string, callback: () => void): boolean {
   if (executedFunctions.has(id)) {
@@ -144,6 +152,10 @@ export function onFinalUIStartup(): void {
     .then(showReleaseNotesChoice)
     .catch(console.error);
 
+  applyPrivateSearchDefault().catch((error) => {
+    console.error("[PrivateSearchDefault]", error);
+  });
+
   // int OS Modules
   ChromeUtils.importESModule(
     "resource://noraneko/modules/os-apis/OSGlue.sys.mjs",
@@ -168,9 +180,9 @@ async function openReleaseNotesInRecentWindow(): Promise<void> {
   if (
     !isUpdated ||
     effectiveReleaseNotesMode(
-      Services.prefs.getStringPref(RELEASE_NOTES_PREFS.mode, "blocking"),
-      Services.prefs.getBoolPref(RELEASE_NOTES_PREFS.confirmed, false),
-    ) ===
+        Services.prefs.getStringPref(RELEASE_NOTES_PREFS.mode, "blocking"),
+        Services.prefs.getBoolPref(RELEASE_NOTES_PREFS.confirmed, false),
+      ) ===
       "disabled"
   ) {
     return;
@@ -349,7 +361,7 @@ async function setupNoranekoNewTab(): Promise<void> {
     )) === false
   ) {
     // Fallback for dev build about:newtab if file doesn't exist
-    AboutNewTab.newTabURL = "http://localhost:5186/";
+    AboutNewTab.newTabURL = launchDevPort.httpOrigin("newtab", "/");
   }
 }
 
@@ -395,10 +407,10 @@ const getCustomAboutPages = async (): Promise<Record<string, string>> => {
 
   // Check and fallback for Dev Mode
   if (!(await isResourceAvailable(customAboutPages.hub))) {
-    customAboutPages.hub = "http://localhost:5183/";
+    customAboutPages.hub = launchDevPort.httpOrigin("settings", "/");
   }
   if (!(await isResourceAvailable(customAboutPages.welcome))) {
-    customAboutPages.welcome = "http://localhost:5187/";
+    customAboutPages.welcome = launchDevPort.httpOrigin("welcome", "/");
   }
 
   if (await checkNewtabUserPreference()) {
@@ -406,7 +418,7 @@ const getCustomAboutPages = async (): Promise<Record<string, string>> => {
     customAboutPages["home"] = "chrome://noraneko-newtab/content/index.html";
     // Fallback for newtab in about pages map (though AboutNewTab handles the actual newtab url)
     if (!(await isResourceAvailable(customAboutPages["newtab"]))) {
-      const localhostNewTab = "http://localhost:5186/";
+      const localhostNewTab = launchDevPort.httpOrigin("newtab", "/");
       customAboutPages["newtab"] = localhostNewTab;
       customAboutPages["home"] = localhostNewTab;
     }
@@ -511,7 +523,9 @@ function registerSsbCommandLineHandler(): void {
 
     const registrar = getComponentRegistrar();
     if (!registrar) {
-      console.error("[NoranekoStartup] Failed to get nsIComponentRegistrar for SSB handler");
+      console.error(
+        "[NoranekoStartup] Failed to get nsIComponentRegistrar for SSB handler",
+      );
       return;
     }
     registrar.registerFactory(
@@ -530,6 +544,45 @@ function registerSsbCommandLineHandler(): void {
   });
 }
 
+const PRIVATE_SEARCH_ENGINE_PREF = "floorp.search.privateDefault";
+const PRIVATE_SEARCH_APPLIED_PREF = "floorp.search.privateDefaultApplied";
+
+/**
+ * Switch the default search engine (normal and private windows) to the engine
+ * named by `floorp.search.privateDefault` once per profile. A default the user
+ * already changed away from the app default is left alone; an empty pref
+ * disables this.
+ */
+async function applyPrivateSearchDefault(): Promise<void> {
+  if (Services.prefs.getBoolPref(PRIVATE_SEARCH_APPLIED_PREF, false)) return;
+  const engineName = Services.prefs.getStringPref(
+    PRIVATE_SEARCH_ENGINE_PREF,
+    "",
+  );
+  if (!engineName) return;
+
+  const { SearchService } = ChromeUtils.importESModule(
+    "moz-src:///toolkit/components/search/SearchService.sys.mjs",
+  );
+  await SearchService.init();
+  const engine = SearchService.getEngineByName(engineName);
+  if (!engine) {
+    console.error("[PrivateSearchDefault] Engine not found:", engineName);
+    return;
+  }
+  const reason = SearchService.CHANGE_REASON.UNKNOWN;
+  if (SearchService.defaultEngine === SearchService.appDefaultEngine) {
+    await SearchService.setDefault(engine, reason);
+  }
+  if (
+    SearchService.defaultPrivateEngine ===
+      SearchService.appPrivateDefaultEngine
+  ) {
+    await SearchService.setDefaultPrivate(engine, reason);
+  }
+  Services.prefs.setBoolPref(PRIVATE_SEARCH_APPLIED_PREF, true);
+}
+
 async function initializeExperiments() {
   const { Experiments } = await ChromeUtils.importESModule(
     "resource://noraneko/modules/experiments/Experiments.sys.mjs",
@@ -544,6 +597,18 @@ async function initializeExperiments() {
 
 (async () => {
   registerSsbCommandLineHandler();
+  // macOS Web App ownership has a separate native lifecycle; do not replay
+  // those windows until restart has been validated with the native shim.
+  if (isMainBrowser && ["WINNT", "Linux"].includes(Services.appinfo.OS)) {
+    try {
+      const { SsbRestart } = ChromeUtils.importESModule(
+        "resource://noraneko/modules/pwa/SsbRestart.sys.mjs",
+      );
+      SsbRestart.init();
+    } catch (error) {
+      console.error("[NoranekoStartup] PWA restart setup failed:", error);
+    }
+  }
   await registerCustomAboutPages();
   initializeVersionInfo();
   await initializeExperiments();

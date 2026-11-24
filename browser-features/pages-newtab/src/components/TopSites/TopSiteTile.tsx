@@ -25,11 +25,10 @@ export function TopSiteTile(
   { site, isPinned, isFirefoxMode, onContextMenu }: TopSiteTileProps,
 ) {
   const isPinnedSite = isPinned;
+  // Only use locally cached favicons; a remote favicon service would learn
+  // every top site. Tiles without one fall back to the title's first letter.
   const faviconUrl = (site as TopSite).favicon ||
-    (site as TopSite).smallFavicon ||
-    `https://www.google.com/s2/favicons?domain=${
-      new URL(site.url).hostname
-    }&sz=64`;
+    (site as TopSite).smallFavicon;
 
   return (
     <a
@@ -57,7 +56,7 @@ export function TopSiteTile(
                 alt={site.title}
                 className={`${
                   isFirefoxMode ? "w-6 h-6 md:w-8 md:h-8" : "w-6 h-6"
-                } object-contain`}
+                } object-contain grayscale transition group-hover:grayscale-0`}
               />
             )
             : (

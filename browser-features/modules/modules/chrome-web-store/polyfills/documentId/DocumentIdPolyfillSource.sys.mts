@@ -112,6 +112,10 @@ export const DOCUMENT_ID_POLYFILL_SOURCE = `
     }
   }
 
+  function isOwnId(documentId) {
+    return typeof documentId === "string" && documentId.startsWith(DOCUMENT_ID_PREFIX);
+  }
+
   function wrapScriptingAPI(polyfill, originalScripting) {
     if (!originalScripting) return originalScripting;
 
@@ -119,7 +123,8 @@ export const DOCUMENT_ID_POLYFILL_SOURCE = `
     if (!originalExecuteScript) return originalScripting;
 
     const wrappedExecuteScript = async (details) => {
-      if (details.target?.documentIds && Array.isArray(details.target.documentIds)) {
+      // Gecko's own documentIds (UUIDs) go to the native API unchanged.
+      if (Array.isArray(details.target?.documentIds) && details.target.documentIds.every(isOwnId)) {
         const targets = polyfill.documentIdsToTargets(details.target.documentIds);
         
         if (targets.length === 0) {
@@ -159,7 +164,7 @@ export const DOCUMENT_ID_POLYFILL_SOURCE = `
     if (!originalSendMessage) return originalTabs;
 
     const wrappedSendMessage = (tabId, message, options) => {
-      if (options?.documentId) {
+      if (options?.documentId && isOwnId(options.documentId)) {
         const parsed = polyfill.parseDocumentId(options.documentId);
         
         if (!parsed) {

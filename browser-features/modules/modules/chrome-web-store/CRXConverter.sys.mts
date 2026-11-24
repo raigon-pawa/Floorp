@@ -37,6 +37,10 @@ import {
 import { unzipSync, zipSync, type Unzipped } from "fflate/browser";
 import { OFFSCREEN_POLYFILL_SOURCE } from "./polyfills/offscreen/OffscreenPolyfillSource.sys.mts";
 import { DOCUMENT_ID_POLYFILL_SOURCE } from "./polyfills/documentId/DocumentIdPolyfillSource.sys.mts";
+import {
+  CHROME_COMPAT_FILES,
+  POLYFILL_DIR,
+} from "./polyfills/chromeCompat/ChromeCompatSource.sys.mts";
 
 // =============================================================================
 // Constants
@@ -270,6 +274,24 @@ export class CRXConverterClass {
         new TextEncoder().encode(DOCUMENT_ID_POLYFILL_SOURCE);
     }
 
+    // Chrome API polyfills: their files, and the same scripts the background
+    // gets in every extension page (side panel, options, ...)
+    const compatPages = firefoxManifest.background?.scripts?.includes(
+        `${POLYFILL_DIR}/ChromeCompatCore.js`,
+      )
+      ? injectCompatScripts(
+        firefoxManifest.background.scripts.filter((script) =>
+          script.startsWith(`${POLYFILL_DIR}/`)
+        ),
+      )
+      : null;
+    if (compatPages) {
+      log("Injecting Chrome compatibility polyfills...");
+      for (const [path, source] of Object.entries(CHROME_COMPAT_FILES)) {
+        outputFiles[path] = new TextEncoder().encode(source);
+      }
+    }
+
     // Process other files
     let processedCount = 0;
     for (const [filename, data] of Object.entries(unzipped)) {
@@ -291,6 +313,16 @@ export class CRXConverterClass {
         }
       }
 
+      if (isJavaScriptFile(filename)) {
+        const content = new TextDecoder().decode(data);
+        const rewritten = rewriteOwnOrigin(content);
+        if (rewritten !== content) {
+          outputFiles[filename] = new TextEncoder().encode(rewritten);
+          processedCount++;
+          continue;
+        }
+      }
+
       // Sanitize DNR rules if needed
       if (this.options.sanitizeDNR && dnrRuleFiles.has(filename)) {
         try {
@@ -308,6 +340,10 @@ export class CRXConverterClass {
           );
           outputFiles[filename] = data;
         }
+      } else if (compatPages && filename.endsWith(".html")) {
+        outputFiles[filename] = new TextEncoder().encode(
+          compatPages(new TextDecoder().decode(data)),
+        );
       } else {
         // Copy as-is
         outputFiles[filename] = data;
@@ -404,3 +440,47 @@ export const CRXConverter = {
     return result.xpiData ?? null;
   },
 };
+
+/**
+ * Points code that builds the extension's own origin from its ID
+ * ("chrome-extension://" + chrome.runtime.id) at the real origin. Firefox
+ * serves extension pages from moz-extension://<uuid>, so checks such as
+ * sender.url.startsWith(`chrome-extension://${chrome.runtime.id}/`) would
+ * reject the extension's own pages. Rewriting the code, not sender.url,
+ * keeps checks against chrome.runtime.getURL("") working too.
+ */
+export function rewriteOwnOrigin(source: string): string {
+  if (!source.includes("chrome-extension://")) return source;
+  const origin = (ns: string) => `${ns}.runtime.getURL("").slice(0, -1)`;
+  return source
+    .replace(
+      /chrome-extension:\/\/\$\{\s*(chrome|browser)\.runtime\.id\s*\}/g,
+      (_, ns: string) => "${" + origin(ns) + "}",
+    )
+    .replace(
+      /(["'])chrome-extension:\/\/\1\s*\+\s*(chrome|browser)\.runtime\.id(?![\w$.])/g,
+      (_, _quote: string, ns: string) => `(${origin(ns)})`,
+    );
+}
+
+/**
+ * Returns a function that adds the polyfill <script> tags at the top of an
+ * extension page's <head>, so they run before the page's own scripts.
+ * DocumentId, Offscreen and the externally_connectable relay belong to the
+ * background page only (the relay would otherwise answer once per page).
+ */
+export function injectCompatScripts(
+  scripts: string[],
+): (html: string) => string {
+  const tags = scripts
+    .filter((script) => !/(DocumentId|Offscreen|ExternallyConnectable)Polyfill\.js$/.test(script))
+    .map((script) => `<script src="/${script}"></script>`)
+    .join("");
+  return (html) => {
+    if (html.includes(`/${POLYFILL_DIR}/`)) return html;
+    const head = html.match(/<head(\s[^>]*)?>/i);
+    if (!head) return tags + html;
+    const end = (head.index ?? 0) + head[0].length;
+    return html.slice(0, end) + tags + html.slice(end);
+  };
+}

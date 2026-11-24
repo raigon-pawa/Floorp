@@ -1,7 +1,11 @@
 // SPDX-License-Identifier: MPL-2.0
 // @colocated-env browser
 
-import { CRXConverterClass } from "../CRXConverter.sys.mts";
+import {
+  CRXConverterClass,
+  injectCompatScripts,
+  rewriteOwnOrigin,
+} from "../CRXConverter.sys.mts";
 import {
   assert,
   assertEquals,
@@ -10,6 +14,63 @@ import {
 } from "../../../../chrome/test/utils/test_harness.ts";
 
 const tests: TestCase[] = [
+  // --- Own-origin rewrite ---
+  {
+    name: "rewriteOwnOrigin points chrome-extension://<id> at the real origin",
+    fn() {
+      const own = 'chrome.runtime.getURL("").slice(0, -1)';
+      assertEquals(
+        rewriteOwnOrigin(
+          "e.url.startsWith(`chrome-extension://${chrome.runtime.id}/`)",
+        ),
+        "e.url.startsWith(`${" + own + "}/`)",
+        "template literal (Claude's sender check)",
+      );
+      assertEquals(
+        rewriteOwnOrigin("x='chrome-extension://'+browser.runtime.id+'/'"),
+        'x=(browser.runtime.getURL("").slice(0, -1))+\'/\'',
+        "concatenation keeps the namespace",
+      );
+      const untouched = [
+        "`chrome-extension://${otherId}/cb.html`",
+        '"chrome-extension://"+chrome.runtime.id.length',
+        "u.startsWith(chrome.runtime.getURL(''))",
+      ];
+      for (const source of untouched) {
+        assertEquals(rewriteOwnOrigin(source), source, `unchanged: ${source}`);
+      }
+    },
+  },
+
+  // --- Chrome compat page injection ---
+  {
+    name: "injectCompatScripts adds page polyfills at the top of <head>",
+    fn() {
+      const inject = injectCompatScripts([
+        "__floorp_polyfills__/ChromeCompatCore.js",
+        "__floorp_polyfills__/DebuggerPolyfill.js",
+        "__floorp_polyfills__/ExternallyConnectablePolyfill.js",
+        "__floorp_polyfills__/OffscreenPolyfill.js",
+      ]);
+      const html = inject(
+        '<!doctype html><html><head lang="en"><script src="/app.js"></script></head></html>',
+      );
+      assertEquals(
+        html,
+        '<!doctype html><html><head lang="en">' +
+          '<script src="/__floorp_polyfills__/ChromeCompatCore.js"></script>' +
+          '<script src="/__floorp_polyfills__/DebuggerPolyfill.js"></script>' +
+          '<script src="/app.js"></script></head></html>',
+        "core and debugger go in, background-only polyfills stay out",
+      );
+      assertEquals(inject(html), html, "injecting twice changes nothing");
+      assert(
+        inject("<p>no head</p>").startsWith("<script"),
+        "pages without <head> still get the scripts",
+      );
+    },
+  },
+
   // --- Constructor / options ---
   {
     name: "CRXConverterClass can be instantiated with default options",

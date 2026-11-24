@@ -1,0 +1,181 @@
+/* -*- indent-tabs-mode: nil; js-indent-level: 2 -*-
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+/* Archwave: pure black, white and grey chrome. Theme tokens are set with
+ * !important because the active (dark) theme writes them as inline styles on
+ * the root element. `:root:root` outranks design sheets (Lepton, Fluerial)
+ * that may load after this one. Legacy pre-152 names follow via the Gecko 152
+ * aliases. */
+
+:root:root {
+  --aw-black: #000000;
+  --aw-bg-1: #0a0a0a;
+  --aw-bg-2: #131313;
+  --aw-bg-3: #1d1d1d;
+  --aw-bg-4: #272727;
+  --aw-line: #2c2c2c;
+  --aw-muted: #8a8a8a;
+  --aw-text: #e6e6e6;
+  --aw-white: #ffffff;
+  --aw-mono: "JetBrainsMono Nerd Font", "JetBrains Mono", monospace;
+
+  --lwt-accent-color: var(--aw-black) !important;
+  --lwt-accent-color-inactive: var(--aw-black) !important;
+  --lwt-text-color: var(--aw-text) !important;
+  --toolbox-background-color: var(--aw-black) !important;
+  --toolbox-background-color-inactive: var(--aw-black) !important;
+  --toolbox-text-color: var(--aw-text) !important;
+  --toolbox-text-color-inactive: var(--aw-muted) !important;
+  --toolbar-background-color: var(--aw-black) !important;
+  --toolbar-color: var(--aw-text) !important;
+  --toolbar-text-color: var(--aw-text) !important;
+  --toolbar-field-background-color: var(--aw-bg-2) !important;
+  --toolbar-field-focus-background-color: var(--aw-bg-1) !important;
+  --toolbar-field-color: var(--aw-text) !important;
+  --toolbar-field-focus-color: var(--aw-white) !important;
+  --toolbar-field-border-color: var(--aw-line) !important;
+  --toolbar-field-focus-border-color: var(--aw-muted) !important;
+  --toolbarbutton-background-color-hover: var(--aw-bg-3) !important;
+  --toolbarbutton-background-color-active: var(--aw-bg-4) !important;
+  --toolbarbutton-icon-fill: var(--aw-text) !important;
+  --toolbarbutton-icon-fill-attention: var(--aw-white) !important;
+  --toolbarbutton-icon-fill-attention-text: var(--aw-black) !important;
+  --tab-background-color-selected: var(--aw-bg-3) !important;
+  --tab-background-color-hover: var(--aw-bg-2) !important;
+  --tab-selected-textcolor: var(--aw-white) !important;
+  --tab-loading-fill: var(--aw-white) !important;
+  --tab-attention-icon-color: var(--aw-white) !important;
+  --tab-selected-outline-color: var(--aw-line) !important;
+  --panel-background-color: var(--aw-bg-1) !important;
+  --panel-text-color: var(--aw-text) !important;
+  --panel-border-color: var(--aw-line) !important;
+  --panel-separator-color: var(--aw-line) !important;
+  --menu-background-color: var(--aw-bg-1) !important;
+  --menu-color: var(--aw-text) !important;
+  --menu-border-color: var(--aw-line) !important;
+  --menuitem-hover-background-color: var(--aw-bg-3) !important;
+  --sidebar-background-color: var(--aw-black) !important;
+  --sidebar-text-color: var(--aw-text) !important;
+  --sidebar-border-color: var(--aw-line) !important;
+  --urlbarView-highlight-background: var(--aw-bg-3) !important;
+  --urlbarView-highlight-color: var(--aw-white) !important;
+  --urlbarView-separator-color: var(--aw-line) !important;
+  --urlbar-box-bgcolor: var(--aw-bg-1) !important;
+  --urlbar-box-hover-bgcolor: var(--aw-bg-3) !important;
+  --urlbar-box-active-bgcolor: var(--aw-bg-4) !important;
+  --urlbar-box-text-color: var(--aw-text) !important;
+  --color-accent-primary: var(--aw-white) !important;
+  --color-accent-primary-hover: #d4d4d4 !important;
+  --color-accent-primary-active: #bcbcbc !important;
+  --button-text-color-primary: var(--aw-black) !important;
+  --focus-outline-color: var(--aw-muted) !important;
+  --chrome-content-separator-color: var(--aw-line) !important;
+
+  scrollbar-color: var(--aw-line) transparent;
+}
+
+#navigator-toolbox {
+  background-color: var(--aw-black) !important;
+  border-bottom: 1px solid var(--aw-line) !important;
+}
+
+#nav-bar,
+#PersonalToolbar,
+#TabsToolbar,
+#titlebar {
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Tabs: a flat grey slab with a hairline, no shadows or colored lines. */
+.tab-background {
+  box-shadow: none !important;
+  background-image: none !important;
+}
+.tab-background:is([selected], [multiselected]) {
+  background-color: var(--aw-bg-3) !important;
+  outline: 1px solid var(--aw-line) !important;
+  outline-offset: -1px !important;
+}
+.tabbrowser-tab:hover > .tab-stack > .tab-background:not([selected], [multiselected]) {
+  background-color: var(--aw-bg-2) !important;
+}
+.tab-label {
+  color: var(--aw-muted);
+}
+.tabbrowser-tab:is([selected], :hover) .tab-label {
+  color: var(--aw-white);
+}
+.tab-context-line {
+  background-color: var(--aw-white) !important;
+}
+
+/* Address bar: mono text, thin border, no glow. */
+#urlbar-background,
+#searchbar {
+  background-color: var(--aw-bg-2) !important;
+  border: 1px solid var(--aw-line) !important;
+  box-shadow: none !important;
+}
+#urlbar[focused] > #urlbar-background {
+  background-color: var(--aw-bg-1) !important;
+  border-color: var(--aw-muted) !important;
+  outline: none !important;
+}
+#urlbar-input,
+#urlbar .urlbarView-title,
+#urlbar .urlbarView-url,
+#searchbar .searchbar-textbox {
+  font-family: var(--aw-mono) !important;
+}
+#urlbar .urlbarView-url {
+  color: var(--aw-muted) !important;
+}
+#identity-box .identity-box-button:not(:hover, [open]) {
+  background-color: transparent !important;
+}
+
+/* Popups and menus. */
+menupopup,
+panel {
+  --panel-background: var(--aw-bg-1) !important;
+  --panel-color: var(--aw-text) !important;
+}
+
+/* Floorp's own surfaces. */
+#statusBar,
+#panel-sidebar-box,
+#panel-sidebar-select-box,
+#sidebar-box,
+#sidebar-main {
+  background-color: var(--aw-black) !important;
+  color: var(--aw-text) !important;
+  border-color: var(--aw-line) !important;
+}
+#statusBar {
+  font-family: var(--aw-mono) !important;
+  border-top: 1px solid var(--aw-line) !important;
+}
+
+/* Badges (downloads, extensions) in white-on-black instead of blue. */
+.toolbarbutton-badge {
+  background-color: var(--aw-white) !important;
+  color: var(--aw-black) !important;
+  box-shadow: none !important;
+}
+#downloads-button .toolbarbutton-animatable-box,
+#downloads-indicator-progress-inner {
+  fill: var(--aw-white) !important;
+}
+
+/* Colored chrome icons (workspace, profile avatar, account badge, web panel
+ * favicons) in greyscale; web panels regain their color on hover. */
+#workspaces-toolbar-button .toolbarbutton-icon,
+#profile-manager-button .toolbarbutton-icon,
+.toolbarbutton-badge,
+.panel-sidebar-button-wrapper:not(:hover) :is(image, img) {
+  filter: grayscale(1) !important;
+}

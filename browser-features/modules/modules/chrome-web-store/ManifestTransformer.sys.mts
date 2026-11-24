@@ -13,6 +13,7 @@ import {
   isPermissionSupported,
   isOptionalPermissionAllowed,
 } from "./Constants.sys.mts";
+import { POLYFILL_DIR } from "./polyfills/chromeCompat/ChromeCompatSource.sys.mts";
 import type { ChromeManifest, TransformOptions } from "./types.ts";
 
 // =============================================================================
@@ -83,6 +84,10 @@ export function transformManifestFull(
   if (manifest.permissions?.includes("scripting")) {
     injectDocumentIdPolyfill(transformed);
   }
+
+  // Inject chrome.sidePanel / chrome.debugger / externally_connectable
+  // polyfills (needs the original permissions, before filtering)
+  injectChromeCompat(transformed, manifest);
 
   // Remove unsupported permissions
   const permWarnings = filterUnsupportedPermissions(transformed);
@@ -379,6 +384,70 @@ function injectDocumentIdPolyfill(manifest: ChromeManifest): void {
   if (!manifest.background.type) {
     manifest.background.type = "module";
   }
+}
+
+/**
+ * Wire in the Chrome API polyfills from polyfills/chromeCompat for the APIs
+ * the extension uses. They run before every other background script, and
+ * CRXConverter adds the matching files and the page <script> tags.
+ * @returns true when the polyfills were injected
+ */
+export function injectChromeCompat(
+  manifest: ChromeManifest,
+  original: ChromeManifest,
+): boolean {
+  const permissions = original.permissions ?? [];
+  const sidePanel = permissions.includes("sidePanel") ||
+    original.side_panel !== undefined;
+  const debuggerApi = permissions.includes("debugger");
+  const external = original.externally_connectable as
+    | { matches?: string[] }
+    | undefined;
+  const externalMatches = external?.matches ?? [];
+  if (!sidePanel && !debuggerApi && externalMatches.length === 0) return false;
+
+  const scripts = [`${POLYFILL_DIR}/ChromeCompatCore.js`];
+  const extraPermissions: string[] = [];
+  if (sidePanel) {
+    scripts.push(`${POLYFILL_DIR}/SidePanelPolyfill.js`);
+    const panel = original.side_panel as { default_path?: string } | undefined;
+    manifest.sidebar_action = {
+      // chrome.sidePanel.setOptions swaps in per-tab panels at runtime
+      default_panel: panel?.default_path ?? `${POLYFILL_DIR}/sidepanel.html`,
+      default_title: manifest.name,
+      ...(manifest.icons ? { default_icon: manifest.icons } : {}),
+      open_at_install: false,
+    };
+  }
+  if (debuggerApi) {
+    scripts.push(`${POLYFILL_DIR}/DebuggerPolyfill.js`);
+    extraPermissions.push("webRequest"); // Network.* events
+  }
+  if (externalMatches.length > 0) {
+    scripts.push(`${POLYFILL_DIR}/ExternallyConnectablePolyfill.js`);
+    // rewrites ancestorOrigins reads in scripts of frames it embeds
+    extraPermissions.push("webRequest", "webRequestBlocking", "webRequestFilterResponse");
+    manifest.content_scripts = [
+      {
+        js: [`${POLYFILL_DIR}/ExternallyConnectableContent.js`],
+        matches: externalMatches,
+        run_at: "document_start",
+        all_frames: true,
+      },
+      ...(manifest.content_scripts ?? []),
+    ];
+  }
+
+  manifest.background ??= { scripts: [], type: "module" };
+  const background = manifest.background.scripts ?? [];
+  manifest.background.scripts = [
+    ...scripts,
+    ...background.filter((script) => !scripts.includes(script)),
+  ];
+  manifest.permissions = [
+    ...new Set([...(manifest.permissions ?? []), ...extraPermissions]),
+  ];
+  return true;
 }
 
 /**

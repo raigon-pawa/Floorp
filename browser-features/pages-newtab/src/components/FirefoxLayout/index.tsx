@@ -4,12 +4,12 @@ export function FirefoxLayout() {
       <img
         src="chrome://branding/content/about-logo.png"
         alt="Logo"
-        className="w-16 h-16 mr-4"
+        className="w-16 h-16 mr-4 grayscale"
       />
       <img
         src="chrome://branding/content/firefox-wordmark.svg"
         alt="Wordmark"
-        className="h-12"
+        className="h-12 brightness-0 invert"
       />
     </div>
   );

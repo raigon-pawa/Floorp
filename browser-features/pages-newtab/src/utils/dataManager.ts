@@ -53,11 +53,10 @@ export interface RandomImageResult {
 }
 
 export const DEFAULT_SUGGESTED_SITES: PinnedSite[] = [
-  { url: "https://youtube.com", title: "YouTube" },
-  { url: "https://x.com", title: "X" },
-  { url: "https://www.reddit.com/", title: "Reddit" },
+  { url: "https://wiki.archlinux.org/", title: "ArchWiki" },
   { url: "https://wikipedia.org/", title: "Wikipedia" },
-  { url: "https://instagram.com", title: "Instagram" },
+  { url: "https://github.com/", title: "GitHub" },
+  { url: "https://duckduckgo.com/", title: "DuckDuckGo" },
 ];
 
 const DEFAULT_SETTINGS: NewTabSettings = {
@@ -68,7 +67,7 @@ const DEFAULT_SETTINGS: NewTabSettings = {
     firefoxLayout: true,
   },
   background: {
-    type: "random",
+    type: "none",
     customImage: null,
     fileName: null,
     folderPath: null,
@@ -80,13 +79,7 @@ const DEFAULT_SETTINGS: NewTabSettings = {
     searchEngine: "default",
   },
   topSites: {
-    pinned: [
-      { url: "https://www.cube-soft.jp/", title: "Cubesoft (Sponsor)" },
-      {
-        url: "https://docs.floorp.app/docs/features/",
-        title: "Floorp Support",
-      },
-    ],
+    pinned: [],
     blocked: [],
   },
 };
