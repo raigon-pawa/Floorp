@@ -1,0 +1,124 @@
+# Floorp Archwave releases: Linux archives built with `archwave:update
+# --package`, published as a draft GitHub release. Push a tag such as
+# v12.21.2-archwave.1, or run the workflow by hand with a tag name; review the
+# draft, then publish it on GitHub.
+name: "(Archwave) Release"
+
+"on":
+  push:
+    tags:
+      - "v*-archwave*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Release tag, e.g. v12.21.2-archwave.1 (created on the selected branch if missing)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archwave-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    name: Build / linux-${{ matrix.arch }}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: x86_64
+          - runner: ubuntu-24.04-arm
+            arch: aarch64
+    steps:
+      - name: Check tag name
+        run: |
+          if [[ ! "$TAG" =~ ^v[0-9][A-Za-z0-9.+-]*$ ]]; then
+            echo "::error::Tag must look like v12.21.2-archwave.1, got: $TAG"
+            exit 1
+          fi
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: denoland/setup-deno@667a34cdef165d8d2b2e98dde39547c9daac7282
+        with:
+          deno-version: v2.x
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cache/deno
+          key: deno-archwave-release-${{ matrix.runner }}-${{ hashFiles('deno.lock') }}
+          restore-keys: deno-archwave-release-${{ matrix.runner }}-
+      - run: deno install
+      - name: Assemble and package
+        env:
+          # The job token avoids the anonymous API rate limit when downloading
+          # the locked Runtime.
+          FLOORP_RUNTIME_GITHUB_TOKEN: ${{ github.token }}
+        run: >-
+          deno task archwave:update --no-pull --no-install --package
+          --release-name "$TAG"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-linux-${{ matrix.arch }}
+          path: _dist/release/*
+          if-no-files-found: error
+          retention-days: 7
+
+  release:
+    name: Draft GitHub release
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: release-linux-*
+          path: dist
+          merge-multiple: true
+      - name: Write release notes
+        run: |
+          floorp=$(jq -r .version package.json)
+          firefox=$(jq -r '.artifacts[0].version' floorp-runtime.lock.json)
+          {
+            echo "Floorp Archwave $TAG, based on Floorp $floorp and Firefox $firefox."
+            echo
+            echo "## Install (Linux)"
+            echo
+            echo '```bash'
+            echo "tar -xJf floorp-archwave-$TAG-linux-x86_64.tar.xz   # or -aarch64"
+            echo "./floorp-archwave/floorp"
+            echo '```'
+            echo
+            echo "The browser's built-in updater is disabled; download a newer release to update."
+            echo
+            echo "## Checksums (SHA-256)"
+            echo
+            echo '```'
+            cat dist/*.sha256
+            echo '```'
+          } > notes.md
+      - name: Create draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: >-
+          gh release create "$TAG" dist/*
+          --draft
+          --title "Floorp Archwave $TAG"
+          --notes-file notes.md
+          --target "$GITHUB_SHA"

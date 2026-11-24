@@ -1,7 +1,7 @@
 ---
 title: "Architecture Overview"
 sidebar_label: "Architecture"
-floorp_commit: "fef0c4d329adef91f5fb130bf68bd63063923831"
+floorp_commit: "7071e67866a562560774dd48ea9dfd953f6c6f5c"
 generated: true
 ---
 # Architecture Overview
@@ -133,6 +133,7 @@ Deno task inventory comes from `deno.json` and currently lists 36 tasks. The fel
 
 CI workflows recorded in the docs inventory:
 
+- `.github/workflows/archwave_release.yml` - triggers: `push`, `workflow_dispatch`
 - `.github/workflows/assemble-release-bundle.yml` - triggers: `workflow_call`
 - `.github/workflows/build_installers.yml` - triggers: `workflow_call`, `workflow_dispatch`
 - `.github/workflows/collect_firefox_tests.yml` - triggers: `workflow_dispatch`

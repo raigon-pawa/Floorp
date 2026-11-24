@@ -11,6 +11,11 @@
  *      floorp-archwave.prev) and re-apply the archwave app icon.
  *
  * Usage: deno task archwave:update [--no-pull] [--no-install] [--auto-resolve]
+ *                                  [--package [--release-name NAME]]
+ *
+ * --package also writes the browser, laid out as installed, to
+ * _dist/release/floorp-archwave-<NAME>-linux-<arch>.tar.xz plus a .sha256
+ * file (NAME defaults to the package.json version).
  *
  * --auto-resolve lets headless Claude Code resolve merge conflicts (see
  * tools/src/merge_resolver.ts); the merge is undone if the build then fails.
@@ -140,17 +145,9 @@ function assertNotRunning(target: string): void {
   }
 }
 
-function install(): void {
-  const target = installDir();
-  const optDir = path.dirname(target);
-  const previous = `${target}.prev`;
-  assertNotRunning(target);
-
-  Deno.mkdirSync(optDir, { recursive: true });
-  if (exists(target)) {
-    safeRemove(previous);
-    Deno.renameSync(target, previous);
-  }
+/** Copies the assembled browser to `target` as a self-contained install. */
+function stage(target: string): void {
+  Deno.mkdirSync(path.dirname(target), { recursive: true });
   // -L resolves the dev symlinks so the install does not depend on the repo.
   runCommand("cp", ["-rL", BIN_DIR, target]);
 
@@ -173,9 +170,35 @@ function install(): void {
     Deno.copyFileSync(path.join(iconDir, name), path.join(backupDir, name));
     Deno.copyFileSync(icon, path.join(iconDir, name));
   }
+}
 
+function install(): void {
+  const target = installDir();
+  const previous = `${target}.prev`;
+  assertNotRunning(target);
+
+  if (exists(target)) {
+    safeRemove(previous);
+    Deno.renameSync(target, previous);
+  }
+  stage(target);
   logger.success(`Installed to ${target}`);
   if (exists(previous)) logger.info(`Previous build kept at ${previous}`);
+}
+
+/** Writes the release archive and its checksum; returns the archive path. */
+function packageRelease(name: string): string {
+  const releaseDir = path.join(PROJECT_ROOT, "_dist", "release");
+  safeRemove(releaseDir);
+  stage(path.join(releaseDir, "floorp-archwave"));
+  const arch = Deno.build.arch === "aarch64" ? "aarch64" : "x86_64";
+  const archive = `floorp-archwave-${name}-linux-${arch}.tar.xz`;
+  runCommand("tar", ["-cJf", archive, "floorp-archwave"], releaseDir);
+  const sum = runCommand("sha256sum", [archive], releaseDir).stdout;
+  Deno.writeTextFileSync(path.join(releaseDir, `${archive}.sha256`), sum);
+  safeRemove(path.join(releaseDir, "floorp-archwave"));
+  logger.success(`Packaged ${path.join(releaseDir, archive)}`);
+  return archive;
 }
 
 async function main(): Promise<void> {
@@ -183,11 +206,23 @@ async function main(): Promise<void> {
     throw new Error("archwave-update only supports Linux.");
   }
   const args = parseArgs(Deno.args, {
-    boolean: ["pull", "install", "auto-resolve"],
+    boolean: ["pull", "install", "auto-resolve", "package"],
+    string: ["release-name"],
     default: { pull: true, install: true },
     negatable: ["pull", "install"],
   });
 
+  let releaseName: string | undefined;
+  if (args.package) {
+    const pkg = JSON.parse(
+      Deno.readTextFileSync(path.join(PROJECT_ROOT, "package.json")),
+    ) as { version: string };
+    releaseName = args["release-name"] || pkg.version;
+    // The name ends up in a file name; keep it to tag-like characters.
+    if (!/^[\w.+-]+$/.test(releaseName)) {
+      throw new Error(`Bad release name: ${releaseName}`);
+    }
+  }
   if (args.install) assertNotRunning(installDir());
   const before = git("rev-parse", "HEAD");
   const autoResolved = args.pull && pullUpstream(args["auto-resolve"]);
@@ -200,6 +235,7 @@ async function main(): Promise<void> {
     throw error;
   }
   if (args.install) install();
+  if (releaseName) packageRelease(releaseName);
 }
 
 try {

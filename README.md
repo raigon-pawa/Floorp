@@ -159,8 +159,23 @@ shutdown, so session restore keeps working.
 
 ## Installation
 
-Archwave is installed from source. Linux (x86_64) is the only supported
-platform.
+Linux is the only supported platform.
+
+### From a release
+
+Download the archive for your architecture (x86_64 or aarch64) from
+[Releases](https://github.com/raigon-pawa/Floorp/releases), check it against the
+SHA-256 checksum in the release notes, then extract and run it:
+
+```bash
+tar -xJf floorp-archwave-<version>-linux-x86_64.tar.xz
+./floorp-archwave/floorp
+```
+
+The browser's built-in updater is disabled, so download a newer release to
+update.
+
+### From source
 
 **Requirements:** [Deno](https://deno.com) 2.x and Git.
 
@@ -181,11 +196,12 @@ deno task archwave:update
 3. Installs it to `~/.local/opt/floorp-archwave`, keeps the previous build in
    `floorp-archwave.prev`, and sets up the Archwave icon.
 
-| Option           | Effect                                                                                         |
-| ---------------- | ---------------------------------------------------------------------------------------------- |
-| `--no-pull`      | Build the current checkout without merging upstream                                            |
-| `--no-install`   | Build only; do not install                                                                     |
-| `--auto-resolve` | Let headless Claude Code resolve merge conflicts. The merge is undone if the build then fails. |
+| Option           | Effect                                                                                                    |
+| ---------------- | --------------------------------------------------------------------------------------------------------- |
+| `--no-pull`      | Build the current checkout without merging upstream                                                       |
+| `--no-install`   | Build only; do not install                                                                                |
+| `--package`      | Also write a release archive and checksum to `_dist/release/` (see [Making a release](#making-a-release)) |
+| `--auto-resolve` | Let headless Claude Code resolve merge conflicts. The merge is undone if the build then fails.            |
 
 Run the same command again to update. Firefox's built-in updater is disabled in
 these installs, because it only knows official Floorp releases.
@@ -259,6 +275,30 @@ with an error if one is missing. It does not run CI's provenance verification or
 the macOS signing and DMG steps.
 
 </details>
+
+### Making a release
+
+Releases are built by the
+[`(Archwave) Release`](.github/workflows/archwave_release.yml) workflow. Push a
+tag of the form `v<floorp version>-archwave.<n>`:
+
+```bash
+git tag v12.21.2-archwave.1
+git push origin v12.21.2-archwave.1
+```
+
+The workflow builds Linux x86_64 and aarch64 archives with
+`deno task archwave:update --no-pull --no-install --package`, and creates a
+**draft** release with install steps and checksums. Review the draft on GitHub,
+then publish it. The workflow can also be started by hand from the Actions tab
+with a tag name.
+
+To build the same archive locally:
+
+```bash
+deno task archwave:update --no-pull --no-install --package --release-name <name>
+# → _dist/release/floorp-archwave-<name>-linux-<arch>.tar.xz (+ .sha256)
+```
 
 ### Branches
 
