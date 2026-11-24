@@ -51,7 +51,8 @@ open class BrowserApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // Always dark, whatever the device setting; set in every process so the crash prompt is dark too.
+        // Always dark, whatever the device setting. The crash prompt (separate process) is not affected:
+        // lib-crash gives it a fixed light theme.
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 
         setupCrashReporting(this)
