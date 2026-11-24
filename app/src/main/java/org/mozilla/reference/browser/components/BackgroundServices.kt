@@ -19,7 +19,6 @@ import mozilla.components.concept.sync.DeviceType
 import mozilla.components.concept.sync.PeriodicSyncConfig
 import mozilla.components.concept.sync.SyncConfig
 import mozilla.components.concept.sync.SyncEngine
-import mozilla.components.feature.accounts.push.FxaPushSupportFeature
 import mozilla.components.feature.accounts.push.SendTabFeature
 import mozilla.components.feature.syncedtabs.commands.SyncedTabsCommands
 import mozilla.components.feature.syncedtabs.commands.SyncedTabsCommandsFlushScheduler
@@ -41,7 +40,6 @@ val maxActiveTime = TimeUnit.DAYS.toMillis(DEFAULT_ACTIVE_DAYS)
  */
 class BackgroundServices(
     context: Context,
-    push: Push,
     placesHistoryStorage: Lazy<PlacesHistoryStorage>,
     remoteTabsStorage: Lazy<RemoteTabsStorage>,
     loginsStorage: Lazy<SyncableLoginsStorage>,
@@ -90,8 +88,6 @@ class BackgroundServices(
                 SendTabFeature(accountManager) { device, tabs ->
                     NotificationManager.showReceivedTabs(context, device, tabs)
                 }
-
-                push.feature?.let { push -> FxaPushSupportFeature(context, accountManager, push, applicationScope) }
 
                 SyncedTabsIntegration(context, accountManager).launch()
 

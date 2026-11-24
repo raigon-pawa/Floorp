@@ -21,7 +21,6 @@ import org.mozilla.reference.browser.autofill.AutofillUnlockActivity
 import org.mozilla.reference.browser.components.Analytics
 import org.mozilla.reference.browser.components.BackgroundServices
 import org.mozilla.reference.browser.components.Core
-import org.mozilla.reference.browser.components.Push
 import org.mozilla.reference.browser.components.Services
 import org.mozilla.reference.browser.components.UseCases
 import org.mozilla.reference.browser.components.Utilities
@@ -45,7 +44,6 @@ class Components(
     val backgroundServices by lazy {
         BackgroundServices(
             context,
-            push,
             core.lazyHistoryStorage,
             core.lazyRemoteTabsStorage,
             core.lazyLoginsStorage,
@@ -67,7 +65,6 @@ class Components(
     val services by lazy {
         Services(context, backgroundServices.accountManager, useCases.tabsUseCases, applicationScope)
     }
-    val push by lazy { Push(context, analytics.crashReporter) }
 
     @delegate:SuppressLint("NewApi")
     val autofillConfiguration by lazy {

@@ -14,7 +14,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.concept.engine.webextension.isUnsupported
-import mozilla.components.concept.push.PushProcessor
 import mozilla.components.feature.addons.update.GlobalAddonDependencyProvider
 import mozilla.components.support.AppServicesInitializer
 import mozilla.components.support.AppServicesInitializer.Config as AppServicesConfig
@@ -25,12 +24,10 @@ import mozilla.components.support.ktx.android.content.isMainProcess
 import mozilla.components.support.ktx.android.content.runOnlyInMainProcess
 import mozilla.components.support.rusthttp.RustHttpConfig
 import mozilla.components.support.webextensions.WebExtensionSupport
-import org.mozilla.reference.browser.push.PushFxaIntegration
-import org.mozilla.reference.browser.push.WebPushEngineIntegration
 
 /**
- * Owns the app's [Components]. Engine, add-on and push setup run only in the main process, never in GeckoView child or
- * crash handler processes.
+ * Owns the app's [Components]. Engine and add-on setup run only in the main process, never in GeckoView child or crash
+ * handler processes.
  */
 open class BrowserApplication : Application() {
     /**
@@ -113,20 +110,6 @@ open class BrowserApplication : Application() {
             onUpdatePermissionRequest = components.core.addonUpdater::onUpdatePermissionRequest,
         )
 
-        components.push.feature?.let {
-            Logger.info("AutoPushFeature is configured, initializing it...")
-
-            PushProcessor.install(it)
-
-            // WebPush integration to observe and deliver push messages to engine.
-            WebPushEngineIntegration(components.core.engine, it, applicationScope).start()
-
-            // Perform a one-time initialization of the account manager if a message is received.
-            PushFxaIntegration(it, lazy { components.backgroundServices.accountManager }, applicationScope).launch()
-
-            // Initialize the push feature and service.
-            it.initialize()
-        }
         applicationScope.launch(Dispatchers.IO) {
             components.core.fileUploadsDirCleaner.cleanUploadsDirectory()
         }
