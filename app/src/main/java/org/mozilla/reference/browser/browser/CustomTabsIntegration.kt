@@ -159,6 +159,8 @@ class CustomTabsIntegration(
             customTabsUseCases,
             window = activity?.window,
             // Keep the app's own colours: ignore the toolbar and system bar colours the calling app asks for.
+            // The caller's action button keeps its own colours, like a site icon: forceActionButtonTinting would
+            // flatten a full-colour bitmap into a white silhouette, often a plain square.
             customTabsColorsConfig =
                 CustomTabsColorsConfig(
                     updateStatusBarColor = false,
