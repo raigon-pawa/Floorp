@@ -15,7 +15,9 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
@@ -65,7 +67,19 @@ open class BrowserActivity : AppCompatActivity() {
             }
         }
 
-        lifecycle.addObserver(CrashIntegration(components.core.store, ::onTabCrashedChanged))
+        // The offer to restore a crashed tab belongs to the browser screen: it sits above that screen's toolbar,
+        // goes away with it (the tabs tray replaces it) and comes back when the screen does.
+        supportFragmentManager.registerFragmentLifecycleCallbacks(
+            object : FragmentManager.FragmentLifecycleCallbacks() {
+                override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, state: Bundle?) {
+                    val toolbar = v.findViewById<View>(R.id.toolbar) ?: return
+                    f.viewLifecycleOwner.lifecycle.addObserver(
+                        CrashIntegration(components.core.store) { crashed -> onTabCrashedChanged(toolbar, crashed) }
+                    )
+                }
+            },
+            false,
+        )
         showNoticeIfCrashedSinceLastStart()
         lifecycle.addObserver(webExtensionPopupObserver)
 
@@ -131,18 +145,16 @@ open class BrowserActivity : AppCompatActivity() {
         }
 
     /** A crashed tab stays blank until it is restored, so the offer stays up until it is taken or moot. */
-    private fun onTabCrashedChanged(crashed: Boolean) {
+    private fun onTabCrashedChanged(toolbar: View, crashed: Boolean) {
         crashSnackbar?.dismiss()
         crashSnackbar =
             if (crashed) {
-                Snackbar.make(
-                        findViewById(android.R.id.content),
-                        R.string.crash_report_non_fatal_message,
-                        LENGTH_INDEFINITE,
-                    )
+                Snackbar.make(toolbar, R.string.crash_report_non_fatal_message, LENGTH_INDEFINITE)
                     .setAction(R.string.crash_report_non_fatal_action) {
                         components.useCases.sessionUseCases.crashRecovery.invoke()
                     }
+                    // Up for as long as the tab is crashed, so it must not sit on top of the address bar.
+                    .setAnchorView(toolbar.takeIf { it.isVisible })
                     .also { it.show() }
             } else {
                 null
