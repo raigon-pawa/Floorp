@@ -54,6 +54,7 @@ import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.R.string.pref_key_remote_debugging
 import org.mozilla.reference.browser.R.string.pref_key_tracking_protection_normal
 import org.mozilla.reference.browser.R.string.pref_key_tracking_protection_private
+import org.mozilla.reference.browser.browser.CrashedTabMiddleware
 import org.mozilla.reference.browser.downloads.DownloadService
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.getPreferenceKey
@@ -120,6 +121,7 @@ class Core(
                         ),
                         SearchMiddleware(context),
                         RecordingDevicesMiddleware(context, context.components.notificationsDelegate),
+                        CrashedTabMiddleware(),
                     ) + EngineMiddleware.create(engine)
             )
             .apply {
