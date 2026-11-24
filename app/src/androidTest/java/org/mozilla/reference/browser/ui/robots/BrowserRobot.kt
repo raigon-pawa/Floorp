@@ -31,10 +31,6 @@ class BrowserRobot {
         assertTrue(mDevice.findObject(UiSelector().textContains(expectedText)).waitForExists(waitingTime))
     }
 
-    fun verifyGithubUrl() {
-        verifyUrl("https://github.com/login")
-    }
-
     fun verifyUrl(expectedUrl: String) {
         mDevice.findObject(UiSelector().resourceId("$packageName:id/toolbar")).waitForExists(waitingTime)
         mDevice

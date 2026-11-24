@@ -160,9 +160,6 @@ class ToolbarIntegration(
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                     context.startActivity(intent)
                 },
-                TextMenuCandidate(text = "Report issue") {
-                    tabsUseCases.addTab(url = "https://github.com/mozilla-mobile/reference-browser/issues/new")
-                },
                 TextMenuCandidate(text = "Settings") {
                     val intent = Intent(context, SettingsActivity::class.java)
                     intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK

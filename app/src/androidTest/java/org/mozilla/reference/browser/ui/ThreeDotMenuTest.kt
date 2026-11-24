@@ -30,7 +30,6 @@ import org.mozilla.reference.browser.ui.robots.navigationToolbar
  * - Share button opens app overlay menu
  * - Request desktop site toggle forwards to desktop view of web page (TBD)
  * - Find in page button can locate web page text
- * - Report issue button forwards to gitubh issues (TBD)
  * - Open settings button opens Settings sub-menu
  *
  * Not included:
@@ -74,7 +73,6 @@ class ThreeDotMenuTest {
                 verifyFindInPageButtonDoesntExist()
                 // Only these items should exist in the home screen menu
                 verifyAddOnsButtonExists()
-                verifyReportIssueExists()
                 verifyOpenSettingsExists()
             }
     }
@@ -99,7 +97,6 @@ class ThreeDotMenuTest {
                 verifyAddToHomescreenButtonExists()
                 verifyFindInPageButtonExists()
                 verifyAddOnsButtonExists()
-                verifyReportIssueExists()
                 verifyOpenSettingsExists()
             }
     }
@@ -210,24 +207,6 @@ class ThreeDotMenuTest {
                 verifyFindInPageResult("1/2")
                 clickFindInPageCloseButton()
                 verifyFindInPageBarIsDismissed()
-            }
-    }
-
-    // so less flaky, we only test redirect to github login
-    // (redirect happens with / without WIFI enabled)
-    @Test
-    fun reportIssueTest() {
-        val loremIpsumWebPage = TestAssetHelper.getLoremIpsumAsset(mockWebServer)
-
-        navigationToolbar {}
-            .enterUrlAndEnterToBrowser(loremIpsumWebPage.url) {
-                mDevice.waitForIdle()
-            }
-        navigationToolbar {}
-            .openThreeDotMenu {}
-            .reportIssue {
-                mDevice.waitForIdle()
-                verifyGithubUrl()
             }
     }
 

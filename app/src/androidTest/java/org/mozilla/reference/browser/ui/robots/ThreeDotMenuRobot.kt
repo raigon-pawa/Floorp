@@ -40,8 +40,6 @@ class ThreeDotMenuRobot {
 
     fun verifyAddOnsButtonExists() = assertAddOnsButton()
 
-    fun verifyReportIssueExists() = assertReportIssueButton()
-
     fun verifyOpenSettingsExists() = assertSettingsButton()
 
     fun verifyShareButtonDoesntExist() = assertShareButtonDoesntExist()
@@ -130,12 +128,6 @@ class ThreeDotMenuRobot {
             return FindInPagePanelRobot.Transition()
         }
 
-        fun reportIssue(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            reportIssueButton().click()
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
-        }
-
         fun openSettings(interact: SettingsViewRobot.() -> Unit): SettingsViewRobot.Transition {
             settingsButton().click()
             mDevice.waitForIdle()
@@ -185,8 +177,6 @@ private fun requestDesktopSiteToggle() = onView(ViewMatchers.withText("Request d
 
 private fun findInPageButton() = onView(ViewMatchers.withText("Find in Page"))
 
-private fun reportIssueButton() = onView(ViewMatchers.withText("Report issue"))
-
 private fun settingsButton() = onView(ViewMatchers.withText("Settings"))
 
 private fun addToHomescreenButton() = onView(ViewMatchers.withText("Add to homescreen"))
@@ -233,10 +223,6 @@ private fun assertFindInPageButton() =
 
 private fun assertAddOnsButton() =
     addOnsButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-
-private fun assertReportIssueButton() =
-    reportIssueButton()
-        .check(ViewAssertions.matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
 private fun assertSettingsButton() =
     settingsButton()
