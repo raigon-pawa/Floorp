@@ -169,6 +169,12 @@
         <service android:name=".media.MediaSessionService"
             android:foregroundServiceType="mediaPlayback"
             android:exported="false" />
+
+        <!-- Glean is on the classpath through Android Components but never initialised; its exported debug
+             activity has no use here. -->
+        <activity
+            android:name="mozilla.telemetry.glean.debug.GleanDebugActivity"
+            tools:node="remove" />
     </application>
 
 </manifest>
