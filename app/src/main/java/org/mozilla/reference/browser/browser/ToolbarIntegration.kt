@@ -58,7 +58,8 @@ class ToolbarIntegration(
     historyStorage: PlacesHistoryStorage,
     private val store: BrowserStore,
     private val sessionUseCases: SessionUseCases,
-    private val tabsUseCases: TabsUseCases,
+    // Lost its last user with the Report issue entry; the New tab entries planned for this menu need it again.
+    @Suppress("UnusedPrivateProperty") private val tabsUseCases: TabsUseCases,
     private val webAppUseCases: WebAppUseCases,
     sessionId: String? = null,
 ) : LifecycleAwareFeature, UserInteractionHandler {
