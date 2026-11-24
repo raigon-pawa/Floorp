@@ -12,6 +12,8 @@
  * - chrome.sidePanel options, mapped onto the extension's sidebar
  * - chrome.debugger sessions, whose privileged commands are forwarded to
  *   NRChromeCompatTargetChild in the debugged tab
+ * - non-interactive chrome.identity.launchWebAuthFlow, run in a hidden
+ *   browser as Chrome does
  */
 
 import { EXTENSION_ID_SUFFIX } from "../modules/chrome-web-store/Constants.sys.mts";
@@ -28,6 +30,8 @@ interface CallArgs {
   enabled?: boolean;
   method?: string;
   params?: unknown;
+  url?: string;
+  timeoutMs?: number;
 }
 
 interface NativeTab {
@@ -64,6 +68,9 @@ const { ExtensionParent } = ChromeUtils.importESModule(
 );
 const { ExtensionCommon } = ChromeUtils.importESModule(
   "resource://gre/modules/ExtensionCommon.sys.mjs",
+);
+const { HiddenBrowserManager } = ChromeUtils.importESModule(
+  "resource://gre/modules/HiddenFrame.sys.mjs",
 );
 
 /** Commands answered by the debugged tab's content process. */
@@ -116,7 +123,95 @@ export function requireDebuggableURI(
  */
 const NAMESPACE_PERMISSIONS: Record<string, string> = {
   debugger: "debugger",
+  identity: "identity",
 };
+
+/** Lowercase hex SHA-1, as Gecko's identity API hashes add-on IDs. */
+function sha1Hex(text: string): string {
+  const hash = Cc["@mozilla.org/security/hash;1"].createInstance(
+    Ci.nsICryptoHash,
+  );
+  hash.initWithString("sha1");
+  const bytes = new TextEncoder().encode(text);
+  hash.update(bytes, bytes.length);
+  return Array.from(
+    hash.finish(false),
+    (c) => c.charCodeAt(0).toString(16).padStart(2, "0"),
+  ).join("");
+}
+
+/**
+ * The redirect URL an auth flow ends at, with the same rules as Gecko's
+ * identity.launchWebAuthFlow (ext-identity.js): the url's redirect_uri, which
+ * must be the add-on's getRedirectURL() or its loopback URL.
+ */
+export function authRedirectURI(
+  url: string,
+  addonId: string,
+  redirectDomain: string,
+): string {
+  const parsed = URL.parse(url);
+  if (parsed?.protocol !== "https:" && parsed?.protocol !== "http:") {
+    throw new Error("details.url is invalid");
+  }
+  const hash = sha1Hex(addonId);
+  const base = `https://${hash}.${redirectDomain}/`;
+  const redirect = URL.parse(parsed.searchParams.get("redirect_uri") || base);
+  if (!redirect) throw new Error("redirect_uri is invalid");
+  if (
+    !redirect.href.startsWith(base) &&
+    !redirect.href.startsWith(`http://127.0.0.1/mozoauth2/${hash}`)
+  ) {
+    throw new Error("redirect_uri not allowed");
+  }
+  return redirect.href;
+}
+
+/**
+ * Non-interactive launchWebAuthFlow. Gecko's only follows HTTP redirects, so
+ * sign-in pages that redirect from script (OAuth prompt=none) always fail and
+ * extensions such as Claude lose their login on every restart. Chrome loads
+ * the page in a hidden window instead; this does the same.
+ */
+export function silentWebAuthFlow(
+  url: string,
+  redirectURI: string,
+  timeoutMs: number,
+): Promise<string> {
+  return HiddenBrowserManager.withHiddenBrowser(
+    (browser: XULBrowserElement) =>
+      new Promise<string>((resolve, reject) => {
+        const observer = (subject: nsISupports) => {
+          const channel = subject.QueryInterface?.(Ci.nsIChannel);
+          if (
+            !channel ||
+            channel.loadInfo.browsingContext?.browserId !== browser.browserId ||
+            !channel.URI.spec.startsWith(redirectURI)
+          ) {
+            return;
+          }
+          channel.cancel(Cr.NS_BINDING_ABORTED);
+          finish();
+          resolve(channel.URI.spec);
+        };
+        const timer = setTimeout(() => {
+          finish();
+          reject(new Error("Authorization page timed out"));
+        }, timeoutMs);
+        function finish(): void {
+          clearTimeout(timer);
+          Services.obs.removeObserver(observer, "http-on-modify-request");
+        }
+        Services.obs.addObserver(observer, "http-on-modify-request");
+        // System principal, as Gecko's own hidden loads: a first-party load
+        // that sends the site's cookies. authRedirectURI allows only http(s).
+        browser.loadURI(Services.io.newURI(url), {
+          triggeringPrincipal: Services.scriptSecurityManager
+            .getSystemPrincipal(),
+        });
+      }),
+  );
+}
 
 /**
  * Sites that let the Chrome extension frame them (frame-ancestors
@@ -303,6 +398,18 @@ export class NRChromeCompatParent extends JSWindowActorParent {
           String(args.method),
           args.params ?? {},
         );
+      }
+      case "identity.launchWebAuthFlow": {
+        const redirectURI = authRedirectURI(
+          String(args.url),
+          addonId,
+          Services.prefs.getStringPref(
+            "extensions.webextensions.identity.redirectDomain",
+          ),
+        );
+        // Chrome's timeoutMsForNonInteractive; Claude asks for up to 30 s.
+        const timeoutMs = Math.min(Number(args.timeoutMs) || 30000, 60000);
+        return silentWebAuthFlow(String(args.url), redirectURI, timeoutMs);
       }
     }
     throw new Error(`Unknown compat method: ${method}`);

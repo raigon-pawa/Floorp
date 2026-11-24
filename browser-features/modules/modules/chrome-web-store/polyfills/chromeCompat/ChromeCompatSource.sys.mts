@@ -129,6 +129,17 @@ export const CHROME_COMPAT_CORE = String.raw`(function () {
   dropNewTabUrl(api.tabs, "create");
   dropNewTabUrl(api.windows, "create");
 
+  // Non-interactive auth flows run in a hidden browser page, as in Chrome;
+  // Gecko only follows HTTP redirects, so silent re-login always failed.
+  var identity = api.identity;
+  if (identity && identity.launchWebAuthFlow) {
+    var nativeAuthFlow = identity.launchWebAuthFlow.bind(identity);
+    identity.launchWebAuthFlow = asyncApi(function (details) {
+      if (!details || details.interactive) return nativeAuthFlow(details);
+      return call("identity.launchWebAuthFlow", { url: details.url, timeoutMs: details.timeoutMsForNonInteractive });
+    });
+  }
+
   // The background runs as an event page here, not a service worker. Chrome
   // extensions gate their background-only setup (alarms, keepalives, bridge
   // pairing) on this global, so mark the background page with it.

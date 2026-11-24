@@ -3,9 +3,11 @@
 
 import {
   allowConvertedAncestor,
+  authRedirectURI,
   type CompatPolicy,
   requireDebuggableURI,
   requirePermission,
+  silentWebAuthFlow,
 } from "../NRChromeCompatParent.sys.mts";
 import {
   asyncWrapper,
@@ -103,6 +105,57 @@ export async function runAllTests(): Promise<void> {
           other,
           "sites that never allowed this extension stay closed",
         );
+      },
+    },
+    {
+      name: "silent auth flows end only at the add-on's own redirect URL",
+      fn() {
+        const id = "abc@chromium-extension";
+        const base = `https://${
+          new URL(
+            authRedirectURI("https://auth.example/", id, "redirect.test"),
+          ).hostname
+        }/`;
+        assert(
+          /^https:\/\/[0-9a-f]{40}\.redirect\.test\/$/.test(base),
+          `default is the getRedirectURL() form: ${base}`,
+        );
+        const url = (redirect: string) =>
+          `https://auth.example/authorize?redirect_uri=${
+            encodeURIComponent(redirect)
+          }`;
+        assertEquals(
+          authRedirectURI(url(`${base}cb`), id, "redirect.test"),
+          `${base}cb`,
+          "a path under the redirect URL is allowed",
+        );
+        throws(
+          () => authRedirectURI(url("https://evil.test/"), id, "redirect.test"),
+          /redirect_uri not allowed/,
+          "other redirect targets are refused",
+        );
+        throws(
+          () => authRedirectURI("file:///etc/passwd", id, "redirect.test"),
+          /details.url is invalid/,
+          "only web pages are loaded",
+        );
+      },
+    },
+    {
+      name: "silent auth flows follow redirects made from script",
+      async fn() {
+        const redirect = "http://127.0.0.1/mozoauth2/test";
+        const page = `data:text/html,<script>location.href="${redirect}?code=42"</script>`;
+        assertEquals(
+          await silentWebAuthFlow(page, redirect, 10000),
+          `${redirect}?code=42`,
+          "the redirect URL comes back without being loaded",
+        );
+        let error = "";
+        await silentWebAuthFlow("data:text/html,stuck", redirect, 300).catch(
+          (e: Error) => (error = e.message),
+        );
+        assert(/timed out/.test(error), `pages that never redirect time out: ${error}`);
       },
     },
     {
