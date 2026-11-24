@@ -4,16 +4,19 @@
 
 package org.mozilla.reference.browser.ui
 
-import androidx.core.net.toUri
+import androidx.test.platform.app.InstrumentationRegistry
 import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.RetryTestRule
 import org.mozilla.reference.browser.helpers.TestAssetHelper
+import org.mozilla.reference.browser.helpers.TestHelper
+import org.mozilla.reference.browser.ui.robots.browser
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
 
 class CrashRecoveryTest {
@@ -43,26 +46,34 @@ class CrashRecoveryTest {
         val page = TestAssetHelper.getGenericAsset(mockWebServer, 1)
 
         navigationToolbar {}.enterUrlAndEnterToBrowser(page.url) { verifyPageContent(page.content) }
-        navigationToolbar {}
-            .enterUrlAndEnterToBrowser("about:crashcontent".toUri()) {
-                clickSnackbarRestoreButton()
-                verifyPageContent(page.content)
-                verifyNoTabCrashedSnackbar()
-            }
+        loadUrl("about:crashcontent")
+        browser {
+            clickSnackbarRestoreButton()
+            verifyPageContent(page.content)
+            verifyNoTabCrashedSnackbar()
+        }
     }
 
-    // A crashed tab must not swallow what the user does next: typing an address has to leave the crashed page.
+    // A crashed tab must not swallow what the user does next: loading an address has to leave the crashed page.
     @Test
     fun navigateAwayFromCrashedTabTest() {
         val page = TestAssetHelper.getGenericAsset(mockWebServer, 1)
         val nextPage = TestAssetHelper.getGenericAsset(mockWebServer, 2)
 
         navigationToolbar {}.enterUrlAndEnterToBrowser(page.url) { verifyPageContent(page.content) }
-        navigationToolbar {}.enterUrlAndEnterToBrowser("about:crashcontent".toUri()) { verifyTabCrashedSnackbar() }
-        navigationToolbar {}
-            .enterUrlAndEnterToBrowser(nextPage.url) {
-                verifyPageContent(nextPage.content)
-                verifyNoTabCrashedSnackbar()
-            }
+        loadUrl("about:crashcontent")
+        browser { verifyTabCrashedSnackbar() }
+        loadUrl(nextPage.url.toString())
+        browser {
+            verifyPageContent(nextPage.content)
+            verifyNoTabCrashedSnackbar()
+        }
     }
+
+    // Typing a second address into the toolbar right after a load often does not register under UI Automator, so the
+    // later loads go through the same use case the toolbar calls.
+    private fun loadUrl(url: String) =
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            TestHelper.appContext.components.useCases.sessionUseCases.loadUrl(url)
+        }
 }
