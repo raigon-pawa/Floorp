@@ -73,6 +73,7 @@ class ToolbarIntegration(
 
     private fun menuToolbar(session: SessionState?): RowMenuCandidate {
         val tint = ContextCompat.getColor(context, R.color.icons)
+        val canGoForward = session?.content?.canGoForward == true
 
         val forward =
             SmallMenuCandidate(
@@ -81,9 +82,10 @@ class ToolbarIntegration(
                     DrawableMenuIcon(
                         context,
                         mozilla.components.ui.icons.R.drawable.mozac_ic_forward_24,
-                        tint = tint,
+                        // The menu does not dim a disabled button by itself.
+                        tint = if (canGoForward) tint else ContextCompat.getColor(context, R.color.aw_text_disabled),
                     ),
-                containerStyle = ContainerStyle(isEnabled = session?.content?.canGoForward == true),
+                containerStyle = ContainerStyle(isEnabled = canGoForward),
             ) {
                 sessionUseCases.goForward.invoke()
             }
