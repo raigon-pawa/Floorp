@@ -5,13 +5,11 @@
 package org.mozilla.reference.browser.ui
 
 import androidx.core.net.toUri
-import androidx.test.rule.GrantPermissionRule
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.RetryTestRule
-import org.mozilla.reference.browser.ui.robots.mDevice
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
 
 /**
@@ -20,11 +18,6 @@ import org.mozilla.reference.browser.ui.robots.navigationToolbar
  * - Expected options are displayed as listed below
  */
 class SettingsViewTest {
-    // Grant the app access to the camera so that we can test the Firefox Accounts QR code reader
-    @Rule
-    @JvmField
-    val grantPermissionRule: GrantPermissionRule = GrantPermissionRule.grant(android.Manifest.permission.CAMERA)
-
     @get:Rule val browserActivityTestRule = BrowserActivityTestRule()
 
     @Rule @JvmField val retryTestRule = RetryTestRule(3)
@@ -37,10 +30,6 @@ class SettingsViewTest {
             .openSettings {
                 verifySettingsRecyclerViewToExist()
                 verifyNavigateUp()
-                verifySyncSigninButton()
-                verifySyncHistorySummary()
-                verifySyncQrCodeButton()
-                verifySyncQrSummary()
                 verifyPrivacyButton()
                 verifyPrivacySummary()
                 verifyOpenLinksInApps()
@@ -53,31 +42,6 @@ class SettingsViewTest {
                 verifyCustomAddonCollectionButton()
                 verifyMozillaHeading()
                 verifyAboutReferenceBrowserButton()
-            }
-    }
-
-    @Test
-    fun openFXATest() {
-        navigationToolbar {}
-            .openThreeDotMenu {}
-            .openSettings {}
-            .openFXASignin {
-                verifyFXAUrl()
-            }
-    }
-
-    // openFXAQrCodeTest tests that we get to the camera
-    // Additional tests are needed to verify that the QR code reader works
-    @Ignore("Test instrumentation process crash, see: https://github.com/mozilla-mobile/reference-browser/issues/1502")
-    @Test
-    fun openFXAQrCodeTest() {
-        navigationToolbar {}
-            .openThreeDotMenu {}
-            .openSettings {}
-            .openFXAQrCode {
-                mDevice.waitForIdle()
-                verifyFxAQrCode()
-                mDevice.pressBack()
             }
     }
 

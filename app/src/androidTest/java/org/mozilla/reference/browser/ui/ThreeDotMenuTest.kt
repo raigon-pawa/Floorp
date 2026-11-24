@@ -74,7 +74,6 @@ class ThreeDotMenuTest {
                 verifyFindInPageButtonDoesntExist()
                 // Only these items should exist in the home screen menu
                 verifyAddOnsButtonExists()
-                verifySyncedTabsButtonExists()
                 verifyReportIssueExists()
                 verifyOpenSettingsExists()
             }
@@ -100,7 +99,6 @@ class ThreeDotMenuTest {
                 verifyAddToHomescreenButtonExists()
                 verifyFindInPageButtonExists()
                 verifyAddOnsButtonExists()
-                verifySyncedTabsButtonExists()
                 verifyReportIssueExists()
                 verifyOpenSettingsExists()
             }
@@ -239,20 +237,6 @@ class ThreeDotMenuTest {
             .openThreeDotMenu {}
             .openSettings {
                 verifySettingsViewExists()
-            }
-    }
-
-    // Verifies the Synced tabs menu opens from a tab's 3 dot menu and
-    // displays the correct view if the user isn't signed in
-    @Test
-    fun openSyncedTabsTest() {
-        val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
-
-        navigationToolbar {}.enterUrlAndEnterToBrowser(defaultWebPage.url) {}
-        navigationToolbar {}
-            .openThreeDotMenu {}
-            .openSyncedTabs {
-                verifyNotSignedInSyncTabsView()
             }
     }
 

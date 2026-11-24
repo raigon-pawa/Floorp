@@ -31,10 +31,6 @@ class BrowserRobot {
         assertTrue(mDevice.findObject(UiSelector().textContains(expectedText)).waitForExists(waitingTime))
     }
 
-    fun verifyFXAUrl() {
-        verifyUrl("https://accounts.firefox.com")
-    }
-
     fun verifyGithubUrl() {
         verifyUrl("https://github.com/login")
     }

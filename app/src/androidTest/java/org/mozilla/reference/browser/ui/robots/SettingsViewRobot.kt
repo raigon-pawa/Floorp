@@ -23,9 +23,7 @@ import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.helpers.TestAssetHelper
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
-import org.mozilla.reference.browser.helpers.TestHelper.assertUIObjectExists
 import org.mozilla.reference.browser.helpers.TestHelper.getStringResource
-import org.mozilla.reference.browser.helpers.TestHelper.itemWithText
 import org.mozilla.reference.browser.helpers.TestHelper.packageName
 import org.mozilla.reference.browser.helpers.click
 import org.mozilla.reference.browser.helpers.hasCousin
@@ -35,14 +33,6 @@ class SettingsViewRobot {
     fun verifySettingsViewExists() = assertSettingsView()
 
     fun verifyNavigateUp() = assertNavigateUpButton()
-
-    fun verifySyncSigninButton() = assertSyncSigninButton()
-
-    fun verifySyncHistorySummary() = assertSyncHistorySummary()
-
-    fun verifySyncQrCodeButton() = assertSyncQrCodeButton()
-
-    fun verifySyncQrSummary() = assertSyncQrSummary()
 
     fun verifyPrivacyButton() = assertPrivacyButton()
 
@@ -99,18 +89,6 @@ class SettingsViewRobot {
             return SettingsViewPrivacyRobot.Transition()
         }
 
-        fun openFXASignin(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            syncSignInButton().click()
-            BrowserRobot().interact()
-            return BrowserRobot.Transition()
-        }
-
-        fun openFXAQrCode(interact: ExternalAppsRobot.() -> Unit): ExternalAppsRobot.Transition {
-            syncQrCodeButton().click()
-            ExternalAppsRobot().interact()
-            return ExternalAppsRobot.Transition()
-        }
-
         fun makeDefaultBrowser(interact: ExternalAppsRobot.() -> Unit): ExternalAppsRobot.Transition {
             makeDefaultBrowserButton().click()
             ExternalAppsRobot().interact()
@@ -156,14 +134,6 @@ private fun assertSettingsView() {
     )
 }
 
-private fun syncSignInButton() = itemWithText(getStringResource(R.string.sign_in))
-
-private fun syncHistorySummary() = Espresso.onView(withText(R.string.preferences_sign_in_summary))
-
-private fun syncQrCodeButton() = Espresso.onView(withText(R.string.pair_sign_in))
-
-private fun syncQrSummary() = Espresso.onView(withText(R.string.preferences_pair_sign_in_summary))
-
 private fun privacyButton() = Espresso.onView(withText(R.string.privacy))
 
 private fun privacySummary() = Espresso.onView(withText(R.string.preferences_privacy_summary))
@@ -203,17 +173,6 @@ private fun aboutReferenceBrowserButton() = Espresso.onView(withText(R.string.pr
 private fun assertNavigateUpButton() {
     mDevice.wait(Until.findObject(By.text("Navigate up")), TestAssetHelper.waitingTimeShort)
 }
-
-private fun assertSyncSigninButton() = assertUIObjectExists(syncSignInButton())
-
-private fun assertSyncHistorySummary() =
-    syncHistorySummary().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-
-private fun assertSyncQrCodeButton() =
-    syncQrCodeButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-
-private fun assertSyncQrSummary() =
-    syncQrSummary().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
 private fun assertPrivacyButton() =
     privacyButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))

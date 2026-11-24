@@ -40,7 +40,8 @@ class Components(
         )
     }
 
-    // Background services are initiated eagerly; they kick off periodic tasks and setup an accounts system.
+    // Firefox Accounts and Sync are dormant: nothing reachable in the app may touch this group, because creating
+    // it starts the account manager.
     val backgroundServices by lazy {
         BackgroundServices(
             context,
@@ -63,7 +64,7 @@ class Components(
         )
     }
     val services by lazy {
-        Services(context, backgroundServices.accountManager, useCases.tabsUseCases, applicationScope)
+        Services(context, lazy { backgroundServices.accountManager }, useCases.tabsUseCases, applicationScope)
     }
 
     @delegate:SuppressLint("NewApi")

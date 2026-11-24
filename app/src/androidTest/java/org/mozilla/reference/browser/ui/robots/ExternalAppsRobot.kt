@@ -4,16 +4,10 @@
 
 package org.mozilla.reference.browser.ui.robots
 
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.assertion.ViewAssertions.matches
-import androidx.test.espresso.matcher.ViewMatchers
-import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
-import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import org.junit.Assert.assertTrue
-import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.reference.browser.helpers.TestHelper.packageName
@@ -23,8 +17,6 @@ class ExternalAppsRobot {
     fun verifyAndroidDefaultApps() = assertDefaultAppsLayout()
 
     fun verifyAndroidAutofillServices() = assertAutofillServices()
-
-    fun verifyFxAQrCode() = assertFXAQrCode()
 
     fun verifyYouTubeApp() = assertYouTubeApp()
 
@@ -55,10 +47,4 @@ private fun assertYouTubeApp() {
             mDevice.findObject(UiSelector().text("Update for a faster, better YouTube")).waitForExists(waitingTime)
         )
     }
-}
-
-private fun assertFXAQrCode() {
-    onView(withText(R.string.pair_preferences)).check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-    onView(withText(R.string.pair_instructions))
-        .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 }

@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-@file:Suppress("ForbiddenComment")
-
 package org.mozilla.reference.browser
 
 import android.content.Context
@@ -16,11 +14,7 @@ import mozilla.components.concept.engine.request.RequestInterceptor
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.tabs.PrivatePage
 
-/**
- * NB, and FIXME: this class is consumed by a 'Core' component group, but itself relies on 'firefoxAccountsFeature'
- * component; this creates a circular dependency, since firefoxAccountsFeature relies on tabsUseCases which in turn
- * needs 'core' itself.
- */
+/** Serves the app's own about: pages and hands other loads to the app links interceptor. */
 class AppRequestInterceptor(private val context: Context) : RequestInterceptor {
     override fun onLoadRequest(
         engineSession: EngineSession,
@@ -47,7 +41,9 @@ class AppRequestInterceptor(private val context: Context) : RequestInterceptor {
             }
 
             else -> {
-                context.components.services.accountsAuthFeature.interceptor.onLoadRequest(
+                // Firefox Accounts is dormant: asking services.accountsAuthFeature here would start the account
+                // manager on the first page load.
+                context.components.services.appLinksInterceptor.onLoadRequest(
                     engineSession,
                     uri,
                     lastUri,
@@ -57,16 +53,6 @@ class AppRequestInterceptor(private val context: Context) : RequestInterceptor {
                     isDirectNavigation,
                     isSubframeRequest,
                 )
-                    ?: context.components.services.appLinksInterceptor.onLoadRequest(
-                        engineSession,
-                        uri,
-                        lastUri,
-                        hasUserGesture,
-                        isSameDomain,
-                        isRedirect,
-                        isDirectNavigation,
-                        isSubframeRequest,
-                    )
             }
         }
 

@@ -40,8 +40,6 @@ class ThreeDotMenuRobot {
 
     fun verifyAddOnsButtonExists() = assertAddOnsButton()
 
-    fun verifySyncedTabsButtonExists() = assertSyncedTabsButton()
-
     fun verifyReportIssueExists() = assertReportIssueButton()
 
     fun verifyOpenSettingsExists() = assertSettingsButton()
@@ -152,14 +150,6 @@ class ThreeDotMenuRobot {
             return AddonsManagerRobot.Transition()
         }
 
-        fun openSyncedTabs(interact: SyncedTabsRobot.() -> Unit): SyncedTabsRobot.Transition {
-            mDevice.findObject(UiSelector().text("Synced Tabs")).waitForExists(waitingTime)
-            syncedTabsButton().click()
-
-            SyncedTabsRobot().interact()
-            return SyncedTabsRobot.Transition()
-        }
-
         fun goBack(interact: NavigationToolbarRobot.() -> Unit): NavigationToolbarRobot.Transition {
             mDevice.pressBack()
 
@@ -203,8 +193,6 @@ private fun addToHomescreenButton() = onView(ViewMatchers.withText("Add to homes
 
 private fun addOnsButton() = onView(ViewMatchers.withText("Add-ons"))
 
-private fun syncedTabsButton() = onView(ViewMatchers.withText("Synced Tabs"))
-
 private fun assertShareButtonDoesntExist() = shareButton().check(ViewAssertions.doesNotExist())
 
 private fun assertRequestDesktopSiteToggleDoesntExist() =
@@ -245,9 +233,6 @@ private fun assertFindInPageButton() =
 
 private fun assertAddOnsButton() =
     addOnsButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-
-private fun assertSyncedTabsButton() =
-    syncedTabsButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
 private fun assertReportIssueButton() =
     reportIssueButton()
