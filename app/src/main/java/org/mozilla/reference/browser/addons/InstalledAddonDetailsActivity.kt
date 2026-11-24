@@ -33,7 +33,7 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
     private val logger = Logger("InstalledAddonDetailsActivity")
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT))
+        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_installed_add_on_details)
         window.setupPersistentInsets(true)

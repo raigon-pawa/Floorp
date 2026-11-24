@@ -30,7 +30,7 @@ import org.mozilla.reference.browser.R
 /** An activity to show the details of an add-on. */
 class AddonDetailsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT))
+        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_on_details)
         window.setupPersistentInsets()

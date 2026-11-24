@@ -17,7 +17,7 @@ class AddonsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.activity_main)
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT))
+        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         window.setupPersistentInsets(true)
 
         if (savedInstanceState == null) {

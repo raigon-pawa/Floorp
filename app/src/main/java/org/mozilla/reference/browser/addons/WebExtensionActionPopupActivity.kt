@@ -30,7 +30,7 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.activity_add_on_settings)
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT))
+        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         window.setupPersistentInsets()
 
