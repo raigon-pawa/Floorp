@@ -29,10 +29,43 @@ export type DevEnvProfileOptions = {
    * catch that occupied port instead of silently sharing it).
    */
   portOffset?: number;
+  /**
+   * The "Archwave look" defaults in override.ini (monochrome theme, dark
+   * Firefox theme, compact density). Test runs set `false` so the design
+   * tests check Floorp's stock look. Written for every launch because dev
+   * and test share this profile.
+   */
+  archwaveLook?: boolean;
 };
 
 const CHROME_BASELINE_CSP_PREF =
   'user_pref("security.chrome_baseline_csp.enabled", false);';
+
+/** Archwave values from override.ini, or Firefox's stock defaults. */
+function archwaveLookPrefs(archwave: boolean): string {
+  const prefs: Record<string, string | number | boolean> = archwave
+    ? {
+      "floorp.archwave.enabled": true,
+      "extensions.activeThemeID": "firefox-compact-dark@mozilla.org",
+      "layout.css.prefers-color-scheme.content-override": 0,
+      "browser.theme.toolbar-theme": 0,
+      "browser.theme.content-theme": 0,
+      "browser.compactmode.show": true,
+      "browser.uidensity": 1,
+    }
+    : {
+      "floorp.archwave.enabled": false,
+      "extensions.activeThemeID": "default-theme@mozilla.org",
+      "layout.css.prefers-color-scheme.content-override": 2,
+      "browser.theme.toolbar-theme": 2,
+      "browser.theme.content-theme": 2,
+      "browser.compactmode.show": false,
+      "browser.uidensity": 0,
+    };
+  return Object.entries(prefs)
+    .map(([name, value]) => `user_pref("${name}", ${JSON.stringify(value)});\n`)
+    .join("");
+}
 
 function buildUserJs(options: DevEnvProfileOptions = {}): string {
   const allowBrowserHttpLoader = options.allowBrowserHttpLoader ?? false;
@@ -59,7 +92,7 @@ user_pref("${PROFILE_TOKEN_PREF}", true);
 user_pref("${OS_SERVER_PORT_PREF}", ${osServerPortForOffset(portOffset)});
 user_pref("browser.sessionstore.resume_from_crash", false);
 user_pref("nora.dev.allow_http_loader", ${allowBrowserHttpLoader});
-${
+${archwaveLookPrefs(options.archwaveLook ?? true)}${
     portOffset > 0
       ? `user_pref("marionette.port", ${marionettePortForOffset(portOffset)});
 user_pref("nora.dev.port_offset", ${portOffset});
