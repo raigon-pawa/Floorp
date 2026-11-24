@@ -18,6 +18,8 @@ Usage: tools/chroma.py shot.png [more.png ...] [--rect X,Y,W,H ...] [--exclude X
   --exclude  ignore these rectangles (web content, site and extension icons)
   --max      exit with status 1 when the saturated share of an image exceeds PERCENT
 
+Exits with status 2 when an image cannot be read or the rectangles leave nothing to examine.
+
 Prints, per image, the saturated share of the examined area and the clusters of saturated pixels
 (bounding box, pixel count, average colour), largest first.
 """
@@ -89,11 +91,18 @@ THRESHOLD = 4
 
 
 def analyse(image, rects=(), excludes=(), threshold=THRESHOLD):
-    """Return (share of examined pixels that are saturated, [(box, pixels, '#rrggbb'), ...])."""
-    image = image.convert("RGB")
+    """Return (share of examined pixels that are saturated, [(box, pixels, '#rrggbb'), ...]).
+
+    Raises ValueError when the rectangles leave no pixel to examine.
+    """
+    # Transparent pixels have no colour of their own: measure the image as drawn on black.
+    rgba = image.convert("RGBA")
+    image = Image.alpha_composite(Image.new("RGBA", rgba.size, (0, 0, 0, 255)), rgba).convert("RGB")
     area = area_mask(image.size, rects, excludes)
     mask = ImageChops.multiply(saturated_mask(image, threshold), area)
     examined = ImageStat.Stat(area).sum[0] / 255
+    if not examined:
+        raise ValueError("nothing to examine: the rectangles are outside the %dx%d image" % image.size)
     saturated = ImageStat.Stat(mask).sum[0] / 255
     found = []
     for box in clusters(mask):
@@ -104,7 +113,7 @@ def analyse(image, rects=(), excludes=(), threshold=THRESHOLD):
         mean = ImageStat.Stat(image.crop(box), part).mean
         found.append((tight, pixels, "#%02x%02x%02x" % tuple(int(v) for v in mean)))
     found.sort(key=lambda item: -item[1])
-    return (saturated / examined if examined else 0.0), found
+    return saturated / examined, found
 
 
 def selftest():
@@ -125,6 +134,13 @@ def selftest():
     for tint in ((0x60, 0x7D, 0x8B), (0x2A, 0x2A, 0x2E)):
         assert analyse(Image.new("RGB", (50, 50), tint))[0] == 1, tint
     assert analyse(Image.new("RGB", (50, 50), (0x60, 0x7D, 0x8B)), threshold=48)[0] == 0
+    # A fully transparent pixel is not a coloured one.
+    assert analyse(Image.new("RGBA", (50, 50), (255, 0, 0, 0)))[0] == 0
+    try:
+        analyse(image, rects=[(500, 500, 510, 510)])
+        raise AssertionError("a rectangle outside the image must not pass as clean")
+    except ValueError:
+        pass
     print("selftest ok")
 
 
@@ -145,12 +161,17 @@ def main():
         parser.error("no image given")
     status = 0
     for path in args.images:
-        share, found = analyse(Image.open(path), args.rect, args.exclude, args.threshold)
+        try:
+            share, found = analyse(Image.open(path), args.rect, args.exclude, args.threshold)
+        except (OSError, ValueError) as error:
+            print("%s: %s" % (path, error), file=sys.stderr)
+            status = 2
+            continue
         print("%s: %.4f%% saturated, %d cluster(s)" % (path, share * 100, len(found)))
         for (x0, y0, x1, y1), pixels, colour in found[: args.top]:
             print("  %6d px  %s  at %d,%d %dx%d" % (pixels, colour, x0, y0, x1 - x0, y1 - y0))
         if args.max is not None and share * 100 > args.max:
-            status = 1
+            status = status or 1
     return status
 
 
