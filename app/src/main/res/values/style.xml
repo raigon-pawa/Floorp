@@ -120,6 +120,8 @@
         <item name="android:colorAccent">@color/aw_text_hint</item>
     </style>
 
+    <!-- The two styles below replace library styles of the same name, so the library's own items are copied by hand
+         from Android Components 160.0.1: compare them again when that version changes. -->
     <!-- Android Components' bottom sheets (save login, credit card, address): the library style is a light theme. -->
     <style name="MozDialogStyle" parent="ThemeOverlay.Material3.BottomSheetDialog" tools:ignore="UnusedResources">
         <item name="android:windowIsFloating">false</item>
