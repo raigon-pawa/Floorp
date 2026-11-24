@@ -2,10 +2,13 @@
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
-"""Report coloured (clearly saturated) pixels in a screenshot.
+"""Report coloured pixels in a screenshot.
 
-The app's own UI is meant to be black, white and grey, so any saturated pixel in app chrome is a
-leftover accent. A pixel counts as saturated when max(R,G,B) - min(R,G,B) >= --threshold.
+The app's own UI is meant to be black, white and grey, so any coloured pixel in app chrome is a
+leftover accent or tint. A pixel counts as coloured ("saturated" below) when
+max(R,G,B) - min(R,G,B) >= --threshold. Screenshots of grey UI measure exactly 0, so the default
+of 4 also catches faint tints such as the engine's blue-grey #2A2A2E; pass --threshold 48 to see
+only vivid accents.
 
 Usage: tools/chroma.py shot.png [more.png ...] [--rect X,Y,W,H ...] [--exclude X,Y,W,H ...]
                        [--threshold N] [--max PERCENT]
@@ -82,7 +85,10 @@ def clusters(mask):
     return boxes
 
 
-def analyse(image, rects=(), excludes=(), threshold=48):
+THRESHOLD = 4
+
+
+def analyse(image, rects=(), excludes=(), threshold=THRESHOLD):
     """Return (share of examined pixels that are saturated, [(box, pixels, '#rrggbb'), ...])."""
     image = image.convert("RGB")
     area = area_mask(image.size, rects, excludes)
@@ -115,6 +121,10 @@ def selftest():
     share, found = analyse(image, rects=[(0, 0, 100, 100)])
     assert abs(share - 400 / 10000) < 1e-9 and len(found) == 1, (share, found)
     assert analyse(Image.new("RGB", (50, 50), (255, 255, 255)))[0] == 0
+    # Faint tints count too: the download notification blue-grey and the engine cover.
+    for tint in ((0x60, 0x7D, 0x8B), (0x2A, 0x2A, 0x2E)):
+        assert analyse(Image.new("RGB", (50, 50), tint))[0] == 1, tint
+    assert analyse(Image.new("RGB", (50, 50), (0x60, 0x7D, 0x8B)), threshold=48)[0] == 0
     print("selftest ok")
 
 
@@ -123,7 +133,7 @@ def main():
     parser.add_argument("images", nargs="*")
     parser.add_argument("--rect", action="append", default=[], type=parse_rect, metavar="X,Y,W,H")
     parser.add_argument("--exclude", action="append", default=[], type=parse_rect, metavar="X,Y,W,H")
-    parser.add_argument("--threshold", type=int, default=48)
+    parser.add_argument("--threshold", type=int, default=THRESHOLD)
     parser.add_argument("--max", type=float, metavar="PERCENT")
     parser.add_argument("--top", type=int, default=8, help="clusters to list per image")
     parser.add_argument("--selftest", action="store_true")
