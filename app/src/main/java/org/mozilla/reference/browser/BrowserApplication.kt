@@ -53,6 +53,8 @@ open class BrowserApplication : Application() {
 
         // Always dark, whatever the device setting; set in every process so the crash prompt is dark too.
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        // GeckoView takes the accent colour for web content from the application context's theme.
+        setTheme(R.style.ArchwaveEngineColors)
 
         setupCrashReporting(this)
 

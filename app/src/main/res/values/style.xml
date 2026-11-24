@@ -95,6 +95,13 @@
         <item name="mozac_primary_text_color">@color/aw_black</item>
     </style>
 
+    <!-- Theme of the application context, where GeckoView reads the accent it uses in web content: text selection
+         and its handles, focus rings, checkboxes. A mid grey shows on white and on black pages. The parent is the
+         platform default the application context had before, so nothing else changes for pages. -->
+    <style name="ArchwaveEngineColors" parent="android:Theme.DeviceDefault.Light.DarkActionBar">
+        <item name="android:colorAccent">@color/aw_text_hint</item>
+    </style>
+
     <!-- Android Components' bottom sheets (save login, credit card, address): the library style is a light theme. -->
     <style name="MozDialogStyle" parent="ThemeOverlay.Material3.BottomSheetDialog" tools:ignore="UnusedResources">
         <item name="android:windowIsFloating">false</item>
