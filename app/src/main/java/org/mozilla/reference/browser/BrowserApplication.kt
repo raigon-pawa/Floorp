@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser
 
 import android.app.Application
+import androidx.appcompat.app.AppCompatDelegate
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
@@ -49,6 +50,9 @@ open class BrowserApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Always dark, whatever the device setting; set in every process so the crash prompt is dark too.
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
 
         setupCrashReporting(this)
 
