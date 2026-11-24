@@ -198,7 +198,8 @@ jobs:
       - name: Validate locked Runtime release metadata
         if: github.event_name != 'pull_request'
         env:
-          FLOORP_RUNTIME_GITHUB_TOKEN: ${{ secrets.PAT }}
+          # Forks have no PAT; the job token still avoids the anonymous API rate limit.
+          FLOORP_RUNTIME_GITHUB_TOKEN: ${{ secrets.PAT || github.token }}
         run: >-
           deno run -A tools/runtime-lock/runtime_lock_cli.ts
           validate-release-metadata
