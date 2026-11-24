@@ -546,9 +546,13 @@ export class ExperimentsClient {
     this.disabledExperiments = this.loadDisabledExperiments();
     this.forceEnrolledExperiments = this.loadForceEnrolledExperiments();
 
-    // Opted-out users never contact the experiments server. Without a
-    // manifest no experiment is enrolled, so features use their defaults.
-    if (this.getPrefString(PARTICIPATION_POLICY_PREF, "default") === "never") {
+    // Opted-out users never contact the experiments server, so no experiment
+    // is enrolled and features use their defaults. A local manifest (data:,
+    // as in tests) is still read.
+    if (
+      this.getPrefString(PARTICIPATION_POLICY_PREF, "default") === "never" &&
+      /^https?:/i.test(String(this.experimentsUrl))
+    ) {
       this.experiments = [];
       this.assignments = {};
       return this;

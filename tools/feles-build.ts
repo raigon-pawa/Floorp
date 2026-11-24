@@ -250,7 +250,11 @@ async function runTest(
     allowBrowserHttpLoader: true,
     portOffset,
   });
-  DevEnvManager.setup({ allowBrowserHttpLoader: true, portOffset });
+  DevEnvManager.setup({
+    allowBrowserHttpLoader: true,
+    portOffset,
+    archwaveLook: false,
+  });
 
   // Graceful shutdown
   Deno.addSignalListener("SIGINT", () => {

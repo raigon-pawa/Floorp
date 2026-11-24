@@ -101,7 +101,14 @@ const KNOWN_DROPPED_RULES: Record<string, KnownDrop> = {
  * file, with the number allowed and a reason. Empty on purpose: every
  * current template is either a stylesheet or a run of `css +=` fragments.
  */
-const KNOWN_SKIPPED_TEMPLATES: Record<string, KnownDrop> = {};
+const KNOWN_SKIPPED_TEMPLATES: Record<string, KnownDrop> = {
+  "browser-features/modules/modules/chrome-web-store/polyfills/chromeCompat/ChromeCompatSource.sys.mts":
+    {
+      count: 1,
+      reason:
+        "SIDE_PANEL_BLANK_HTML is an HTML page with an inline <style>, not a stylesheet",
+    },
+};
 
 function modesFor(source: CssSource): ParseMode[] {
   return AGENT_SHEET_SOURCES.has(source.label)
