@@ -14,9 +14,14 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.edit
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
+import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+import kotlinx.coroutines.launch
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
@@ -61,6 +66,7 @@ open class BrowserActivity : AppCompatActivity() {
         }
 
         lifecycle.addObserver(CrashIntegration(components.core.store, ::onTabCrashedChanged))
+        showNoticeIfCrashedSinceLastStart()
         lifecycle.addObserver(webExtensionPopupObserver)
 
         onBackPressedDispatcher.addCallback(
@@ -143,11 +149,27 @@ open class BrowserActivity : AppCompatActivity() {
             }
     }
 
+    /** A crash of the main process closes the app without a word, so say what happened when it is opened again. */
+    private fun showNoticeIfCrashedSinceLastStart() = lifecycleScope.launch {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this@BrowserActivity)
+        val lastCheck = prefs.getLong(PREF_LAST_CRASH_CHECK, 0)
+        prefs.edit { putLong(PREF_LAST_CRASH_CHECK, System.currentTimeMillis()) }
+
+        // Nothing is ever sent, so "unsent" means every crash recorded since then.
+        if (components.analytics.crashReporter.unsentCrashReportsSince(lastCheck).any { it.isFatalCrash }) {
+            Snackbar.make(findViewById(android.R.id.content), R.string.archwave_crashed_last_time, LENGTH_LONG).show()
+        }
+    }
+
     private fun openPopup(webExtensionState: WebExtensionState) {
         val intent = Intent(this, WebExtensionActionPopupActivity::class.java)
         intent.putExtra("web_extension_id", webExtensionState.id)
         intent.putExtra("web_extension_name", webExtensionState.name)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         startActivity(intent)
+    }
+
+    private companion object {
+        const val PREF_LAST_CRASH_CHECK = "archwave.last_crash_check"
     }
 }
