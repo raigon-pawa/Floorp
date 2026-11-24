@@ -34,8 +34,6 @@ class SettingsViewTest {
                 verifyPrivacySummary()
                 verifyOpenLinksInApps()
                 verifyMakeDefaultBrowserButton()
-                verifyAutofillAppsButton()
-                varifyAutofillAppsSummary()
                 verifyJetpackComposeButton()
                 verifyDeveloperToolsHeading()
                 verifyRemoteDebugging()
@@ -66,16 +64,6 @@ class SettingsViewTest {
             .openSettings {}
             .makeDefaultBrowser {
                 verifyAndroidDefaultApps()
-            }
-    }
-
-    @Test
-    fun autofillAppsTest() {
-        navigationToolbar {}
-            .openThreeDotMenu {}
-            .openSettings {}
-            .clickAutofillAppsButton {
-                verifyAndroidAutofillServices()
             }
     }
 

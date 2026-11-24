@@ -138,7 +138,6 @@ mozilla-feature-accounts-base = { group = "org.mozilla.components", name = "feat
 mozilla-feature-accounts-push = { group = "org.mozilla.components", name = "feature-accounts-push", version.ref = "android-components" }
 mozilla-feature-addons = { group = "org.mozilla.components", name = "feature-addons", version.ref = "android-components" }
 mozilla-feature-app-links = { group = "org.mozilla.components", name = "feature-app-links", version.ref = "android-components" }
-mozilla-feature-autofill = { group = "org.mozilla.components", name = "feature-autofill", version.ref = "android-components" }
 mozilla-feature-awesomebar = { group = "org.mozilla.components", name = "feature-awesomebar", version.ref = "android-components" }
 mozilla-feature-contextmenu = { group = "org.mozilla.components", name = "feature-contextmenu", version.ref = "android-components" }
 mozilla-feature-customtabs = { group = "org.mozilla.components", name = "feature-customtabs", version.ref = "android-components" }

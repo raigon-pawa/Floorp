@@ -42,10 +42,6 @@ class SettingsViewRobot {
 
     fun verifyMakeDefaultBrowserButton() = assertMakeDefaultBrowserButton()
 
-    fun verifyAutofillAppsButton() = assertAutofillAppsButton()
-
-    fun varifyAutofillAppsSummary() = assertAutofillAppsSummary()
-
     fun verifyJetpackComposeButton() = assertJetpackComposeButton()
 
     fun verifyDeveloperToolsHeading() = assertDeveloperToolsHeading()
@@ -91,12 +87,6 @@ class SettingsViewRobot {
 
         fun makeDefaultBrowser(interact: ExternalAppsRobot.() -> Unit): ExternalAppsRobot.Transition {
             makeDefaultBrowserButton().click()
-            ExternalAppsRobot().interact()
-            return ExternalAppsRobot.Transition()
-        }
-
-        fun clickAutofillAppsButton(interact: ExternalAppsRobot.() -> Unit): ExternalAppsRobot.Transition {
-            autofillAppsButton().click()
             ExternalAppsRobot().interact()
             return ExternalAppsRobot.Transition()
         }
@@ -148,11 +138,7 @@ private fun openLinksInAppsToggle() =
 
 private fun makeDefaultBrowserButton() = Espresso.onView(withText(R.string.preferences_make_default_browser))
 
-private fun autofillAppsButton() = onView(withText("Autofill apps"))
-
 private fun jetpackComposeButton() = onView(withText("Use experimental Jetpack Compose UI"))
-
-private fun autofillAppsSummary() = onView(withText("Autofill logins and passwords in other apps"))
 
 private fun developerToolsHeading() = Espresso.onView(withText(R.string.developer_tools_category))
 
@@ -185,12 +171,6 @@ private fun assertOpenLinksInApps() =
 
 private fun assertMakeDefaultBrowserButton() =
     makeDefaultBrowserButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-
-private fun assertAutofillAppsButton() =
-    autofillAppsButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
-
-private fun assertAutofillAppsSummary() =
-    autofillAppsSummary().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
 private fun assertJetpackComposeButton() =
     jetpackComposeButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))

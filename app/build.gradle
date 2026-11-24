@@ -250,7 +250,6 @@ dependencies {
     implementation libs.mozilla.feature.addons
     implementation libs.mozilla.feature.app.links
     implementation libs.mozilla.feature.awesomebar
-    implementation libs.mozilla.feature.autofill
     implementation libs.mozilla.feature.contextmenu
     implementation libs.mozilla.feature.customtabs
     implementation libs.mozilla.feature.downloads

@@ -10,13 +10,10 @@ import androidx.test.uiautomator.Until
 import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTimeShort
-import org.mozilla.reference.browser.helpers.TestHelper.packageName
 
 /** Implementation of Robot Pattern for any non-Reference Browser (external) apps. */
 class ExternalAppsRobot {
     fun verifyAndroidDefaultApps() = assertDefaultAppsLayout()
-
-    fun verifyAndroidAutofillServices() = assertAutofillServices()
 
     fun verifyYouTubeApp() = assertYouTubeApp()
 
@@ -27,11 +24,6 @@ class ExternalAppsRobot {
 
 private fun assertDefaultAppsLayout() {
     mDevice.wait(Until.findObject(By.text("Default apps")), waitingTimeShort)
-}
-
-private fun assertAutofillServices() {
-    mDevice.waitForWindowUpdate(packageName, waitingTime)
-    assertTrue(mDevice.findObject(UiSelector().descriptionContains("Autofill service")).waitForExists(waitingTime))
 }
 
 private fun assertYouTubeApp() {

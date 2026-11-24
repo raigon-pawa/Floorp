@@ -27,7 +27,6 @@ import org.mozilla.reference.browser.R.string.pref_key_make_default_browser
 import org.mozilla.reference.browser.R.string.pref_key_override_amo_collection
 import org.mozilla.reference.browser.R.string.pref_key_privacy
 import org.mozilla.reference.browser.R.string.pref_key_remote_debugging
-import org.mozilla.reference.browser.autofill.AutofillPreference
 import org.mozilla.reference.browser.ext.getPreferenceKey
 import org.mozilla.reference.browser.ext.requireComponents
 
@@ -63,20 +62,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val aboutPageKey = requireContext().getPreferenceKey(pref_key_about_page)
         val privacyKey = requireContext().getPreferenceKey(pref_key_privacy)
         val customAddonsKey = requireContext().getPreferenceKey(pref_key_override_amo_collection)
-        val autofillPreferenceKey = requireContext().getPreferenceKey(R.string.pref_key_autofill)
 
         val preferenceMakeDefaultBrowser = findPreference<Preference>(makeDefaultBrowserKey)
         val preferenceRemoteDebugging = findPreference<SwitchPreferenceCompat>(remoteDebuggingKey)
         val preferenceAboutPage = findPreference<Preference>(aboutPageKey)
         val preferencePrivacy = findPreference<Preference>(privacyKey)
         val preferenceCustomAddons = findPreference<Preference>(customAddonsKey)
-        val preferenceAutofill = findPreference<AutofillPreference>(autofillPreferenceKey)
-
-        if (!AutofillPreference.isSupported(requireContext())) {
-            preferenceAutofill?.isVisible = false
-        } else {
-            (preferenceAutofill as AutofillPreference).updateSwitch()
-        }
 
         preferenceMakeDefaultBrowser?.onPreferenceClickListener = getClickListenerForMakeDefaultBrowser()
         preferenceRemoteDebugging?.onPreferenceChangeListener = getChangeListenerForRemoteDebugging()
