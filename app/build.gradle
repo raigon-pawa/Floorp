@@ -100,7 +100,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "org.mozilla.reference.browser"
+        applicationId "io.github.raigonpawa.archwave"
         buildToolsVersion Config.buildToolsVersion
         compileSdk {
             version = release(Config.compileSdkMajorVersion) {

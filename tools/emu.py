@@ -36,7 +36,7 @@ import sys
 import time
 import xml.etree.ElementTree as ET
 
-DEFAULT_PACKAGE = "org.mozilla.reference.browser.debug"
+DEFAULT_PACKAGE = "io.github.raigonpawa.archwave.debug"
 CAPTURE_FILE = "/data/local/tmp/archwave-capture.pcap"
 KEYS = {
     "back": 4, "home": 3, "enter": 66, "menu": 82, "tab": 61, "del": 67, "search": 84,
