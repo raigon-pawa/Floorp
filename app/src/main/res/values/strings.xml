@@ -51,7 +51,7 @@
     <string name="preferences_global_privacy_control">Tell websites not to share &amp; sell data</string>
 
     <!-- Preference about page -->
-    <string name="preferences_about_page">About Reference Browser</string>
+    <string name="preferences_about_page">About Archwave</string>
 
     <!-- Preference for signing in -->
     <string name="sign_in">Sign in</string>
@@ -157,13 +157,10 @@
 
     <!-- About content -->
     <string name="about_content"><![CDATA[
-<p>%1$s puts you in control.</p>
-<p>Use it as a reference to:
-    <br>&bull; Learn how to build your own browser.
-    <br>&bull; Contribute to making it easier to build browsers.
-    <br>&bull; File bug reports!
-</p>
-<p>%1$s is produced by Mozilla. Our mission is to foster a healthy, open Internet.<br/>
+<p>%1$s is a monochrome, privacy-hardened browser for Android with Firefox extension support.</p>
+<p>%1$s is an independent fork of Mozilla\'s Reference Browser, built with Mozilla Android Components and the GeckoView
+engine. It is not affiliated with, endorsed by or supported by Mozilla.</p>
+<p>The source code is available under the Mozilla Public License 2.0.</p>
     ]]></string>
 
     <string name="menu_share_with">Share with…</string>
