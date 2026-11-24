@@ -70,6 +70,7 @@
         <item name="switchStyle">@style/Widget.AppCompat.CompoundButton.Switch</item>
         <item name="actionBarStyle">@style/ArchwaveActionBar</item>
         <item name="materialTimePickerTheme">@style/ArchwaveTimePicker</item>
+        <item name="android:dialogTheme">@style/ArchwavePanelDialog</item>
 
         <!-- Theme attributes that Android Components layouts and drawables read. -->
         <item name="mozac_primary_text_color">@color/aw_text_1</item>
@@ -93,6 +94,13 @@
         <item name="colorOnPrimaryContainer">@color/aw_black</item>
         <item name="colorTertiaryContainer">@color/aw_text_1</item>
         <item name="colorOnTertiaryContainer">@color/aw_black</item>
+    </style>
+
+    <!-- Android Components' prompts (add-on permissions, downloads, site permissions) are plain dialogs that paint
+         themselves with the activity's window background: black on a black page. The parent is the platform
+         default, so only the hairline along their top edge is new. -->
+    <style name="ArchwavePanelDialog" parent="android:Theme.Material.Dialog">
+        <item name="android:windowContentOverlay">@drawable/archwave_panel_edge</item>
     </style>
 
     <style name="AppTheme" parent="AppThemeNotActionBar">
