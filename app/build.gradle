@@ -20,9 +20,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 androidComponents {
     beforeVariants(selector().all()) { variantBuilder ->
         if (variantBuilder.buildType == "release") {
-            variantBuilder.enable = false
-        }
-        if (variantBuilder.buildType == "nightly") {
             variantBuilder.enableUnitTest = true
         }
     }
@@ -66,7 +63,7 @@ androidComponents {
         // -------------------------------------------------------------------------
         // Note: In the new API, checking buildConfigFields defined in build types is harder.
         // We check the build type name directly instead.
-        if (variant.buildType == "nightly") {
+        if (variant.buildType == "release") {
             // Logic adapted for new API
             def baseCode = baseVersionCode
             if (baseCode % 2 != 0) baseCode += 1 // Ensure even
@@ -115,14 +112,30 @@ android {
         testInstrumentationRunnerArguments clearPackageData: 'true'
     }
 
+    // Release signing: the keystore is named in local.properties (archwave.*) or the environment (ARCHWAVE_*),
+    // neither of which is committed. Without one, release builds are signed with the debug key.
+    def signingValue = { String key, String envName ->
+        def localKey = "localProperties.archwave.${key}"
+        gradle.hasProperty(localKey) ? gradle."${localKey}" : System.getenv(envName)
+    }
+    def releaseStoreFile = signingValue('storeFile', 'ARCHWAVE_STORE_FILE')
+
+    signingConfigs {
+        if (releaseStoreFile) {
+            archwave {
+                storeFile rootProject.file(releaseStoreFile)
+                storePassword signingValue('storePassword', 'ARCHWAVE_STORE_PASSWORD')
+                keyAlias signingValue('keyAlias', 'ARCHWAVE_KEY_ALIAS')
+                keyPassword signingValue('keyPassword', 'ARCHWAVE_KEY_PASSWORD')
+            }
+        }
+    }
+
     def releaseTemplate = {
         minifyEnabled true
         proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-        matchingFallbacks = ['release'] // Use on the "release" build type in dependencies (AARs)
 
-        if (gradle.hasProperty("localProperties.autosignReleaseWithDebugKey")) {
-            signingConfig signingConfigs.debug
-        }
+        signingConfig releaseStoreFile ? signingConfigs.archwave : signingConfigs.debug
 
         if (gradle.hasProperty("localProperties.debuggable")) {
             debuggable true
@@ -137,8 +150,9 @@ android {
     buildTypes {
         debug {
             applicationIdSuffix ".debug"
+            versionNameSuffix "-debug"
         }
-        nightly releaseTemplate >> {
+        release releaseTemplate >> {
             buildConfigField "boolean", "IS_RELEASED", "true"
         }
     }
@@ -150,7 +164,6 @@ android {
 
     lintOptions {
         lintConfig = file("lint.xml")
-            versionNameSuffix "-debug"
         disable 'GradleDependency', 'AndroidGradlePluginVersion'
     }
 
@@ -165,6 +178,15 @@ android {
     }
 
     namespace = 'org.mozilla.reference.browser'
+}
+
+// Say so once, and only when a release is really being built, if it is signed with the debug key.
+gradle.taskGraph.whenReady { graph ->
+    def signsRelease = graph.allTasks.any { it.project == project && it.name == 'validateSigningRelease' }
+    if (signsRelease && android.buildTypes.release.signingConfig.name == 'debug') {
+        logger.warn("WARNING: no release keystore configured (archwave.storeFile in local.properties or " +
+                "ARCHWAVE_STORE_FILE); this release build is signed with the DEBUG key. Do not distribute it.")
+    }
 }
 
 kotlin {
