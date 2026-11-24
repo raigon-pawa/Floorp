@@ -206,6 +206,7 @@ class ToolbarIntegration(
 
         toolbar.edit.apply {
             hint = context.getString(R.string.toolbar_hint)
+            setUrlBackground(ResourcesCompat.getDrawable(context.resources, R.drawable.url_background, context.theme))
 
             // The library's default highlight for the inline autocomplete suggestion is magenta.
             colors =
