@@ -82,6 +82,8 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate {
                     AddonsManagerAdapter(
                         this@AddonsFragment,
                         addons,
+                        // Names in white, everything else in the secondary grey the list uses by default.
+                        style = AddonsManagerAdapter.Style(addonNameTextColor = R.color.aw_text_1),
                         store = requireContext().components.core.store,
                     )
                 recyclerView.adapter = adapter

@@ -24,7 +24,7 @@
     <View
             android:layout_width="match_parent"
             android:layout_height="1dp"
-            android:background="@color/photonGrey40"
+            android:background="@color/aw_divider"
             android:importantForAccessibility="no" />
 
 </LinearLayout>
