@@ -111,19 +111,30 @@ android {
 
     // Release signing: the keystore is named in local.properties (archwave.*) or the environment (ARCHWAVE_*),
     // neither of which is committed. Without one, release builds are signed with the debug key.
-    def signingValue = { String key, String envName ->
+    // An empty value counts as not set, so a blank local.properties line does not hide the environment.
+    def signingEnv = [storeFile: 'ARCHWAVE_STORE_FILE', storePassword: 'ARCHWAVE_STORE_PASSWORD',
+                      keyAlias: 'ARCHWAVE_KEY_ALIAS', keyPassword: 'ARCHWAVE_KEY_PASSWORD']
+    def signing = signingEnv.collectEntries { key, envName ->
         def localKey = "localProperties.archwave.${key}"
-        gradle.hasProperty(localKey) ? gradle."${localKey}" : System.getenv(envName)
+        [key, (gradle.hasProperty(localKey) ? gradle."${localKey}" : null) ?: System.getenv(envName)]
     }
-    def releaseStoreFile = signingValue('storeFile', 'ARCHWAVE_STORE_FILE')
+    def releaseStoreFile = signing.storeFile
+    if (releaseStoreFile) {
+        // AGP would only fail after minification, and without naming the setting.
+        def missing = signing.findAll { !it.value }.keySet().collect { "archwave.${it} / ${signingEnv[it]}" }
+        if (missing) {
+            throw new GradleException("Release signing: archwave.storeFile / ARCHWAVE_STORE_FILE is set but " +
+                    "these are missing (local.properties key / environment variable): ${missing.join(', ')}")
+        }
+    }
 
     signingConfigs {
         if (releaseStoreFile) {
             archwave {
                 storeFile rootProject.file(releaseStoreFile)
-                storePassword signingValue('storePassword', 'ARCHWAVE_STORE_PASSWORD')
-                keyAlias signingValue('keyAlias', 'ARCHWAVE_KEY_ALIAS')
-                keyPassword signingValue('keyPassword', 'ARCHWAVE_KEY_PASSWORD')
+                storePassword signing.storePassword
+                keyAlias signing.keyAlias
+                keyPassword signing.keyPassword
             }
         }
     }
