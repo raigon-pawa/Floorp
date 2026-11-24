@@ -2,12 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import org.gradle.api.Project
-
-/** SDK levels, build tools and version names for the app's Gradle build. */
+/** SDK levels, build tools and the version name for the app's Gradle build. */
 object Config {
     const val buildToolsVersion = "37.0.0"
     const val compileSdkMajorVersion = 37
@@ -16,15 +11,6 @@ object Config {
     const val targetSdkVersion = 37
     const val jvmTargetCompatibility = 17
 
-    /**
-     * Appends the year and week of year (two digits each), so ancient builds are easy to spot when debugging while the
-     * version stays the same all week and tools like Sentry do not fill up with versions.
-     */
-    @JvmStatic fun generateDebugVersionName(): String = SimpleDateFormat("1.0.yyww", Locale.US).format(Date())
-
-    /**
-     * Nightly tasks pass `-PversionName`. This runs at configuration time, before Gradle knows which variant is being
-     * built, so it returns an empty string instead of failing when the property is absent.
-     */
-    @JvmStatic fun releaseVersionName(project: Project): String = project.findProperty("versionName") as String? ?: ""
+    /** Archwave's own version. Debug builds append "-debug"; the version code is generated from the build time. */
+    const val versionName = "0.1.0"
 }
