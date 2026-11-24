@@ -200,6 +200,15 @@ class BrowserRobot {
             it.click()
         }
 
+    fun verifyTabCrashedSnackbar() = assertTrue(snackbarRestoreButton().waitForExists(waitingTime))
+
+    fun clickSnackbarRestoreButton() {
+        verifyTabCrashedSnackbar()
+        snackbarRestoreButton().click()
+    }
+
+    fun verifyNoTabCrashedSnackbar() = assertTrue(snackbarRestoreButton().waitUntilGone(waitingTime))
+
     class Transition {
         fun checkExternalApps(interact: ExternalAppsRobot.() -> Unit): ExternalAppsRobot.Transition {
             mDevice.waitForWindowUpdate(packageName, waitingTime)
@@ -233,6 +242,9 @@ fun browser(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
     BrowserRobot().interact()
     return BrowserRobot.Transition()
 }
+
+private fun snackbarRestoreButton() =
+    mDevice.findObject(UiSelector().resourceId("$packageName:id/snackbar_action").textContains("Restore"))
 
 private fun mediaPlayerPlayButton(state: String) =
     mDevice.findObject(UiSelector().className("android.widget.Button").text(state))
