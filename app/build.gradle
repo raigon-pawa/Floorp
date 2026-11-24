@@ -300,7 +300,6 @@ dependencies {
         implementation(libs.androidx.test.monitor)
     }
     androidTestImplementation libs.androidx.test.monitor
-    androidTestImplementation libs.androidx.test.rules
     androidTestImplementation libs.androidx.test.runner
     androidTestImplementation libs.androidx.test.uiautomator
 
