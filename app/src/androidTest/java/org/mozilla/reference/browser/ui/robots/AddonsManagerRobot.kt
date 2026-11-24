@@ -27,6 +27,7 @@ import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.waitAndInteract
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTimeShort
+import org.mozilla.reference.browser.helpers.TestHelper.appContext
 import org.mozilla.reference.browser.helpers.TestHelper.assertUIObjectExists
 import org.mozilla.reference.browser.helpers.TestHelper.getStringResource
 import org.mozilla.reference.browser.helpers.TestHelper.itemWithResId
@@ -75,7 +76,8 @@ class AddonsManagerRobot {
 
     fun dismissAddonDownloadCompletedPrompt(addonName: String) {
         mDevice.waitForWindowUpdate(packageName, waitingTime)
-        mDevice.findObject(UiSelector().text("$addonName was added")).waitForExists(waitingTime)
+        val title = appContext.getString(addonsR.string.mozac_feature_addons_installed_dialog_title_2, addonName)
+        mDevice.findObject(UiSelector().text(title)).waitForExists(waitingTime)
         mDevice.waitAndInteract(
             Until.findObject(
                 By.text(getStringResource(addonsR.string.mozac_feature_addons_installed_dialog_okay_button_2))
