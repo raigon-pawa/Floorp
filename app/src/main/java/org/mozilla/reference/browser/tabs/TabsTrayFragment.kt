@@ -98,8 +98,8 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
             TabsTrayStyling(
                 itemBackgroundColor = Color.TRANSPARENT,
                 selectedItemBackgroundColor = ContextCompat.getColor(context, R.color.aw_surface_3),
-                itemTextColor = Color.WHITE,
-                selectedItemTextColor = Color.WHITE,
+                itemTextColor = ContextCompat.getColor(context, R.color.aw_text_1),
+                selectedItemTextColor = ContextCompat.getColor(context, R.color.aw_text_1),
             )
         val viewHolderProvider: ViewHolderProvider = { viewGroup ->
             val view = LayoutInflater.from(context).inflate(R.layout.browser_tabstray_item, viewGroup, false)

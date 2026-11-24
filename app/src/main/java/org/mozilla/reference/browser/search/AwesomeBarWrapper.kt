@@ -8,20 +8,16 @@ import android.content.Context
 import android.util.AttributeSet
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.AbstractComposeView
+import androidx.compose.ui.res.colorResource
 import mozilla.components.compose.browser.awesomebar.AwesomeBar
 import mozilla.components.compose.browser.awesomebar.AwesomeBarDefaults
 import mozilla.components.compose.browser.awesomebar.AwesomeBarOrientation
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.GroupedSuggestion
 import mozilla.components.support.ktx.android.view.hideKeyboard
+import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
-
-// The palette of res/values/archwave_theme.xml: aw_black, aw_text_1 and aw_text_2.
-private val backgroundColor = Color(0xff000000)
-private val titleColor = Color(0xffffffff)
-private val descriptionColor = Color(0xffb3b3b3)
 
 /**
  * This wrapper wraps the `AwesomeBar()` composable and exposes it as a `View` and `concept-awesomebar` implementation
@@ -47,6 +43,7 @@ constructor(
             return
         }
 
+        val descriptionColor = colorResource(R.color.aw_text_2)
         AwesomeBar(
             text = text.value,
             providers = providers.value,
@@ -54,8 +51,8 @@ constructor(
             orientation = AwesomeBarOrientation.BOTTOM,
             colors =
                 AwesomeBarDefaults.colors(
-                    background = backgroundColor,
-                    title = titleColor,
+                    background = colorResource(R.color.aw_black),
+                    title = colorResource(R.color.aw_text_1),
                     description = descriptionColor,
                     autocompleteIcon = descriptionColor,
                     // Not inside a MaterialTheme, so the default would come from the light baseline scheme.
