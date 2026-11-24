@@ -69,6 +69,7 @@
         <!-- The Material 3 switch has a white thumb both on and off; the AppCompat one dims it when off. -->
         <item name="switchStyle">@style/Widget.AppCompat.CompoundButton.Switch</item>
         <item name="actionBarStyle">@style/ArchwaveActionBar</item>
+        <item name="materialTimePickerTheme">@style/ArchwaveTimePicker</item>
 
         <!-- Theme attributes that Android Components layouts and drawables read. -->
         <item name="mozac_primary_text_color">@color/aw_text_1</item>
@@ -83,6 +84,15 @@
     <!-- Black like the rest of the window, so the status bar area above it matches. -->
     <style name="ArchwaveActionBar" parent="Widget.Material3.ActionBar.Solid">
         <item name="background">@color/aw_black</item>
+    </style>
+
+    <!-- The time picker tells the selected hour/minute field and AM/PM half apart only by these container roles,
+         which the app theme maps to the same grey as the unselected ones. -->
+    <style name="ArchwaveTimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
+        <item name="colorPrimaryContainer">@color/aw_text_1</item>
+        <item name="colorOnPrimaryContainer">@color/aw_black</item>
+        <item name="colorTertiaryContainer">@color/aw_text_1</item>
+        <item name="colorOnTertiaryContainer">@color/aw_black</item>
     </style>
 
     <style name="AppTheme" parent="AppThemeNotActionBar">
