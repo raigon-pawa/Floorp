@@ -154,10 +154,6 @@ open class BrowserApplication : Application() {
             .whenGoingToBackground()
             .whenSessionsChange()
     }
-
-    companion object {
-        const val NON_FATAL_CRASH_BROADCAST = "org.mozilla.reference.browser"
-    }
 }
 
 private fun setupCrashReporting(application: BrowserApplication) {

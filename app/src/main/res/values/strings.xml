@@ -126,11 +126,11 @@
     <string name="pair_preferences">Pairing</string>
     <string name="pair_instructions">Open firefox.com/pair in Firefox Desktop for your pairing code</string>
 
-    <!-- Snackbar message when a non fatal crash happen-->
-    <string name="crash_report_non_fatal_message">Sorry. We crashed</string>
+    <!-- Snackbar message when the content process of a tab crashed -->
+    <string name="crash_report_non_fatal_message">Sorry, a tab crashed</string>
 
-    <!-- Snackbar action button when a non fatal crash happen-->
-    <string name="crash_report_non_fatal_action">Report</string>
+    <!-- Snackbar action button that reloads the crashed tabs -->
+    <string name="crash_report_non_fatal_action">Restore</string>
 
     <!-- Private Browsing -->
     <string name="private_browsing_title">Private Browsing</string>

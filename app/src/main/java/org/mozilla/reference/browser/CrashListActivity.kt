@@ -4,13 +4,11 @@
 
 package org.mozilla.reference.browser
 
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toUri
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.crash.ui.AbstractCrashListFragment
 import mozilla.components.support.ktx.android.view.setupPersistentInsets
@@ -31,13 +29,6 @@ class CrashListActivity : AppCompatActivity() {
 class CrashListFragment : AbstractCrashListFragment() {
     override val reporter: CrashReporter by lazy { requireComponents.analytics.crashReporter }
 
-    override fun onCrashServiceSelected(url: String) {
-        val intent =
-            Intent(Intent.ACTION_VIEW).apply {
-                data = url.toUri()
-                `package` = context?.packageName
-            }
-        startActivity(intent)
-        activity?.finish()
-    }
+    // Crashes are only stored on the device, so no entry links to a report on a service.
+    override fun onCrashServiceSelected(url: String) = Unit
 }

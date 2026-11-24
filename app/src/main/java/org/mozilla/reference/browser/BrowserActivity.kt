@@ -16,11 +16,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
-import mozilla.components.lib.crash.Crash
 import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.log.logger.Logger
@@ -34,7 +33,7 @@ import org.mozilla.reference.browser.ext.components
 
 /** Activity that holds the [BrowserFragment]. */
 open class BrowserActivity : AppCompatActivity() {
-    private lateinit var crashIntegration: CrashIntegration
+    private var crashSnackbar: Snackbar? = null
 
     private val sessionId: String?
         get() = SafeIntent(intent).getStringExtra(EXTRA_SESSION_ID)
@@ -61,11 +60,7 @@ open class BrowserActivity : AppCompatActivity() {
             }
         }
 
-        crashIntegration =
-            CrashIntegration(this, components.analytics.crashReporter) { crash ->
-                onNonFatalCrash(crash)
-            }
-        lifecycle.addObserver(crashIntegration)
+        lifecycle.addObserver(CrashIntegration(components.core.store, ::onTabCrashedChanged))
 
         NotificationManager.checkAndNotifyPolicy(this)
         lifecycle.addObserver(webExtensionPopupObserver)
@@ -131,12 +126,23 @@ open class BrowserActivity : AppCompatActivity() {
             }
         }
 
-    private fun onNonFatalCrash(crash: Crash) {
-        Snackbar.make(findViewById(android.R.id.content), R.string.crash_report_non_fatal_message, LENGTH_LONG)
-            .setAction(R.string.crash_report_non_fatal_action) {
-                crashIntegration.sendCrashReport(crash)
+    /** A crashed tab stays blank until it is restored, so the offer stays up until it is taken or moot. */
+    private fun onTabCrashedChanged(crashed: Boolean) {
+        crashSnackbar?.dismiss()
+        crashSnackbar =
+            if (crashed) {
+                Snackbar.make(
+                        findViewById(android.R.id.content),
+                        R.string.crash_report_non_fatal_message,
+                        LENGTH_INDEFINITE,
+                    )
+                    .setAction(R.string.crash_report_non_fatal_action) {
+                        components.useCases.sessionUseCases.crashRecovery.invoke()
+                    }
+                    .also { it.show() }
+            } else {
+                null
             }
-            .show()
     }
 
     private fun openPopup(webExtensionState: WebExtensionState) {

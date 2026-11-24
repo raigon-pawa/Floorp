@@ -4,59 +4,36 @@
 
 package org.mozilla.reference.browser.browser
 
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
-import kotlinx.coroutines.launch
-import mozilla.components.lib.crash.Crash
-import mozilla.components.lib.crash.CrashReporter
-import mozilla.components.support.utils.ext.registerReceiverCompat
-import org.mozilla.reference.browser.BrowserApplication.Companion.NON_FATAL_CRASH_BROADCAST
-import org.mozilla.reference.browser.ext.components
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.lib.state.ext.flowScoped
+import mozilla.components.support.base.feature.LifecycleAwareFeature
 
-/** Forwards non-fatal crash broadcasts to [onCrash] while the owning lifecycle is started. */
+/**
+ * Tells [onTabCrashedChanged] whether any tab is waiting to be restored after its content process crashed. It reads
+ * the store, so a crash that happened while the owner was stopped is reported when it starts again.
+ */
 class CrashIntegration(
-    private val context: Context,
-    private val crashReporter: CrashReporter,
-    private val onCrash: (Crash) -> Unit,
-) : DefaultLifecycleObserver {
-    private val receiver =
-        object : BroadcastReceiver() {
-            override fun onReceive(
-                context: Context,
-                intent: Intent,
-            ) {
-                if (!Crash.isCrashIntent(intent)) {
-                    return
-                }
+    private val store: BrowserStore,
+    private val onTabCrashedChanged: (Boolean) -> Unit,
+) : LifecycleAwareFeature {
+    private var scope: CoroutineScope? = null
 
-                val crash = Crash.fromIntent(intent)
-                onCrash(crash)
+    override fun start() {
+        scope =
+            store.flowScoped(dispatcher = Dispatchers.Main) { flow ->
+                flow
+                    .map { state -> (state.tabs + state.customTabs).any { it.engineState.crashed } }
+                    .distinctUntilChanged()
+                    .collect { crashed -> onTabCrashedChanged(crashed) }
             }
-        }
-
-    override fun onStart(owner: LifecycleOwner) {
-        super.onStart(owner)
-        context.registerReceiverCompat(
-            receiver,
-            IntentFilter(NON_FATAL_CRASH_BROADCAST),
-            ContextCompat.RECEIVER_NOT_EXPORTED,
-        )
     }
 
-    override fun onStop(owner: LifecycleOwner) {
-        super.onStop(owner)
-        context.unregisterReceiver(receiver)
-    }
-
-    /** Uses the application scope, so the upload is not tied to the calling activity's lifecycle. */
-    fun sendCrashReport(crash: Crash) {
-        context.components.applicationScope.launch {
-            crashReporter.submitReport(crash)
-        }
+    override fun stop() {
+        scope?.cancel()
     }
 }
