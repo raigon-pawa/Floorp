@@ -9,11 +9,14 @@
 #
 # <n> selects the AVD archwave_android_<n> and its serial: 1 -> emulator-5554,
 # 2 -> emulator-5556, 3 -> emulator-5558. "healthy" exits 0 only if the
-# emulator answers and its display pipeline is alive (a hung software renderer
-# is the usual failure: screenshots and UI dumps then block forever; restart).
+# emulator answers, its display pipeline is alive (a hung software renderer is
+# the usual failure: screenshots and UI dumps then block forever) and it has not
+# grown past its memory limit (the software renderer can leak many gigabytes).
+# Restart an unhealthy emulator; app data survives a restart.
 #
-# Environment: ARCHWAVE_AVD_GPU (default swangle), ARCHWAVE_AVD_MEMORY (MB,
-# default 3072), ANDROID_HOME (default ~/Android/Sdk).
+# Environment: ARCHWAVE_AVD_GPU (default swangle), ARCHWAVE_AVD_MEMORY (guest
+# MB, default 3072), ARCHWAVE_AVD_MAX_RSS_MB (host memory limit for "healthy",
+# default 9000), ANDROID_HOME (default ~/Android/Sdk).
 
 set -eu
 
@@ -32,8 +35,12 @@ pids() { pgrep -f "qemu-system[^ ]* .*-avd $avd( |\$)" || true; }
 
 running() { [ -n "$(pids)" ]; }
 
+# Resident memory of the emulator process on the host, in MB.
+rss_mb() { ps -o rss= -p "$(pids | head -1)" 2>/dev/null | awk '{printf "%d", $1 / 1024}'; }
+
 healthy() {
     running || return 1
+    [ "$(rss_mb)" -lt "${ARCHWAVE_AVD_MAX_RSS_MB:-9000}" ] || return 1
     [ "$(timeout 10 "$adb" -s "$serial" shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = "1" ] || return 1
     # A live compositor produces a screenshot within a second or two; a hung one never does.
     [ "$(timeout 25 "$adb" -s "$serial" exec-out screencap -p 2>/dev/null | head -c 4 | tail -c 3)" = "PNG" ]
@@ -75,7 +82,10 @@ case "$action" in
     start) start ;;
     stop) stop; echo "$avd stopped" ;;
     restart) stop; start ;;
-    status) if healthy; then echo "$avd: healthy ($serial)"; elif running; then echo "$avd: running but unresponsive ($serial)"; else echo "$avd: stopped"; fi ;;
+    status)
+        if healthy; then echo "$avd: healthy ($serial, $(rss_mb) MB)"
+        elif running; then echo "$avd: unhealthy, restart it ($serial, $(rss_mb) MB: hung renderer or over the memory limit)"
+        else echo "$avd: stopped"; fi ;;
     healthy) healthy ;;
     *) echo "usage: $0 start|stop|restart|status|healthy <1|2|3>" >&2; exit 2 ;;
 esac
