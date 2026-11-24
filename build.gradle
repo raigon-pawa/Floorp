@@ -116,7 +116,7 @@ dependencyAnalysis {
             }
             onUsedTransitiveDependencies {
                 // We explicitly want to pull in these dependencies transitively from AC
-                exclude('org.mozilla.appservices.nightly:fxaclient', 'org.mozilla.geckoview:geckoview-nightly-omni')
+                exclude('org.mozilla.appservices:fxaclient', 'org.mozilla.geckoview:geckoview-omni')
             }
         }
     }
