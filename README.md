@@ -1,325 +1,297 @@
-# Floorp Browser
-
-A browser built for keeping the Open, Private and Sustainable Web alive. Based on Mozilla Firefox.
-
-[![Contributors][contributors-shield]][contributors-url]
-[![Forks][forks-shield]][forks-url]
-[![Stargazers][stars-shield]][stars-url]
-[![Issues][issues-shield]][issues-url]
-[![License][license-shield]][license-url]
-[![Crowdin](https://badges.crowdin.net/floorp-browser/localized.svg)](https://crowdin.com/project/floorp-browser)
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Floorp-Projects/Floorp)
-
-<!-- MARKDOWN LINKS & IMAGES -->
-<!-- https://www.markdownguide.org/basic-syntax/#reference-style-links -->
-
-[contributors-shield]: https://img.shields.io/github/contributors/Floorp-Projects/Floorp.svg?style=for-the-badge
-[contributors-url]: https://github.com/Floorp-Projects/Floorp/graphs/contributors
-[forks-shield]: https://img.shields.io/github/forks/Floorp-Projects/Floorp?style=for-the-badge
-[forks-url]: https://github.com/Floorp-Projects/Floorp/network/members
-[stars-shield]: https://img.shields.io/github/stars/Floorp-Projects/Floorp.svg?style=for-the-badge
-[stars-url]: https://github.com/Floorp-Projects/Floorp/stargazers
-[issues-shield]: https://img.shields.io/github/issues/Floorp-Projects/Floorp.svg?style=for-the-badge
-[issues-url]: https://github.com/Floorp-Projects/Floorp/issues
-[license-shield]: https://img.shields.io/github/license/Floorp-Projects/Floorp.svg?style=for-the-badge
-[license-url]: https://github.com/Floorp-Projects/Floorp/blob/main/LICENSE
-
-<!-- PROJECT LOGO -->
-<br />
 <div align="center">
-  <a href="https://github.com/Floorp-Projects/Floorp">
-    <img src="https://avatars.githubusercontent.com/u/94953125?s=200&v=4" alt="Logo" width="150" height="150">
-  </a>
+  <img src="static/gecko/archwave-icon/floorp-archwave.svg" alt="Floorp Archwave icon" width="128" height="128">
 
-  <h3 align="center">Floorp Browser </h3>
+<h1>Floorp Archwave</h1>
 
-  <p align="center">
-    A browser built for keeping the Open, Private and Sustainable Web alive. Based on Mozilla Firefox.
-    <br />
-    <br />
-    <a href="https://floorp.app">Official Site</a>
-    ・
-    <a href="#-download--install">Download</a>
-    ・
-    <a href="https://blog.floorp.app">Blog & Release Notes</a>
-    ・
-    <a href="https://discord.floorp.app">Official Discord</a>
-    ・
-    <a href="https://docs.floorp.app">Documentation</a>
+<p>
+    A monochrome, privacy-hardened build of the <a href="https://github.com/Floorp-Projects/Floorp">Floorp</a> browser
+    that runs Chrome Web Store extensions.
+  </p>
+
+<p>
+    <a href="https://github.com/raigon-pawa/Floorp/actions/workflows/colocated_runner_test.yml"><img alt="Browser tests" src="https://github.com/raigon-pawa/Floorp/actions/workflows/colocated_runner_test.yml/badge.svg?branch=main"></a>
+    <a href="https://github.com/raigon-pawa/Floorp/actions/workflows/docs_pipeline.yml"><img alt="Docs pipeline" src="https://github.com/raigon-pawa/Floorp/actions/workflows/docs_pipeline.yml/badge.svg?branch=main"></a>
+    <a href="LICENSE"><img alt="License: MPL 2.0" src="https://img.shields.io/badge/license-MPL%202.0-555"></a>
+    <img alt="Platform: Linux" src="https://img.shields.io/badge/platform-Linux-555">
+  </p>
+
+<p>
+    <a href="#installation">Installation</a> ·
+    <a href="#features">Features</a> ·
+    <a href="#privacy-defaults">Privacy defaults</a> ·
+    <a href="#development">Development</a> ·
+    <a href="#credits-and-licenses">Credits</a>
   </p>
 </div>
 
-## 📄 Sponsorship
+> [!NOTE]
+> This is an **unofficial, personal fork** of Floorp. It is not affiliated with
+> or endorsed by Ablaze or the Floorp project, nor with Mozilla. For the
+> official browser, visit [floorp.app](https://floorp.app). Please don't report
+> problems with this fork to the upstream project.
+
+## Overview
+
+Floorp Archwave follows upstream Floorp closely and adds a small set of changes
+on top:
+
+| Area                  | What changes                                                                                                                  |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| **Chrome extensions** | Extensions installed from the Chrome Web Store get the Chrome-only APIs they rely on, so tools such as Claude in Chrome work. |
+| **Look**              | A black, white and grey browser theme with thin line icons, a dark base theme and compact density.                            |
+| **New tab**           | A monochrome start page with no sponsored tiles and no Google favicon requests.                                               |
+| **Privacy**           | Strict tracking protection, HTTPS-only mode, encrypted DNS and no telemetry, experiments or background pings.                 |
+| **Updates**           | One command merges upstream Floorp, builds the browser and installs it.                                                       |
+
+Everything else (workspaces, sidebar panels, mouse gestures, PWAs and the rest
+of Floorp) is unchanged from upstream.
+
+## Features
+
+### Chrome Web Store extensions
+
+Floorp converts Chrome extensions to Firefox add-ons when you install them from
+the Chrome Web Store. Archwave adds polyfills, backed by privileged browser-side
+actors, for the APIs Firefox lacks:
+
+- **`chrome.sidePanel`**: side panels open in the extension's Firefox sidebar.
+- **`chrome.debugger`** (tab targets): screenshots, trusted mouse and keyboard
+  input, `Runtime.evaluate`, and console and network events. It is available
+  only to extensions that request the `debugger` permission, and only on pages
+  they have host access to.
+- **`externally_connectable`**: listed websites can message the extension with
+  `chrome.runtime.sendMessage(<chrome id>, …)`.
+- **Silent sign-in** (`identity.launchWebAuthFlow` with `interactive: false`):
+  runs in a hidden browser, as in Chrome, so extensions stay signed in across
+  restarts.
+
+> [!IMPORTANT]
+> Polyfills are written into an extension when it is installed. After an update
+> that changes them, reinstall the affected extension from the Chrome Web Store.
+
+### Archwave look
+
+- A monochrome theme for toolbars, tabs, the address bar, panels, menus and
+  Floorp's own surfaces.
+- JetBrains Mono in the address and status bars, and 16 thin line icons.
+- A dark Firefox base theme and compact density, so the theme sits on a dark
+  base.
+- A new app icon: white wave contours inside a globe, on a black tile.
+
+Turn the theme off with `floorp.archwave.enabled = false` in `about:config`.
+
+### Private start page
+
+- A plain black background instead of a random image.
+- Site tiles use cached favicons or a letter, never Google's favicon service.
+- No sponsored or support pins. The default sites are ArchWiki, Wikipedia,
+  GitHub and DuckDuckGo.
+
+## Privacy defaults
+
+All changes are ordinary default preferences in
+[`static/gecko/pref/override.ini`](static/gecko/pref/override.ini). None are
+locked, so each one can be changed in `about:config` or Settings.
+
+The defaults aim to stay usable. `privacy.resistFingerprinting` is not enabled,
+because it forces light mode, UTC and letterboxing. History is not cleared on
+shutdown, so session restore keeps working.
+
+<details>
+<summary><strong>Full list of changes</strong></summary>
+
+**Tracking protection**
+
+- Strict Enhanced Tracking Protection: Total Cookie Protection, plus blocking of
+  fingerprinters, cryptominers and social trackers, and query-parameter
+  stripping. It applies in private windows too.
+- Global Privacy Control and Do Not Track are sent, and bounce-tracking
+  protection is on.
+- Cross-site referrers are trimmed to the origin.
+
+**Network**
+
+- HTTPS-only mode everywhere.
+- DNS over HTTPS through Quad9 (`network.trr.mode = 2`, which falls back to
+  system DNS if it fails), with Encrypted Client Hello.
+- No link prefetching, DNS prefetching, speculative connections or hyperlink
+  auditing pings.
+- WebRTC does not expose local IP addresses.
+
+**Background services**
+
+- No telemetry, health reports, Normandy studies, crash-report submission or
+  ping-centre pings.
+- Floorp experiments are off
+  (`floorp.experiments.participationPolicy = "never"`), and the experiments
+  server is never contacted.
+- No region lookup, network geolocation, captive-portal or connectivity checks.
+- No add-on recommendations, and no remote Safe Browsing checks for downloads.
+- Release notes are not opened on startup, so the browser starts without
+  contacting the Floorp blog.
 
-Floorp Browser is a free and open-source project. If you like Floorp Browser, please consider sponsoring us. Your sponsorship will help us to continue development and pay for the server costs. You may advertise if you continuously sponsor a minimum of $100 per month.
+**Firefox Home, AI and forms**
 
-- [GitHub Sponsors](https://github.com/sponsors/Ryosuke-Asano)
+- No Pocket, sponsored stories or tiles, or remote default top sites.
+- The AI chatbot sidebar, link previews, smart tab groups and other on-device ML
+  features are off.
+- Address and credit-card autofill is off, because that data is stored
+  unencrypted without a primary password.
 
-<h2> 💕 Special Sponsors </h2>
-<div align="left" style="display: flex; flex-wrap: wrap;">
-  <a href="https://www.cube-soft.jp/" style="margin: 10px; overflow: hidden; padding: 0px 30px;">
-    <img src="https://avatars.githubusercontent.com/u/346808?s=200&v=4" alt="CubeSoft, Inc." width="100" height="100">
-    <h4 style="text-align: center;">CubeSoft, Inc.</h4>
-  </a>
-  <a href="https://1password.com/" style="margin: 10px; overflow: hidden; padding: 0px 30px;">
-    <img src="https://avatars.githubusercontent.com/1Password?s=200&v=4" alt="1Password" width="100" height="100">
-    <h4 style="text-align: center;">1Password</h4>
-  </a>
-  <a href="https://signpath.io/" style="margin: 10px; overflow: hidden; padding: 0px 30px;">
-    <img src="https://avatars.githubusercontent.com/u/34448643?s=200&v=4" alt="SignPath" width="100" height="100">
-    <h4 style="text-align: center;">SignPath</h4>
-  </a>
-</div>
+**Search and address bar**
 
-## ⚡ Get Started
+- No search suggestions, Firefox Suggest, sponsored results or trending
+  searches, and no weather, MDN, Yelp or add-on suggestions.
+- The default search engine, in normal and private windows, is switched to
+  DuckDuckGo once per profile, unless you have already changed it
+  (`floorp.search.privateDefault`).
 
-### 💻 Supported Operating Systems & Requirements
+**Not changed from upstream (trade-offs to be aware of)**
 
-Floorp Browser is available for Windows, macOS, and Linux. You can install it by running the installer or by extracting the archive.
+- `xpinstall.signatures.required = false`: unsigned add-ons can be installed,
+  which Chrome Web Store conversion needs.
+- `toolkit.legacyUserProfileCustomizations.stylesheets = true`: `userChrome.css`
+  and `userContent.css` are loaded.
+- Firefox Sync is available. If you sign in, data is synced through Mozilla's
+  Sync service.
 
-#### Windows
+</details>
 
-- Windows 10 or later. (Windows 7 and 8 are not supported)
+## Installation
 
-- x86_64 CPU architecture. AArch64 is not supported.
+Archwave is installed from source. Linux (x86_64) is the only supported
+platform.
 
-- Floorp provides a `.exe` installer, `winget`, and `Scoop` installation options.
-
-Winget install command:
-
-```
-winget install Ablaze.Floorp
-```
-
-Winget repository provided by [@Hibi_10000](https://github.com/Hibi-10000)
-
-Scoop install command:
-
-```
-scoop bucket add extras
-scoop install extras/floorp
-```
-
-Scoop repository provided by [@SegoCode](https://github.com/SegoCode)
-
-**Floorp has obtained a Certum Open Source Code Signing Certificate. The official Floorp installer is signed by "Open Source Developer, Ryosuke Asano".**
-
-#### macOS
-
-- macOS 10.15 or later.
-
-- x86_64 CPU & ARM64 CPU architecture. Floorp provides a Universal build for both architectures.
-
-Homebrew install command:
-
-```
-brew install --cask floorp
-```
-
-**After version 11.0.0, Floorp has obtained Apple Notarization & Certification. This means that you can install Floorp without any warning messages. Additionally, Floorp now includes an auto-update system.**
-
-#### Linux
-
-- Debian-based distributions (such as Ubuntu and Linux Mint) and Arch-based distributions (such as Manjaro) are supported.
-
-- x86_64 & AArch64 CPU architecture.
-
-- Floorp Browser Requirements: [Firefox system requirements](https://www.mozilla.org/firefox/system-requirements/)
-
-Supported package managers:
-
-- PPA (Ubuntu, Linux Mint, etc.): https://ppa.floorp.app
-- Flatpak (most Linux distributions): https://flathub.org/apps/one.ablaze.floorp
-- Tarball (most Linux distributions): https://github.com/Floorp-Projects/Floorp/releases/latest
-- AUR bin (Arch-based distributions): https://aur.archlinux.org/packages/floorp-bin/ **Unofficial**
-- AUR (Arch-based distributions): https://aur.archlinux.org/packages/floorp/ **Unofficial**
-- SBo bin (Slackware-based distributions): https://slackbuilds.org/repository/15.0/network/floorp-bin/ **Unofficial**
-
-### 📥 Download & 📦 Install
-
-You can download the latest version of Floorp Browser from the official website: [Floorp.app](https://floorp.app/download) or from the [GitHub Releases](https://github.com/Floorp-Projects/Floorp/releases) page.
-
----
-
-## 📖 Documentation
-
-For more detailed information and guidance, check out our [Floorp Documentation Wiki](https://docs.floorp.app).
-
-### 📝 License
-
-[Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/)
-
-- Floorp's name is a registered trademark of Floorp's developer, and Floorp's logo is protected by copyright
-
-- Floorp Browser is based on Mozilla Firefox. Floorp Browser is not affiliated with Mozilla & Mozilla Firefox.
-
-- Floorp uses Mozilla Firefox's source code and other open-source projects. See [Floorp License Notices](#-Floorp-License-Notices-)
-
-### 📧 Contact
-
-- [Official Floorp Twitter](https://twitter.com/Floorp_Browser)
-
-- [Official Floorp Projects Discord](https://discord.floorp.app)
-
-### 📜 Privacy Policy
-
-- [Floorp Privacy Policy](https://floorp.app/privacy)
-
-### 🔒 Privacy Configuration of This Copy
-
-This copy of Floorp makes **no privacy changes of its own** beyond upstream [Floorp-Projects/Floorp](https://github.com/Floorp-Projects/Floorp). Its privacy behavior comes from the default preference overrides that upstream ships in [`static/gecko/pref/override.ini`](static/gecko/pref/override.ini), which are applied on top of Firefox's defaults at build time. They are user-changeable defaults, not locked:
-
-**Telemetry and data reporting are off**
-
-- Firefox telemetry is fully disabled: `toolkit.telemetry.enabled`, `toolkit.telemetry.unified` and `toolkit.telemetry.archive.enabled` are `false`, and `toolkit.telemetry.server` is empty
-- New-profile, update, shutdown, first-shutdown and background-hang (BHR) pings are disabled
-- Health reports and data submission are off: `datareporting.healthreport.uploadEnabled`, `datareporting.policy.dataSubmissionEnabled`
-- Sync telemetry payloads are disabled: `services.sync.telemetry.*` = `0`
-- Origin telemetry for tracking protection is off: `privacy.trackingprotection.origin_telemetry.enabled`
-- Privacy-preserving ad attribution submission is off: `dom.private-attribution.submission.enabled`
-
-**No studies, experiments or recommendations**
-
-- Shield/Normandy opt-out studies are disabled: `app.shield.optoutstudies.enabled`
-- Pioneer study notifications and Trailhead first-run experiments are disabled
-- Add-on recommendations, the "Get Add-ons" pane and "More from Mozilla" are hidden
-- The Web Compatibility Reporter is disabled
-- Sponsored new-tab content is never synced: `showSponsored`, `showSponsoredTopSites` and snippets are excluded from Sync
-
-**Isolation features are on**
-
-- Container tabs are enabled: `privacy.userContext.enabled`, `privacy.userContext.ui.enabled`
-- Private windows can use a separate default search engine: `browser.search.separatePrivateDefault`
-
-**Experimental remote-control features are off**
-
-- Floorp OS and the MCP server are disabled by default: `floorp.os.enabled`, `floorp.mcp.enabled`
-
-**Trade-offs to be aware of**
-
-- `xpinstall.signatures.required = false`: Unsigned extensions can be installed. This gives more flexibility but less protection against tampered add-ons.
-- `toolkit.legacyUserProfileCustomizations.stylesheets = true`: `userChrome.css` / `userContent.css` are loaded from the profile.
-- Firefox Sync is not disabled. If you sign in, prefs, workspaces and notes are synced through Mozilla's Sync service.
-
-To check these defaults in a running browser, open `about:config` or `about:telemetry`. Also see the upstream [Floorp Privacy Policy](https://floorp.app/privacy).
-
-### 📜 About Forks
-
-- Floorp is independent of Mozilla Firefox. Floorp is not affiliated with Mozilla & Mozilla Firefox.
-
-- We are also unaffiliated with the browser that is forking Floorp and we are developing it on our own.
-
-- We are not affiliated with any organization other than Ablaze.
-
----
-
-## 🌟 Contributing
-
-Please also check [`CONTRIBUTING.md`](https://github.com/Floorp-Projects/Floorp/blob/main/.github/CONTRIBUTING.md) for more details on how to contribute.
-
-For localization contributions, see [Localization](.github/CONTRIBUTING.md#localization).
-
-### 🧰 How to Start Development
-
-Floorp's dev workflow is orchestrated by `feles-build` (a Deno task).
-
-To build and run Floorp, follow the [Building section of the documentation](https://docs.floorp.app/docs/building/).
-
-#### Useful commands
-
-- `deno task feles-build stage` (build production assets, run browser in dev mode)
-- `deno task feles-build build --phase before-mach` (production assets step)
-- `deno task feles-build build --phase after-mach` (post-build injection step)
-- `tools/build.sh` (local build script, see below)
-
-#### 🔨 Local build script (`tools/build.sh`)
-
-`tools/build.sh` runs the same build steps as CI (`.github/workflows/package.yml`) on your own machine. It supports Linux and macOS; Windows builds still go through CI.
+**Requirements:** [Deno](https://deno.com) 2.x and Git.
 
 ```bash
-tools/build.sh                                   # Production assets only → _dist/
-tools/build.sh --full --gecko ~/src/floorp-runtime # Full build
-tools/build.sh --full --artifact runtime.tar.xz  # Full build from a prebuilt runtime artifact
-tools/build.sh --full --package                  # Full build, then `mach package`
+git clone https://github.com/raigon-pawa/Floorp.git
+cd Floorp
+git remote add upstream https://github.com/Floorp-Projects/Floorp.git
+deno install
+deno task archwave:update
 ```
 
-| Option                   | Effect                                                                                  |
-| ------------------------ | --------------------------------------------------------------------------------------- |
-| `--full`                 | Run the whole pipeline, not just the assets                                             |
-| `--gecko DIR`            | Firefox/runtime source tree containing `mach` (default: parent dir, if it has `mach`)   |
-| `--artifact FILE`        | Build in artifact mode from `FILE` (`MOZ_ARTIFACT_FILE`; macOS: `dmg:framework.zip`)    |
-| `--package`              | Run `mach package` at the end                                                           |
-| `--skip-install`         | Skip `deno install`                                                                     |
-| `--skip-runtime-patches` | Don't apply `.github/patches/floorp-runtime/common/*.patch` to the Gecko tree           |
+`archwave:update` does the following:
 
-A full build runs these steps:
+1. Fetches upstream Floorp and merges it into the current branch, keeping
+   uncommitted changes.
+2. Assembles a standalone browser from the locked Floorp runtime and production
+   assets. No Gecko build is needed.
+3. Installs it to `~/.local/opt/floorp-archwave`, keeps the previous build in
+   `floorp-archwave.prev`, and sets up the Archwave icon.
 
-1. `deno install`, then applies the runtime patches to the Gecko tree (skipping patches that are already applied)
-2. `feles-build build --phase before-mach` (production assets)
-3. `mach configure` and `mach build`
-4. `feles-build build --phase after-mach` (injects Noraneko)
-5. On Linux, replaces the symlinks in `dist/bin` with real files and applies `tools/patches/*.patch`. On macOS, the patch step is skipped. On both, `buildid2` is copied into place.
-6. `mach package` (only with `--package`)
+| Option           | Effect                                                                                         |
+| ---------------- | ---------------------------------------------------------------------------------------------- |
+| `--no-pull`      | Build the current checkout without merging upstream                                            |
+| `--no-install`   | Build only; do not install                                                                     |
+| `--auto-resolve` | Let headless Claude Code resolve merge conflicts. The merge is undone if the build then fails. |
+
+Run the same command again to update. Firefox's built-in updater is disabled in
+these installs, because it only knows official Floorp releases.
+
+## Development
+
+The development workflow is driven by `feles-build`, which runs as a Deno task.
+
+```bash
+deno install                     # Install dependencies
+deno task feles-build dev        # Dev mode with hot reload
+deno task test                   # Browser-integrated unit tests
+deno task test --near <path>     # Only the tests near a file or directory
+deno task test:host              # Tool tests (Deno native)
+deno task dev-tool status        # Inspect a running dev browser over Marionette
+```
+
+Tests run inside a real browser. Test runs reset the "Archwave look" defaults to
+Firefox's stock values, so the design tests check Floorp's standard appearance.
+
+For a full Gecko build, follow the upstream
+[building guide](https://docs.floorp.app/docs/building/), or use the local build
+script below. Architecture notes for contributors are in
+[`CLAUDE.md`](CLAUDE.md) and [`docs/development`](docs/development).
+
+<details>
+<summary><strong>Local build script (<code>tools/build.sh</code>)</strong></summary>
+
+`tools/build.sh` runs the same build steps as CI
+(`.github/workflows/package.yml`) on your own machine. It supports Linux and
+macOS. Windows builds still go through CI.
+
+```bash
+tools/build.sh                                     # Production assets only → _dist/
+tools/build.sh --full --gecko ~/src/floorp-runtime # Full build
+tools/build.sh --full --artifact runtime.tar.xz    # Full build from a prebuilt runtime artifact
+tools/build.sh --full --package                    # Full build, then `mach package`
+```
+
+| Option                   | Effect                                                                                          |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| `--full`                 | Run the whole pipeline, not just the assets                                                     |
+| `--gecko DIR`            | Firefox/runtime source tree containing `mach` (default: the parent directory, if it has `mach`) |
+| `--artifact FILE`        | Build in artifact mode from `FILE` (`MOZ_ARTIFACT_FILE`; macOS: `dmg:framework.zip`)            |
+| `--package`              | Run `mach package` at the end                                                                   |
+| `--skip-install`         | Skip `deno install`                                                                             |
+| `--skip-runtime-patches` | Don't apply `.github/patches/floorp-runtime/common/*.patch` to the Gecko tree                   |
+
+A full build:
+
+1. Runs `deno install`, then applies the runtime patches to the Gecko tree
+   (skipping any already applied).
+2. Runs `feles-build build --phase before-mach` (production assets).
+3. Runs `mach configure` and `mach build`.
+4. Runs `feles-build build --phase after-mach` (injects Noraneko).
+5. On Linux, replaces the symlinks in `dist/bin` with real files and applies
+   `tools/patches/*.patch`. On macOS, the patch step is skipped. On both,
+   `buildid2` is copied into place.
+6. Runs `mach package` (only with `--package`).
 
 Requirements for `--full`:
 
-- **Folder layout:** This repository must sit at `<gecko>/noraneko` (a clone or a symlink). The injection step writes to `../obj-artifact-build-output`.
-- **mozconfig:** `<gecko>/mozconfig` must exist and set `mk_add_options MOZ_OBJDIR=./obj-artifact-build-output`. Templates are in `.github/workflows/mozconfigs/`.
+- **Folder layout:** this repository must sit at `<gecko>/noraneko` (a clone or
+  a symlink). The injection step writes to `../obj-artifact-build-output`.
+- **mozconfig:** `<gecko>/mozconfig` must exist and set
+  `mk_add_options MOZ_OBJDIR=./obj-artifact-build-output`. Templates are in
+  `.github/workflows/mozconfigs/`.
 
-The script checks these requirements before starting anything slow and stops with an error if one is missing. It does not perform CI's provenance verification or macOS signing/DMG steps.
+The script checks these requirements before starting anything slow, and stops
+with an error if one is missing. It does not run CI's provenance verification or
+the macOS signing and DMG steps.
 
-### 🐛 Reporting Bugs
+</details>
 
-- If you find a bug, please report it to the [Issues](https://github.com/Floorp-Projects/Floorp/issues) page.
+### Branches
 
----
+| Branch     | Purpose                                                               |
+| ---------- | --------------------------------------------------------------------- |
+| `main`     | Default branch, merged from `archwave`                                |
+| `archwave` | Working branch that `archwave:update` builds and merges upstream into |
 
-## 📄 Floorp License Notices 📄
+Upstream changes are merged, never rebased, so the fork's history stays intact.
 
-Floorp utilizes various open-source projects. Below is a comprehensive list of the open-source projects used in Floorp.
+## Credits and licenses
 
-Please note that while some of the software listed below is not included in Floorp itself, it is instead downloaded from the internet. Additionally, Floorp provides a list of recommended add-ons for users to install.
+Floorp Archwave is distributed under the [Mozilla Public License 2.0](LICENSE).
 
-### 🦊 Mozilla Firefox
+It is built on the work of the
+[Floorp project](https://github.com/Floorp-Projects/Floorp) and its
+contributors. The Floorp name is a registered trademark of its developer, and
+the Floorp logo is protected by copyright. If you find Floorp useful, consider
+[sponsoring the upstream project](https://github.com/sponsors/Ryosuke-Asano).
 
-- [Mozilla Firefox](https://www.mozilla.org/en-US/firefox/new/)
-- [Mozilla Public License 2.0](https://www.mozilla.org/en-US/MPL/2.0/)
-- Authors: [Mozilla & Contributors](https://www.mozilla.org/credits/)
+Floorp, and therefore this fork, uses the following open-source projects:
 
-### 🐈 NyanRus Noraneko (Testhead of Floorp 12)
+| Project                                                                | License                                                                    | Author                                                       |
+| ---------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [Mozilla Firefox](https://www.mozilla.org/firefox/)                    | [MPL 2.0](https://www.mozilla.org/MPL/2.0/)                                | [Mozilla and contributors](https://www.mozilla.org/credits/) |
+| [Noraneko](https://github.com/nyanrus/noraneko-runtime)                | [MPL 2.0](https://github.com/nyanrus/noraneko-runtime/blob/main/LICENSE)   | [NyanRus](https://github.com/nyanrus)                        |
+| [Firefox UI Fix (Lepton)](https://github.com/black7375/Firefox-UI-Fix) | [MPL 2.0](https://github.com/black7375/Firefox-UI-Fix/blob/master/LICENSE) | [black7375](https://github.com/black7375)                    |
+| userChromeCSS Loader                                                   | MIT                                                                        | Griever                                                      |
+| [Paxmod](https://github.com/numirias/paxmod)                           | [MIT](https://github.com/numirias/paxmod/blob/master/LICENSE)              | [numirias](https://github.com/numirias)                      |
+| [Fushra Pulse](https://pulsebrowser.app/)                              | [MPL 2.0](https://github.com/pulse-browser/browser/blob/main/LICENSE)      | [Fushra](https://github.com/Fushra)                          |
 
-- [Noraneko](https://github.com/nyanrus/noraneko-runtime)
-- [Mozilla Public License 2.0](https://github.com/nyanrus/noraneko-runtime/blob/main/LICENSE)
-- Author: [NyanRus](https://github.com/nyanrus)
+Some of these components are downloaded at runtime rather than bundled. Floorp
+also lists recommended add-ons for users to install.
 
-### 🎨 Firefox UI FIX (Lepton)
-
-- [Firefox UI FIX (Lepton)](https://github.com/black7375/Firefox-UI-Fix)
-- [Mozilla Public License 2.0](https://github.com/black7375/Firefox-UI-Fix/blob/master/LICENSE)
-- Author: [black7375](https://github.com/black7375)
-
-### 📦 userChromeCSS Loader
-
-- [userChromeCSS Loader](floorp/browser/base/content/browser-chromeCSS.js)
-- [MIT](floorp/browser/base/content/browser-chromeCSS.js)
-- Author: Griever
-
-Notice: if you are a developer of "userChromeCSS Loader", please contact us so that we can add your name and website to the list.
-
-### 📦 Paxmod
-
-- [Paxmod](https://github.com/numirias/paxmod)
-- [MIT](https://github.com/numirias/paxmod/blob/master/LICENSE)
-- Author: [numirias](https://github.com/numirias/)
-
-Notice: If you are a maintainer of any listed component and your name or license is missing or incorrect, please contact us.
-
-### 📦 Fushra Pulse
-
-- [Fushra Pulse](https://pulsebrowser.app/)
-- [Mozilla Public License 2.0](https://github.com/pulse-browser/browser/blob/main/LICENSE)
-- Author: [Fushra](https://github.com/Fushra)
-
-## Star History
-
-[![Star History Chart](https://star-history.dera.page/svg?repos=Floorp-Projects/Floorp&type=date&legend=top-left)](https://star-history.dera.page/#Floorp-Projects/Floorp&type=date&legend=top-left)
+Floorp Archwave is independent of Mozilla and is not affiliated with Mozilla
+Firefox.
