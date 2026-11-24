@@ -9,6 +9,7 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.os.Environment
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -331,6 +332,9 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 onNeedToRequestPermissions = { permissions ->
                     requestDownloadPermissionsLauncher.launch(permissions)
                 },
+                // A full-width panel at the bottom, like the add-on prompts, instead of a floating black box.
+                promptsStyling =
+                    DownloadsFeature.PromptsStyling(gravity = Gravity.BOTTOM, shouldWidthMatchParent = true),
             ),
         )
     }
@@ -417,6 +421,8 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                     requestSitePermissionsLauncher.launch(permissions)
                 },
                 onShouldShowRequestPermissionRationale = { shouldShowRequestPermissionRationale(it) },
+                promptsStyling =
+                    SitePermissionsFeature.PromptsStyling(gravity = Gravity.BOTTOM, shouldWidthMatchParent = true),
                 store = requireComponents.core.store,
                 coroutineScope = requireComponents.applicationScope,
             ),
