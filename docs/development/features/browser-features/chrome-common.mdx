@@ -1,7 +1,7 @@
 ---
 title: "Common Chrome Feature Catalog"
 sidebar_label: "Common Chrome"
-floorp_commit: "ba225e0a202c592e5a26d67e4fc8c4a7835d4233"
+floorp_commit: "fef0c4d329adef91f5fb130bf68bd63063923831"
 generated: true
 ---
 # Common Chrome Feature Catalog
@@ -13,6 +13,7 @@ Common chrome features are discovered from `browser-features/chrome/common/mod.t
 | Feature | Source | Entrypoints | Description |
 |---|---|---|---|
 | addons | `browser-features/chrome/common/addons/index.ts` | `default class Addons`, `init` | Chrome Web Store Install Confirmation UI Customization This module modifies the addon installation confirmation popup to show Chrome extension specific messages when installing from Chrome Web Store. |
+| archwave-theme | `browser-features/chrome/common/archwave-theme/index.ts` | `default class ArchwaveTheme`, `init` | Owns the archwave theme feature through the ArchwaveTheme chrome component and wires `archwave.css?inline`, `icons`. |
 | browser-share-mode | `browser-features/chrome/common/browser-share-mode/index.ts` | `default class BrowserShareMode`, `init` | Owns the browser share mode feature through the BrowserShareMode chrome component and wires `browser-share-mode`. |
 | browser-tab-color | `browser-features/chrome/common/browser-tab-color/index.ts` | `default class BrowserTabColor`, `init` | Owns the browser tab color feature through the BrowserTabColor chrome component and wires `tabcolor-manager`. |
 | chrome-css | `browser-features/chrome/common/chrome-css/index.ts` | `default class ChromeCSS`, `init` | Owns the chrome css feature through the ChromeCSS chrome component and wires `service`. |
