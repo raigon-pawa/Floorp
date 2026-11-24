@@ -6,17 +6,11 @@ package org.mozilla.reference.browser.tabs
 
 import android.content.Context
 import android.content.res.Resources
-import android.graphics.drawable.Drawable
 import android.util.AttributeSet
-import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
-import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
-import androidx.core.graphics.BlendModeColorFilterCompat.createBlendModeColorFilterCompat
-import androidx.core.graphics.BlendModeCompat.SRC_IN
 import com.google.android.material.tabs.TabLayout
 import mozilla.components.feature.tabs.tabstray.TabsFeature
-import mozilla.components.ui.colors.R as colorsR
 import mozilla.components.ui.icons.R as iconsR
 
 /** Tab strip at the top of the tabs tray that switches it between normal and private tabs. */
@@ -63,9 +57,6 @@ constructor(
     }
 
     override fun onTabSelected(tab: Tab?) {
-        // Tint the selected tab's icon.
-        tab?.icon?.colorTint(colorsR.color.photonPurple50)
-
         tabsFeature?.filterTabs { tabSessionState ->
             if (tab == normalTab) {
                 !tabSessionState.content.private
@@ -82,15 +73,9 @@ constructor(
     }
 
     override fun onTabUnselected(tab: Tab?) {
-        // Clear the tint for the unselected tab's icon.
-        tab?.icon?.colorFilter = null
+        // no-op
     }
 
     private fun Resources.getThemedDrawable(@DrawableRes resId: Int) =
         ResourcesCompat.getDrawable(resources, resId, context.theme)
-
-    private fun Drawable.colorTint(@ColorRes color: Int) = apply {
-        mutate()
-        colorFilter = createBlendModeColorFilterCompat(ContextCompat.getColor(context, color), SRC_IN)
-    }
 }
