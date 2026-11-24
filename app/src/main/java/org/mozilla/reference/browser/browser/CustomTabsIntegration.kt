@@ -20,6 +20,7 @@ import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.concept.menu.MenuController
 import mozilla.components.concept.menu.candidate.CompoundMenuCandidate
+import mozilla.components.concept.menu.candidate.ContainerStyle
 import mozilla.components.concept.menu.candidate.DrawableMenuIcon
 import mozilla.components.concept.menu.candidate.MenuCandidate
 import mozilla.components.concept.menu.candidate.RowMenuCandidate
@@ -64,9 +65,10 @@ class CustomTabsIntegration(
         toolbar.display.setUrlBackground(null)
     }
 
-    private fun menuToolbar(session: CustomTabSessionState?): RowMenuCandidate {
+    private fun menuToolbar(session: SessionState?): RowMenuCandidate {
         val tint = ContextCompat.getColor(context, R.color.icons)
         val tabId = session?.id
+        val canGoForward = session?.content?.canGoForward == true
 
         val forward =
             SmallMenuCandidate(
@@ -75,8 +77,10 @@ class CustomTabsIntegration(
                     DrawableMenuIcon(
                         context,
                         mozilla.components.ui.icons.R.drawable.mozac_ic_forward_24,
-                        tint = tint,
+                        // The menu does not dim a disabled button by itself.
+                        tint = if (canGoForward) tint else ContextCompat.getColor(context, R.color.aw_text_disabled),
                     ),
+                containerStyle = ContainerStyle(isEnabled = canGoForward),
             ) {
                 sessionUseCases.goForward.invoke(tabId)
             }
@@ -112,7 +116,7 @@ class CustomTabsIntegration(
 
     private fun menuItems(sessionState: SessionState?): List<MenuCandidate> =
         listOf(
-            menuToolbar(session),
+            menuToolbar(sessionState),
             TextMenuCandidate("Share") {
                 val url = sessionState?.content?.url.orEmpty()
                 context.share(url)
