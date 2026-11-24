@@ -19,6 +19,8 @@ Usage: tools/emu.py [-s SERIAL] [-p PACKAGE] <command> [args]
   shot <file.png>              save a screenshot
   open <url>                   send a VIEW intent for <url> to the app
   launch | stop | clear        start, force-stop, or clear the data of the app
+  capture-start                start a packet capture inside the guest (needs a rootable image)
+  capture-stop <file.pcap>     stop it and save the capture; read it with tools/netaudit.py
 
 <query> matches, case-insensitively, a node's text, content description or resource id (the part
 after ":id/"). An exact match wins over a substring match. SERIAL defaults to $ANDROID_SERIAL or
@@ -35,6 +37,7 @@ import time
 import xml.etree.ElementTree as ET
 
 DEFAULT_PACKAGE = "org.mozilla.reference.browser.debug"
+CAPTURE_FILE = "/data/local/tmp/archwave-capture.pcap"
 KEYS = {
     "back": 4, "home": 3, "enter": 66, "menu": 82, "tab": 61, "del": 67, "search": 84,
     "app_switch": 187, "escape": 111, "up": 19, "down": 20, "left": 21, "right": 22,
@@ -206,6 +209,19 @@ def main():
         device.shell(f"am force-stop {device.package}")
     elif command == "clear":
         print(device.shell(f"pm clear {device.package}").strip())
+    elif command == "capture-start":
+        device.run("root", check=False)
+        device.run("wait-for-device")
+        device.shell(f"pkill tcpdump; rm -f {CAPTURE_FILE}", check=False)
+        # -U flushes each packet, so stopping the capture loses nothing.
+        device.shell(f"nohup tcpdump -i any -U -w {CAPTURE_FILE} >/dev/null 2>&1 &")
+        print("capturing")
+    elif command == "capture-stop":
+        need(1)
+        device.shell("pkill -INT tcpdump", check=False)
+        time.sleep(1)
+        device.run("pull", CAPTURE_FILE, args[0])
+        print(args[0])
     else:
         sys.exit(f"Unknown command {command!r}\n\n{__doc__}")
 
