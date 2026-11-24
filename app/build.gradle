@@ -190,6 +190,13 @@ project.configurations.configureEach {
     }
 }
 
+// Android Components' concept-toolbar depends on androidx.test.ext:junit-ktx at runtime, which puts androidx.test's
+// exported helper activities and the REORDER_TASKS permission into the app. Debug builds need them for the
+// instrumented tests; release builds must not ship them.
+configurations.matching { it.name.startsWith('release') }.configureEach {
+    exclude group: 'androidx.test.ext'
+}
+
 dependencies {
     implementation libs.androidx.activity
     implementation libs.androidx.annotation
