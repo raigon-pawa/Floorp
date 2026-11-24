@@ -18,9 +18,10 @@ import mozilla.components.concept.awesomebar.AwesomeBar.GroupedSuggestion
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import org.mozilla.reference.browser.ext.components
 
-private val backgroundColor = Color(0xff222222)
+// The palette of res/values/archwave_theme.xml: aw_black, aw_text_1 and aw_text_2.
+private val backgroundColor = Color(0xff000000)
 private val titleColor = Color(0xffffffff)
-private val descriptionColor = Color(0xffdddddd)
+private val descriptionColor = Color(0xffb3b3b3)
 
 /**
  * This wrapper wraps the `AwesomeBar()` composable and exposes it as a `View` and `concept-awesomebar` implementation
@@ -57,6 +58,8 @@ constructor(
                     title = titleColor,
                     description = descriptionColor,
                     autocompleteIcon = descriptionColor,
+                    // Not inside a MaterialTheme, so the default would come from the light baseline scheme.
+                    groupTitle = descriptionColor,
                 ),
             onSuggestionClicked = { suggestion ->
                 suggestion.onSuggestionClicked?.invoke()

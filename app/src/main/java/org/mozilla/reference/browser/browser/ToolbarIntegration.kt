@@ -191,10 +191,30 @@ class ToolbarIntegration(
             hint = context.getString(R.string.toolbar_hint)
 
             setUrlBackground(ResourcesCompat.getDrawable(context.resources, R.drawable.url_background, context.theme))
+
+            val white = ContextCompat.getColor(context, R.color.aw_text_1)
+            colors =
+                colors.copy(
+                    hint = ContextCompat.getColor(context, R.color.aw_text_hint),
+                    title = white,
+                    text = white,
+                    trackingProtection = white,
+                    separator = ContextCompat.getColor(context, R.color.aw_divider),
+                    highlight = white,
+                )
         }
 
         toolbar.edit.apply {
             hint = context.getString(R.string.toolbar_hint)
+
+            // The library's default highlight for the inline autocomplete suggestion is magenta.
+            colors =
+                colors.copy(
+                    hint = ContextCompat.getColor(context, R.color.aw_text_hint),
+                    text = ContextCompat.getColor(context, R.color.aw_text_1),
+                    suggestionBackground = ContextCompat.getColor(context, R.color.aw_selection),
+                    suggestionForeground = ContextCompat.getColor(context, R.color.aw_text_1),
+                )
         }
 
         ToolbarAutocompleteFeature(toolbar).apply {
