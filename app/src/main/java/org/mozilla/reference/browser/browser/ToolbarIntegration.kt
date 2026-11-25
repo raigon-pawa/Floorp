@@ -6,9 +6,14 @@ package org.mozilla.reference.browser.browser
 
 import android.content.Context
 import android.content.Intent
+import android.os.Build
+import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
+import android.window.OnBackInvokedCallback
+import android.window.OnBackInvokedDispatcher
 import androidx.annotation.DrawableRes
+import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
@@ -28,6 +33,7 @@ import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.browser.toolbar.BrowserToolbar
+import mozilla.components.browser.toolbar.R as toolbarR
 import mozilla.components.browser.toolbar.display.DisplayToolbar
 import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.concept.menu.MenuController
@@ -51,7 +57,9 @@ import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
+import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
+import mozilla.components.ui.autocomplete.InlineAutocompleteEditText
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.addons.AddonsActivity
@@ -88,6 +96,10 @@ class ToolbarIntegration(
     private val scope = MainScope()
     private var menuUpdateJob: Job? = null
     private var toolbarUpdateJob: Job? = null
+
+    private val editField: InlineAutocompleteEditText =
+        toolbar.findViewById(toolbarR.id.mozac_browser_toolbar_edit_url_view)
+    private var removeEditBackCallback: () -> Unit = {}
 
     private val pageIndicators =
         listOf(DisplayToolbar.Indicators.SECURITY, DisplayToolbar.Indicators.TRACKING_PROTECTION)
@@ -272,6 +284,23 @@ class ToolbarIntegration(
         )
     }
 
+    private fun leaveEditMode() {
+        editField.hideKeyboard()
+        toolbar.displayMode()
+    }
+
+    /** Takes Back ahead of the keyboard, which otherwise only hides itself, while the address is being edited. */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun addEditBackCallback() {
+        val dispatcher = toolbar.findOnBackInvokedDispatcher() ?: return
+        val callback = OnBackInvokedCallback { leaveEditMode() }
+        dispatcher.registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_OVERLAY, callback)
+        removeEditBackCallback = {
+            dispatcher.unregisterOnBackInvokedCallback(callback)
+            removeEditBackCallback = {}
+        }
+    }
+
     private fun startActivity(activity: Class<*>) {
         context.startActivity(Intent(context, activity).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
@@ -323,6 +352,30 @@ class ToolbarIntegration(
                     suggestionBackground = ContextCompat.getColor(context, R.color.aw_selection),
                     suggestionForeground = ContextCompat.getColor(context, R.color.aw_text_1),
                 )
+        }
+
+        editField.setOnDispatchKeyEventPreImeListener { event ->
+            when {
+                event == null -> false
+                // One Back leaves edit mode and hides the keyboard; otherwise the keyboard takes the first Back for
+                // itself. Before Android 16's back callbacks, Back reaches the field as a key event first.
+                event.keyCode == KeyEvent.KEYCODE_BACK -> {
+                    if (event.action == KeyEvent.ACTION_UP) leaveEditMode()
+                    true
+                }
+                // The field's own pre-keyboard handling, which submits on Enter before the keyboard can take the key
+                // to finish a word, only runs when no such listener is set, and the library always sets one.
+                else -> editField.onKeyPreIme(event.keyCode, event)
+            }
+        }
+        toolbar.edit.setOnEditFocusChangeListener { editing ->
+            removeEditBackCallback()
+            if (editing) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) addEditBackCallback()
+            } else {
+                // Leaving edit mode (Enter, a suggestion, Back) hides the field but would leave the keyboard up.
+                editField.hideKeyboard()
+            }
         }
 
         // JetBrains Mono for the address only (shown and edited). It is wider than the system font.
@@ -426,6 +479,8 @@ class ToolbarIntegration(
 
     override fun stop() {
         toolbarFeature.stop()
+        // A callback left behind would keep taking Back from whatever screen comes next.
+        removeEditBackCallback()
 
         toolbarUpdateJob?.cancel()
         toolbarUpdateJob = null
