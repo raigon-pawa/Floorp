@@ -24,7 +24,6 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.menu2.BrowserMenuController
 import mozilla.components.browser.state.selector.findCustomTab
@@ -124,6 +123,12 @@ class ToolbarIntegration(
             override fun setSearchTerms(searchTerms: String) {
                 if (editRoot.isVisible) pendingSearchTerms = searchTerms else toolbar.setSearchTerms(searchTerms)
             }
+
+            // Enter on an empty field only leaves edit mode; it searched for nothing.
+            override fun setOnUrlCommitListener(listener: (String) -> Boolean) =
+                toolbar.setOnUrlCommitListener { text ->
+                    text.isBlank() || listener(text)
+                }
         }
 
     private val pageIndicators =
@@ -313,6 +318,27 @@ class ToolbarIntegration(
         }
     }
 
+    private var suffixLookup: String? = null
+    private var knownSuffix: Pair<String, String?>? = null
+
+    /**
+     * The registrable domain of a host too long to show whole, for the URL formatter, which must answer at once. The
+     * suffix list answers asynchronously (it reads its data on first use): until it has, the whole host is shown, and
+     * then the address is formatted again.
+     */
+    private fun registrableDomain(host: String): String? {
+        knownSuffix?.let { (known, site) -> if (known == host) return site }
+        if (suffixLookup != host) {
+            suffixLookup = host
+            scope.launch {
+                knownSuffix = host to publicSuffixList.getPublicSuffixPlusOne(host).await()
+                suffixLookup = null
+                toolbar.url = toolbar.url
+            }
+        }
+        return null
+    }
+
     private fun leaveEditMode() {
         editField.hideKeyboard()
         toolbar.displayMode()
@@ -349,11 +375,8 @@ class ToolbarIntegration(
 
             setUrlBackground(ResourcesCompat.getDrawable(context.resources, R.drawable.url_background, context.theme))
 
-            // The formatter is synchronous; it only asks the (prefetched) suffix list for hosts too long to show whole.
             urlFormatter = { url ->
-                UrlDisplay.format(url.toString(), privatePageUrl, openedByPage()) { host ->
-                    runBlocking { publicSuffixList.getPublicSuffixPlusOne(host).await() }
-                }
+                UrlDisplay.format(url.toString(), privatePageUrl, openedByPage(), ::registrableDomain)
             }
             // A blank page or our private page has nothing worth editing: open an empty field, not its address.
             onUrlClicked = {
