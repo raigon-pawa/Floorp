@@ -72,8 +72,11 @@ class StartPageIntegration(
         view.isVisible = shown && !editing
         // TalkBack follows the view tree, not what covers what: keep it out of the empty page underneath.
         engineView.importantForAccessibility =
-            if (view.isVisible) View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
-            else View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+            if (view.isVisible) {
+                View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+            } else {
+                View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
+            }
     }
 
     // The address bar would open with the start page's address in it.

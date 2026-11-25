@@ -132,8 +132,9 @@ private fun tileColumns(maxWidth: Dp): Int {
     val style = LocalTextStyle.current.copy(fontSize = LabelSize)
     val labels = StartPage.tiles.map { stringResource(it.label) }
     val widest = with(LocalDensity.current) { labels.maxOf { measurer.measure(it, style).size.width }.toDp() }
+    val all = StartPage.tiles.size
     // The column's side padding is 8dp each.
-    return if (widest <= minOf(maxWidth - 16.dp, ContentWidth) / 4) 4 else 2
+    return if (widest <= minOf(maxWidth - 16.dp, ContentWidth) / all) all else all / 2
 }
 
 /** Looks like the address bar's box; a tap puts the address bar itself into edit mode. */
