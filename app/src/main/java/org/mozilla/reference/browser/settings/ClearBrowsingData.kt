@@ -135,15 +135,10 @@ object BrowsingDataCleaner {
         components: Components,
         items: Set<ClearableData>,
     ) {
-        val tabs = components.useCases.tabsUseCases
         // Closed first, so that no open page writes cookies, storage or history back while the rest is cleared.
-        if (ClearableData.TABS in items) tabs.removeAllTabs(recoverable = false)
-        try {
-            clearData(context, components, items)
-        } finally {
-            // There is always a tab: a fresh one shows the start page.
-            if (components.core.store.state.tabs.isEmpty()) tabs.addTab(START_URL, selectTab = true)
-        }
+        // EnsureTabFeature opens the start-page tab that replaces them; a second add here could make it two.
+        if (ClearableData.TABS in items) components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
+        clearData(context, components, items)
     }
 
     private suspend fun clearData(
@@ -213,8 +208,6 @@ object BrowsingDataCleaner {
                 { continuation.resumeWithException(it ?: IllegalStateException("No permissions")) },
             )
         }
-
-    private const val START_URL = "about:blank"
 }
 
 /** Lets the user pick what to clear. Survives rotation with the boxes as they were. */
