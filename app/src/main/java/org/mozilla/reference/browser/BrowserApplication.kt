@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.action.SystemAction
 import mozilla.components.concept.engine.webextension.isUnsupported
 import mozilla.components.feature.addons.update.GlobalAddonDependencyProvider
@@ -71,6 +72,8 @@ open class BrowserApplication : Application() {
         components.core.engine.warmUp()
 
         restoreBrowserState()
+        // Nothing in Android Components dispatches this, and without it no search engine is ever loaded.
+        components.core.store.dispatch(SearchAction.RefreshSearchEnginesAction)
 
         GlobalAddonDependencyProvider.initialize(
             components.core.addonManager,
