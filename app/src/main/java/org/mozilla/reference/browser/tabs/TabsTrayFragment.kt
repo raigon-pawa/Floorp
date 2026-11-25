@@ -16,8 +16,10 @@ import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.selectedTab
@@ -116,7 +118,24 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
         val before = store.state.tabs.map { it.id }.toSet()
         close()
         val content = activity.findViewById<View>(android.R.id.content)
+        // Above the bottom bar of the screen shown: the tray's, or the browser's once the tray has closed.
+        val fragments = activity.supportFragmentManager
+        val anchorToBrowserToolbar =
+            object : FragmentManager.FragmentLifecycleCallbacks() {
+                lateinit var snackbar: Snackbar
+
+                override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, state: Bundle?) {
+                    v.findViewById<View>(R.id.toolbar)?.let { snackbar.anchorView = it }
+                }
+            }
         Snackbar.make(content, message, Snackbar.LENGTH_LONG)
+            .setAnchorView(view?.findViewById<View>(R.id.tabsToolbar))
+            .addCallback(
+                object : BaseTransientBottomBar.BaseCallback<Snackbar>() {
+                    override fun onDismissed(transientBottomBar: Snackbar, event: Int) =
+                        fragments.unregisterFragmentLifecycleCallbacks(anchorToBrowserToolbar)
+                }
+            )
             .setAction(R.string.tabs_tray_undo) {
                 // The start tab opened because the last tab went is not wanted once the tabs are back. Removed after
                 // the restore, which the undo posts to the main thread, so there is never a moment without a tab.
@@ -125,7 +144,9 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
                 if (added.isNotEmpty()) content.post { tabsUseCases.removeTabs(added) }
             }
             .withoutSystemBarMargins()
+            .also { anchorToBrowserToolbar.snackbar = it }
             .show()
+        fragments.registerFragmentLifecycleCallbacks(anchorToBrowserToolbar, false)
     }
 
     private fun updateTabsToolbar(isPrivate: Boolean) {
