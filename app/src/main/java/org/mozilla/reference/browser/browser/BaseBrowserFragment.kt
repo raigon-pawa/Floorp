@@ -24,6 +24,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.isVisible
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.google.android.material.snackbar.Snackbar
@@ -92,6 +93,7 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
     private val findInPageIntegration = ViewBoundFeatureWrapper<FindInPageIntegration>()
     private val sitePermissionFeature = ViewBoundFeatureWrapper<SitePermissionsFeature>()
     private val pictureInPictureIntegration = ViewBoundFeatureWrapper<PictureInPictureIntegration>()
+    private var leftPictureInPicture = false
     private val swipeRefreshFeature = ViewBoundFeatureWrapper<SwipeRefreshFeature>()
     private val windowFeature = ViewBoundFeatureWrapper<WindowFeature>()
     private val webAuthnFeature = ViewBoundFeatureWrapper<WebAuthnFeature>()
@@ -563,10 +565,32 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
 
     final override fun onPictureInPictureModeChanged(enabled: Boolean) {
         pictureInPictureIntegration.get()?.onPictureInPictureModeChanged(enabled)
-        val session = requireComponents.core.store.state.findTabOrCustomTabOrSelectedTab(sessionId)
-        val fullScreenMode = session?.content?.fullScreen ?: false
-        // If we're exiting PIP mode and we're in fullscreen mode, then we should exit fullscreen mode as well.
-        if (!enabled && fullScreenMode) {
+        if (enabled) return
+        // Expanding the window resumes the activity and closing it stops it; which one comes is known only then.
+        if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
+            leftPictureInPicture = true
+        } else {
+            onPictureInPictureClosed()
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Expanded: the fullscreen video the user left is still fullscreen.
+        leftPictureInPicture = false
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (leftPictureInPicture) onPictureInPictureClosed()
+    }
+
+    // Closing the window means stop watching, as in Chrome and Firefox: pause, and leave fullscreen.
+    private fun onPictureInPictureClosed() {
+        leftPictureInPicture = false
+        val session = requireComponents.core.store.state.findTabOrCustomTabOrSelectedTab(sessionId) ?: return
+        session.mediaSessionState?.controller?.pause()
+        if (session.content.fullScreen) {
             onBackPressed()
             fullScreenChanged(false)
         }
