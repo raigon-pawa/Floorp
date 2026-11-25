@@ -5,8 +5,10 @@
 package org.mozilla.reference.browser
 
 import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.mozilla.reference.browser.tabs.PrivatePage
 
 /**
  * The error pages are the library's HTML and script with the app's stylesheet, which replaces the library's only
@@ -30,4 +32,11 @@ class InternalPagesTest {
         }
     }
 
+    @Test
+    fun privatePageHasNoPlaceholdersLeft() {
+        val page = PrivatePage.createPrivateBrowsingPage(context)
+        assertFalse(Regex("%\\w+%").containsMatchIn(page))
+        // The tabs tray test finds the page by this heading.
+        assertTrue(page.contains("<h1>Private Browsing</h1>"))
+    }
 }

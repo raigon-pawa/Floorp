@@ -136,15 +136,14 @@
     <string name="private_browsing_title">Private Browsing</string>
     <string name="private_browsing_body"><![CDATA[
 <h1>Private Browsing</h1>
-<p>When you browse in a Private Window, Reference Browser <strong>does not save</strong>:</p>
+<p>When you close your private tabs, Archwave <strong>forgets</strong> what you did in them:</p>
 <ul class="two-column">
-    <li>visited pages</li>
-    <li>searches</li>
+    <li>history</li>
     <li>cookies</li>
-    <li>temporary files</li>
+    <li>site data</li>
+    <li>cached files</li>
 </ul>
-<p>Private Browsing <strong>doesn\'t make you anonymous</strong> on the Internet. Your employer or Internet service provider can still know what page you visit.</p>
-<p class="about-info">Learn more about <a id="learnMore">Private Browsing</a>.</p>
+<p>Private tabs <strong>do not make you anonymous</strong>. Websites, your network provider and your employer or school can still see what you do and where you connect from. Files you download are kept.</p>
      ]]></string>
 
     <!-- Title of the notification shown on app startup informing about the data policy -->

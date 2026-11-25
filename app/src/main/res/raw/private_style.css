@@ -3,12 +3,13 @@
    - You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :root {
-    --color-steel: #434c58;
-    --color-driftwood: #f4f4f4;
-    --color-dusk: #556f8e;
-    --color-void: #232426;
-    --color-purple: #331a50;
+    /* The palette of res/values/archwave_theme.xml. */
+    --color-steel: #2a2a2a;
+    --color-driftwood: #000;
+    --color-void: #1f1f1f;
+    --color-black: #000;
     --color-text: #fff;
+    --color-text-2: #b3b3b3;
 }
 
 *,
@@ -133,14 +134,15 @@ button:active {
 }
 
 html.private body {
-    background: var(--color-purple);
+    background: var(--color-black);
+    color: var(--color-text-2);
+}
+
+html.private h1,
+html.private strong {
     color: var(--color-text);
 }
 
 .section-main {
     margin-bottom: 48px;
-}
-
-.about-info {
-    font-size: .9rem;
 }
