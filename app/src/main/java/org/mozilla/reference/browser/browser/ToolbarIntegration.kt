@@ -476,6 +476,15 @@ class ToolbarIntegration(
             toolbar.edit.textSize = URL_TEXT_SIZE_SP
         }
 
+        // The whole address bar opens the editor, not only the line of text: the rest of the pill, its icons and the
+        // bar's height around it took no taps. The toolbar's own buttons still take theirs.
+        val urlView = toolbar.findViewById<View>(toolbarR.id.mozac_browser_toolbar_url_view)
+        (toolbar.findViewById<View>(toolbarR.id.mozac_browser_toolbar_background).parent as View).apply {
+            setOnClickListener { urlView.performClick() }
+            // The URL itself stays TalkBack's button for this.
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+
         ToolbarAutocompleteFeature(toolbar).apply {
             updateAutocompleteProviders(listOf(historyStorage, shippedDomainsProvider))
         }
