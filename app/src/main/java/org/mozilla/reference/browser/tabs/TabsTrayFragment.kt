@@ -13,10 +13,12 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.snackbar.Snackbar
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.TabSessionState
@@ -35,6 +37,7 @@ import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.browser.BrowserFragment
 import org.mozilla.reference.browser.browser.StartPage
 import org.mozilla.reference.browser.browser.UrlDisplay
+import org.mozilla.reference.browser.browser.withoutSystemBarMargins
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.requireComponents
 
@@ -73,7 +76,7 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
         val tabsToolbar: TabsToolbar = view.findViewById(R.id.tabsToolbar)
 
         tabsPanel.initialize(tabsFeature, updateTabsToolbar = ::updateTabsToolbar)
-        tabsToolbar.initialize(tabsFeature) { closeTabsTray() }
+        tabsToolbar.initialize(tabsFeature, closeTabsTray = ::closeTabsTray, closeTabs = ::closeTabs)
         // Open on the panel of the tab the user came from.
         if (requireComponents.core.store.state.selectedTab?.content?.private == true) tabsPanel.selectPrivate()
     }
@@ -100,6 +103,29 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
             replace(R.id.container, BrowserFragment.create())
             commit()
         }
+    }
+
+    /**
+     * Closes tabs with [close] and offers to bring them back for as long as the store keeps them. The snackbar sits on
+     * the activity, so it stays when closing the last tab of a panel takes the tray away.
+     */
+    private fun closeTabs(@StringRes message: Int, close: () -> Unit) {
+        val activity = activity ?: return
+        val store = activity.components.core.store
+        val tabsUseCases = activity.components.useCases.tabsUseCases
+        val before = store.state.tabs.map { it.id }.toSet()
+        close()
+        val content = activity.findViewById<View>(android.R.id.content)
+        Snackbar.make(content, message, Snackbar.LENGTH_LONG)
+            .setAction(R.string.tabs_tray_undo) {
+                // The start tab opened because the last tab went is not wanted once the tabs are back. Removed after
+                // the restore, which the undo posts to the main thread, so there is never a moment without a tab.
+                val added = store.state.tabs.filter { it.id !in before && StartPage.isStartTab(it) }.map { it.id }
+                tabsUseCases.undo.invoke()
+                if (added.isNotEmpty()) content.post { tabsUseCases.removeTabs(added) }
+            }
+            .withoutSystemBarMargins()
+            .show()
     }
 
     private fun updateTabsToolbar(isPrivate: Boolean) {
@@ -192,7 +218,9 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
                             tab: TabSessionState,
                             source: String?,
                         ) {
-                            requireComponents.useCases.tabsUseCases.removeTab(tab.id)
+                            closeTabs(R.string.tabs_tray_tab_closed) {
+                                requireComponents.useCases.tabsUseCases.removeTab(tab.id)
+                            }
                         }
                     },
             )
@@ -202,7 +230,7 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
         tabsTray.adapter = tabsAdapter
 
         TabsTouchHelper {
-                requireComponents.useCases.tabsUseCases.removeTab(it.id)
+                closeTabs(R.string.tabs_tray_tab_closed) { requireComponents.useCases.tabsUseCases.removeTab(it.id) }
             }
             .attachToRecyclerView(tabsTray)
 

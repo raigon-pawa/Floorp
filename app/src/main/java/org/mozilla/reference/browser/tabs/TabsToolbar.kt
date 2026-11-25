@@ -22,6 +22,7 @@ constructor(
     private var tabsFeature: TabsFeature? = null
     private var isPrivateTray = false
     private var closeTabsTray: (() -> Unit)? = null
+    private var closeTabs: ((Int, () -> Unit) -> Unit)? = null
 
     init {
         navigationContentDescription = context.getString(R.string.tabs_tray_back)
@@ -42,9 +43,11 @@ constructor(
                 }
 
                 R.id.closeTab -> {
-                    when (isPrivateTray) {
-                        true -> tabsUseCases.removePrivateTabs.invoke()
-                        false -> tabsUseCases.removeNormalTabs.invoke()
+                    closeTabs?.invoke(R.string.tabs_tray_tabs_closed) {
+                        when (isPrivateTray) {
+                            true -> tabsUseCases.removePrivateTabs.invoke()
+                            false -> tabsUseCases.removeNormalTabs.invoke()
+                        }
                     }
                 }
             }
@@ -54,14 +57,16 @@ constructor(
 
     /**
      * Supplies the collaborators after inflation, since this view is created from XML and only the tabs tray fragment
-     * knows how to close the tray.
+     * knows how to close the tray, and how to close tabs with an offer to undo (a message and the closing action).
      */
     fun initialize(
         tabsFeature: TabsFeature?,
         closeTabsTray: () -> Unit,
+        closeTabs: (message: Int, close: () -> Unit) -> Unit,
     ) {
         this.tabsFeature = tabsFeature
         this.closeTabsTray = closeTabsTray
+        this.closeTabs = closeTabs
     }
 
     /**

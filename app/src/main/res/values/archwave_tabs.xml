@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- Tabs tray: the snackbar after closing one tab or all tabs, and its action that brings them back. -->
+    <string name="tabs_tray_tab_closed">Tab closed</string>
+    <string name="tabs_tray_tabs_closed">Tabs closed</string>
+    <string name="tabs_tray_undo">Undo</string>
+</resources>

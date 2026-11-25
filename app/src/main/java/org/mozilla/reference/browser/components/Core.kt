@@ -40,6 +40,7 @@ import mozilla.components.feature.readerview.ReaderViewMiddleware
 import mozilla.components.feature.search.middleware.SearchMiddleware
 import mozilla.components.feature.search.region.RegionMiddleware
 import mozilla.components.feature.session.HistoryDelegate
+import mozilla.components.feature.session.middleware.undo.UndoMiddleware
 import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
 import mozilla.components.feature.webnotifications.WebNotificationFeature
 import mozilla.components.lib.crash.CrashReporter
@@ -131,6 +132,8 @@ class Core(
                         SearchMiddleware(context),
                         RecordingDevicesMiddleware(context, context.components.notificationsDelegate),
                         CrashedTabMiddleware(),
+                        // Keeps closed tabs for a few seconds, for the tabs tray's Undo.
+                        UndoMiddleware(),
                     ) + EngineMiddleware.create(engine)
             )
             .apply {
