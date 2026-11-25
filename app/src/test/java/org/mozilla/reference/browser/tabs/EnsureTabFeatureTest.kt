@@ -4,12 +4,17 @@
 
 package org.mozilla.reference.browser.tabs
 
+import kotlinx.coroutines.Dispatchers
+import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.EngineAction
+import mozilla.components.browser.state.action.RestoreCompleteAction
+import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.tabs.TabsUseCases
+import mozilla.components.lib.state.Middleware
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -18,6 +23,11 @@ import org.mozilla.reference.browser.browser.StartPage
 
 /** Which tab gets selected, or opened, when none is. */
 class EnsureTabFeatureTest {
+    // There is no engine to load a new tab's page.
+    private val noEngine: Middleware<BrowserState, BrowserAction> = { _, next, action ->
+        if (action !is EngineAction) next(action)
+    }
+
     private fun ensure(
         vararg tabs: TabSessionState,
         selected: String? = null,
@@ -26,11 +36,41 @@ class EnsureTabFeatureTest {
         val store =
             BrowserStore(
                 BrowserState(tabs = tabs.toList(), selectedTabId = selected, restoreComplete = restoreComplete),
-                // There is no engine to load the new tab's page.
-                listOf { _, next, action -> if (action !is EngineAction) next(action) },
+                listOf(noEngine),
             )
         EnsureTabFeature(store, TabsUseCases(store)).ensureTab()
         return store
+    }
+
+    private fun started(): Pair<BrowserStore, EnsureTabFeature> {
+        val store = BrowserStore(BrowserState(restoreComplete = false), listOf(noEngine))
+        // Unconfined: the feature reacts on the dispatching thread, so each dispatch has taken effect when it returns.
+        val feature = EnsureTabFeature(store, TabsUseCases(store), Dispatchers.Unconfined).apply { start() }
+        return store to feature
+    }
+
+    @Test
+    fun `once started it waits for restore and then opens one start-page tab`() {
+        val (store, feature) = started()
+        assertEquals(0, store.state.tabs.size)
+        store.dispatch(RestoreCompleteAction)
+        assertEquals(StartPage.URL, store.state.tabs.single().content.url)
+        assertEquals(store.state.tabs.single().id, store.state.selectedTabId)
+        // Closing it leaves one new start-page tab, not a loop.
+        store.dispatch(TabListAction.RemoveTabAction(store.state.tabs.single().id))
+        assertEquals(1, store.state.tabs.size)
+        assertEquals(store.state.tabs.single().id, store.state.selectedTabId)
+        feature.stop()
+    }
+
+    @Test
+    fun `tabs restored before restore completes are kept and no start-page tab is added`() {
+        val (store, feature) = started()
+        store.dispatch(TabListAction.AddTabAction(createTab("https://example.org/", id = "restored")))
+        store.dispatch(RestoreCompleteAction)
+        assertEquals(listOf("restored"), store.state.tabs.map { it.id })
+        assertEquals("restored", store.state.selectedTabId)
+        feature.stop()
     }
 
     @Test

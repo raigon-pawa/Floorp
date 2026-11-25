@@ -4,6 +4,7 @@
 
 package org.mozilla.reference.browser.tabs
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
@@ -27,12 +28,13 @@ import org.mozilla.reference.browser.browser.StartPage
 class EnsureTabFeature(
     private val store: BrowserStore,
     private val tabsUseCases: TabsUseCases,
+    private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
 ) : LifecycleAwareFeature {
     private var scope: CoroutineScope? = null
 
     override fun start() {
         scope =
-            store.flowScoped(dispatcher = Dispatchers.Main) { flow ->
+            store.flowScoped(dispatcher = mainDispatcher) { flow ->
                 flow.map(::needsTab).distinctUntilChanged().filter { it }.collect { ensureTab() }
             }
     }
