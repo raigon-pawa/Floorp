@@ -165,8 +165,12 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                             if (it) PackageManager.PERMISSION_GRANTED else PackageManager.PERMISSION_DENIED
                         }
                         .toIntArray()
+                val documentPickerAllowed = FilePickerPermissions.canOpenDocumentPicker(requireContext())
                 promptsFeature.withFeature {
-                    it.onPermissionsResult(permissions, grantResults)
+                    it.onPermissionsResult(
+                        permissions,
+                        FilePickerPermissions.grantResults(grantResults, documentPickerAllowed),
+                    )
                 }
             }
     }
@@ -382,7 +386,21 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 fileUploadsDirCleaner = requireComponents.core.fileUploadsDirCleaner,
                 fragmentManager = parentFragmentManager,
                 onNeedToRequestPermissions = { permissions ->
-                    requestPromptsPermissionsLauncher.launch(permissions)
+                    val store = requireComponents.core.store
+                    if (
+                        FilePickerPermissions.isPlainFileInput(store.state, sessionId) &&
+                            FilePickerPermissions.canOpenDocumentPicker(requireContext())
+                    ) {
+                        // Open the document picker straight away rather than asking for camera, mic and media.
+                        promptsFeature.withFeature {
+                            it.onPermissionsResult(
+                                permissions,
+                                FilePickerPermissions.grantResults(IntArray(permissions.size), true),
+                            )
+                        }
+                    } else {
+                        requestPromptsPermissionsLauncher.launch(permissions)
+                    }
                 },
             ),
         )
