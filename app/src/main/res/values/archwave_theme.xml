@@ -17,6 +17,9 @@
     <color name="aw_error">#FFFF6B6B</color>
     <color name="aw_warning">#FFFFD54F</color>
 
+    <!-- The smallest touch target (Android accessibility guidance). -->
+    <dimen name="archwave_min_touch_target">48dp</dimen>
+
     <!-- Android Components resources, overridden by name (app resources win the merge). -->
     <color name="mozac_browser_menu2_background" tools:ignore="UnusedResources">@color/aw_surface_2</color>
     <color name="mozac_browser_menu_background" tools:ignore="UnusedResources">@color/aw_surface_2</color>
@@ -32,6 +35,8 @@
     <color name="mozac_feat_prompt_cancel_save_dialog_text_color" tools:ignore="UnusedResources">@color/aw_text_2</color>
     <color name="mozac_destructive_button_text_color" tools:ignore="UnusedResources">@color/aw_error</color>
     <color name="mozac_feature_qr_scan_success_color" tools:ignore="UnusedResources">@color/aw_text_1</color>
+    <!-- The toolbar's menu button: 36dp wide in the library; touch targets are at least 48dp. -->
+    <dimen name="mozac_browser_toolbar_button_width" tools:ignore="UnusedResources">48dp</dimen>
 
     <!-- Three-dot menu rows: the library keeps them 48dp tall with one line, which cut labels short at a large font
          size (an extension's badge was lost). They take up to two lines and grow with them. -->

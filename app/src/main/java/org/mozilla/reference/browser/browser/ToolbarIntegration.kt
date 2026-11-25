@@ -21,6 +21,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -487,6 +488,13 @@ class ToolbarIntegration(
             setOnClickListener { urlView.performClick() }
             // The URL itself stays TalkBack's button for this.
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+
+        // The library's clear button is 40dp square; touch targets are at least 48dp. It is centred on the toolbar,
+        // which is taller than that.
+        toolbar.findViewById<View>(toolbarR.id.mozac_browser_toolbar_clear_view).updateLayoutParams {
+            width = context.resources.getDimensionPixelSize(R.dimen.archwave_min_touch_target)
+            height = width
         }
 
         ToolbarAutocompleteFeature(toolbar).apply {
