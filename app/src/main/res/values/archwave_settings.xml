@@ -113,5 +113,9 @@
         <item name="android:background">?attr/selectableItemBackground</item>
         <item name="android:textColor">@color/aw_text_1</item>
         <item name="android:textSize">16sp</item>
+        <!-- Shows that the row opens something -->
+        <item name="android:drawableEnd">@drawable/mozac_ic_chevron_right_24</item>
+        <item name="android:drawableTint">@color/aw_text_2</item>
+        <item name="android:drawablePadding">16dp</item>
     </style>
 </resources>
