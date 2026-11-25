@@ -54,6 +54,7 @@
     <!-- What Archwave connects to: the whole page -->
     <string name="archwave_connections_text">Archwave sends no telemetry and no crash reports. It connects to:
         \n\n• The sites you visit, and your search engine when you search.
+        \n\n• Your search engine as you type in the address bar, if you turn on search suggestions (off by default, never in private tabs).
         \n\n• The DNS-over-HTTPS resolver you chose (Quad9 unless you changed it), to look up the addresses of sites.
         \n\n• Mozilla Remote Settings, for blocklists and security data such as revoked certificates.
         \n\n• Google Safe Browsing, for lists of dangerous sites. Only shortened fingerprints of an address are ever sent, and only when an address needs checking.
