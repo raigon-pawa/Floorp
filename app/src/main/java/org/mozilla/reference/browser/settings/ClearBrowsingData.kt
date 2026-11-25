@@ -116,6 +116,22 @@ object BrowsingDataCleaner {
         components: Components,
         items: Set<ClearableData>,
     ) {
+        val tabs = components.useCases.tabsUseCases
+        // Closed first, so that no open page writes cookies, storage or history back while the rest is cleared.
+        if (ClearableData.TABS in items) tabs.removeAllTabs(recoverable = false)
+        try {
+            clearData(context, components, items)
+        } finally {
+            // There is always a tab: a fresh one shows the start page.
+            if (components.core.store.state.tabs.isEmpty()) tabs.addTab(START_URL, selectTab = true)
+        }
+    }
+
+    private suspend fun clearData(
+        context: Context,
+        components: Components,
+        items: Set<ClearableData>,
+    ) {
         val engineFlags = engineFlags(items)
         if (engineFlags != 0) {
             suspendCancellableCoroutine { continuation ->
@@ -133,11 +149,6 @@ object BrowsingDataCleaner {
         }
         if (ClearableData.PERMISSIONS in items) clearSitePermissions(context, components)
         if (ClearableData.DOWNLOADS in items) components.useCases.downloadsUseCases.removeAllDownloads()
-        if (ClearableData.TABS in items) {
-            components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
-            // There is always a tab: a fresh one shows the start page.
-            components.useCases.tabsUseCases.addTab(START_URL, selectTab = true)
-        }
     }
 
     /** Resets every web site's permissions to "ask", in the app's records and in the engine, but not extensions'. */
