@@ -96,7 +96,8 @@ internal fun StartPageContent(onSearch: () -> Unit, onOpen: (String) -> Unit) {
             Modifier.verticalScroll(rememberScrollState())
                 .heightIn(min = maxHeight)
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp),
+                // Narrow sides, so "DuckDuckGo" still fits its quarter at a 1.3 font scale.
+                .padding(horizontal = 8.dp, vertical = 16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
@@ -117,7 +118,8 @@ internal fun StartPageContent(onSearch: () -> Unit, onOpen: (String) -> Unit) {
 private fun SearchBox(onSearch: () -> Unit) {
     val hint = colorResource(R.color.aw_text_hint)
     Row(
-        Modifier.widthIn(max = ContentWidth)
+        Modifier.padding(horizontal = 8.dp)
+            .widthIn(max = ContentWidth)
             .fillMaxWidth()
             .heightIn(min = 48.dp)
             .clip(RoundedCornerShape(8.dp))
@@ -138,7 +140,7 @@ private fun Tile(tile: StartPage.Tile, onOpen: (String) -> Unit, modifier: Modif
         modifier
             .clip(RoundedCornerShape(12.dp))
             .clickable(role = Role.Button) { onOpen(tile.url) }
-            .padding(horizontal = 4.dp, vertical = 8.dp),
+            .padding(vertical = 8.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Box(
