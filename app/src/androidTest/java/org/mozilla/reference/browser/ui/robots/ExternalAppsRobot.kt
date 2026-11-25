@@ -7,6 +7,7 @@ package org.mozilla.reference.browser.ui.robots
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTimeShort
@@ -23,7 +24,9 @@ class ExternalAppsRobot {
 }
 
 private fun assertDefaultAppsLayout() {
-    mDevice.wait(Until.findObject(By.text("Default apps")), waitingTimeShort)
+    // The title is the collapsing toolbar's description on Android 16, plain text on older versions.
+    val title = mDevice.wait(Until.findObject(By.desc("Default apps")), waitingTimeShort)
+    assertNotNull(title ?: mDevice.wait(Until.findObject(By.text("Default apps")), waitingTimeShort))
 }
 
 private fun assertYouTubeApp() {
