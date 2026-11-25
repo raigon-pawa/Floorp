@@ -8,17 +8,18 @@ import android.content.Context
 import android.content.Intent
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.DrawableRes
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.menu2.BrowserMenuController
 import mozilla.components.browser.state.selector.findCustomTab
-import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
+import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
@@ -27,11 +28,14 @@ import mozilla.components.browser.toolbar.display.DisplayToolbar
 import mozilla.components.concept.menu.MenuController
 import mozilla.components.concept.menu.candidate.CompoundMenuCandidate
 import mozilla.components.concept.menu.candidate.ContainerStyle
+import mozilla.components.concept.menu.candidate.DividerMenuCandidate
 import mozilla.components.concept.menu.candidate.DrawableMenuIcon
 import mozilla.components.concept.menu.candidate.MenuCandidate
+import mozilla.components.concept.menu.candidate.NestedMenuCandidate
 import mozilla.components.concept.menu.candidate.RowMenuCandidate
 import mozilla.components.concept.menu.candidate.SmallMenuCandidate
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
+import mozilla.components.feature.addons.menu.createMenuCandidate
 import mozilla.components.feature.pwa.WebAppUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
@@ -41,6 +45,8 @@ import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
+import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
+import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.addons.AddonsActivity
 import org.mozilla.reference.browser.ext.components
@@ -61,10 +67,9 @@ class ToolbarIntegration(
     historyStorage: PlacesHistoryStorage,
     private val store: BrowserStore,
     private val sessionUseCases: SessionUseCases,
-    // Lost its last user with the Report issue entry; the New tab entries planned for this menu need it again.
-    @Suppress("UnusedPrivateProperty") private val tabsUseCases: TabsUseCases,
+    private val tabsUseCases: TabsUseCases,
     private val webAppUseCases: WebAppUseCases,
-    sessionId: String? = null,
+    private val sessionId: String? = null,
 ) : LifecycleAwareFeature, UserInteractionHandler {
     private val shippedDomainsProvider =
         ShippedDomainsProvider().also {
@@ -76,104 +81,154 @@ class ToolbarIntegration(
     private val scope = MainScope()
     private var menuUpdateJob: Job? = null
 
-    private fun menuToolbar(session: SessionState?): RowMenuCandidate {
-        val tint = ContextCompat.getColor(context, R.color.icons)
-        val canGoForward = session?.content?.canGoForward == true
+    private fun rowButton(
+        @StringRes description: Int,
+        @DrawableRes icon: Int,
+        enabled: Boolean = true,
+        onClick: () -> Unit,
+    ) =
+        SmallMenuCandidate(
+            contentDescription = context.getString(description),
+            icon =
+                DrawableMenuIcon(
+                    context,
+                    icon,
+                    // The menu does not dim a disabled button by itself.
+                    tint = ContextCompat.getColor(context, if (enabled) R.color.icons else R.color.aw_text_disabled),
+                ),
+            containerStyle = ContainerStyle(isEnabled = enabled),
+            onClick = onClick,
+        )
 
-        val forward =
-            SmallMenuCandidate(
-                contentDescription = "Forward",
-                icon =
-                    DrawableMenuIcon(
-                        context,
-                        mozilla.components.ui.icons.R.drawable.mozac_ic_forward_24,
-                        // The menu does not dim a disabled button by itself.
-                        tint = if (canGoForward) tint else ContextCompat.getColor(context, R.color.aw_text_disabled),
-                    ),
-                containerStyle = ContainerStyle(isEnabled = canGoForward),
-            ) {
-                sessionUseCases.goForward.invoke()
-            }
-
-        val refresh =
-            SmallMenuCandidate(
-                contentDescription = "Refresh",
-                icon =
-                    DrawableMenuIcon(
-                        context,
-                        mozilla.components.ui.icons.R.drawable.mozac_ic_arrow_clockwise_24,
-                        tint = tint,
-                    ),
-            ) {
-                sessionUseCases.reload.invoke()
-            }
-
-        val stop =
-            SmallMenuCandidate(
-                contentDescription = "Stop",
-                icon =
-                    DrawableMenuIcon(
-                        context,
-                        mozilla.components.ui.icons.R.drawable.mozac_ic_cross_24,
-                        tint = tint,
-                    ),
-            ) {
-                sessionUseCases.stopLoading.invoke()
-            }
-
-        return RowMenuCandidate(listOf(forward, refresh, stop))
+    private fun menuToolbar(tab: SessionState): RowMenuCandidate {
+        val content = tab.content
+        return RowMenuCandidate(
+            listOf(
+                rowButton(R.string.menu_back, iconsR.drawable.mozac_ic_back_24, content.canGoBack) {
+                    sessionUseCases.goBack.invoke(tab.id)
+                },
+                rowButton(R.string.menu_forward, iconsR.drawable.mozac_ic_forward_24, content.canGoForward) {
+                    sessionUseCases.goForward.invoke(tab.id)
+                },
+                // One slot that follows the loading state.
+                if (content.loading) {
+                    rowButton(R.string.menu_stop, iconsR.drawable.mozac_ic_cross_24) {
+                        sessionUseCases.stopLoading.invoke(tab.id)
+                    }
+                } else {
+                    rowButton(R.string.menu_reload, iconsR.drawable.mozac_ic_arrow_clockwise_24) {
+                        sessionUseCases.reload.invoke(tab.id)
+                    }
+                },
+                rowButton(
+                    R.string.menu_share,
+                    iconsR.drawable.mozac_ic_share_android_24,
+                    // A blank page has nothing to share, and our private page's data: URL is not worth sharing.
+                    !UrlDisplay.isHidden(content.url, privatePageUrl),
+                ) {
+                    context.share(content.url)
+                },
+            )
+        )
     }
 
-    private fun sessionMenuItems(sessionState: SessionState): List<MenuCandidate> =
+    private fun pageMenuItems(tab: SessionState): List<MenuCandidate> =
         listOfNotNull(
-            menuToolbar(sessionState),
-            TextMenuCandidate("Share") {
-                val url = sessionState.content.url
-                context.share(url)
+            TextMenuCandidate(context.getString(R.string.menu_find_in_page)) {
+                FindInPageIntegration.launch?.invoke()
             },
             CompoundMenuCandidate(
-                text = "Request desktop site",
-                isChecked = sessionState.content.desktopMode,
+                text = context.getString(R.string.menu_desktop_site),
+                isChecked = tab.content.desktopMode,
                 end = CompoundMenuCandidate.ButtonType.SWITCH,
             ) { checked ->
-                sessionUseCases.requestDesktopSite.invoke(checked)
+                sessionUseCases.requestDesktopSite.invoke(checked, tab.id)
             },
-            if (webAppUseCases.isPinningSupported()) {
-                TextMenuCandidate(
-                    text = "Add to homescreen",
-                    containerStyle = ContainerStyle(isVisible = webAppUseCases.isPinningSupported()),
-                ) {
+            // Only a web page can be pinned, and only where the launcher supports it.
+            if (webAppUseCases.isPinningSupported() && tab.content.url.startsWith("http")) {
+                TextMenuCandidate(context.getString(R.string.menu_add_to_home_screen)) {
                     scope.launch { webAppUseCases.addToHomescreen() }
                 }
             } else {
                 null
             },
-            TextMenuCandidate(text = "Find in Page") {
-                FindInPageIntegration.launch?.invoke()
-            },
+            DividerMenuCandidate(),
         )
 
-    private fun menuItems(sessionState: SessionState?): List<MenuCandidate> {
-        val sessionMenuItems =
-            if (sessionState != null) {
-                sessionMenuItems(sessionState)
-            } else {
-                emptyList()
-            }
-
-        return sessionMenuItems +
+    private fun menuItems(state: BrowserState): List<MenuCandidate> {
+        val tab = state.findTabOrCustomTabOrSelectedTab(sessionId)
+        return listOfNotNull(tab?.let(::menuToolbar)) +
             listOf(
-                TextMenuCandidate(text = "Add-ons") {
-                    val intent = Intent(context, AddonsActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    context.startActivity(intent)
+                TextMenuCandidate(context.getString(R.string.menu_new_tab)) {
+                    tabsUseCases.addTab(url = "about:blank", selectTab = true)
                 },
-                TextMenuCandidate(text = "Settings") {
-                    val intent = Intent(context, SettingsActivity::class.java)
-                    intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
-                    context.startActivity(intent)
+                TextMenuCandidate(context.getString(R.string.menu_new_private_tab)) {
+                    tabsUseCases.addTab(url = "about:privatebrowsing", selectTab = true, private = true)
                 },
+                DividerMenuCandidate(),
+                extensionsMenuItem(state, tab),
+                DividerMenuCandidate(),
+            ) +
+            (tab?.let(::pageMenuItems) ?: emptyList()) +
+            TextMenuCandidate(context.getString(R.string.menu_settings)) {
+                startActivity(SettingsActivity::class.java)
+            }
+    }
+
+    /**
+     * One row per extension action (browser actions, and page actions while enabled) with its icon, badge and disabled
+     * state, tab overrides applied and, in a private tab, only extensions allowed there; then "Manage extensions".
+     * Without any action the entry opens the add-ons manager directly.
+     */
+    private fun extensionsMenuItem(state: BrowserState, tab: SessionState?): MenuCandidate {
+        val title = context.getString(R.string.menu_extensions)
+        val actions =
+            state.extensions.values
+                .filter { it.enabled && (tab?.content?.private != true || it.allowedInPrivateBrowsing) }
+                .sortedBy { it.name }
+                .flatMap { extension ->
+                    val overrides = tab?.extensionState?.get(extension.id)
+                    val browserAction =
+                        extension.browserAction?.let { it to it.copyWithOverride(overrides?.browserAction) }
+                    val pageAction =
+                        extension.pageAction
+                            ?.let { it to it.copyWithOverride(overrides?.pageAction) }
+                            ?.takeIf { (_, shown) -> shown.enabled == true }
+                    listOfNotNull(browserAction, pageAction).map { (global, shown) ->
+                        // The toolbar used to click the global action too; the engine applies it to the current tab.
+                        shown.createMenuCandidate(context, onClick = global.onClick).let {
+                            if (it.text.isEmpty()) it.copy(text = extension.name.orEmpty()) else it
+                        }
+                    }
+                }
+        if (actions.isEmpty()) {
+            return TextMenuCandidate(title) { startActivity(AddonsActivity::class.java) }
+        }
+
+        val tint = ContextCompat.getColor(context, R.color.icons)
+        val back =
+            NestedMenuCandidate(
+                id = R.string.menu_back,
+                text = title,
+                start = DrawableMenuIcon(context, iconsR.drawable.mozac_ic_back_24, tint = tint),
+                subMenuItems = null,
             )
+        val manage =
+            TextMenuCandidate(
+                context.getString(R.string.menu_manage_extensions),
+                start = DrawableMenuIcon(context, iconsR.drawable.mozac_ic_extension_24, tint = tint),
+            ) {
+                startActivity(AddonsActivity::class.java)
+            }
+        return NestedMenuCandidate(
+            id = R.string.menu_extensions,
+            text = title,
+            subMenuItems = listOf(back, DividerMenuCandidate()) + actions + listOf(DividerMenuCandidate(), manage),
+        )
+    }
+
+    private fun startActivity(activity: Class<*>) {
+        context.startActivity(Intent(context, activity).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
 
     private val browserMenuController: MenuController = BrowserMenuController()
@@ -288,12 +343,25 @@ class ToolbarIntegration(
 
         menuUpdateJob?.cancel()
         menuUpdateJob = scope.launch {
+            // Only what the menu shows, so progress and title updates do not rebuild it.
             store
                 .flow()
-                .map { state -> state.selectedTab }
-                .distinctUntilChanged()
-                .collect { tab ->
-                    browserMenuController.submitList(menuItems(tab))
+                .ifAnyChanged { state ->
+                    val tab = state.findTabOrCustomTabOrSelectedTab(sessionId)
+                    arrayOf(
+                        tab?.id,
+                        tab?.content?.url,
+                        tab?.content?.private,
+                        tab?.content?.loading,
+                        tab?.content?.canGoBack,
+                        tab?.content?.canGoForward,
+                        tab?.content?.desktopMode,
+                        tab?.extensionState,
+                        state.extensions,
+                    )
+                }
+                .collect { state ->
+                    browserMenuController.submitList(menuItems(state))
                 }
         }
     }

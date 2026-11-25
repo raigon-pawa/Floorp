@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- Three-dot menu: the row of icon buttons at its top. -->
+    <string name="menu_back">Back</string>
+    <string name="menu_forward">Forward</string>
+    <string name="menu_reload">Reload</string>
+    <string name="menu_stop">Stop</string>
+    <string name="menu_share">Share</string>
+
+    <!-- Three-dot menu entries. -->
+    <string name="menu_new_tab">New tab</string>
+    <string name="menu_new_private_tab">New private tab</string>
+    <string name="menu_extensions">Extensions</string>
+    <string name="menu_manage_extensions">Manage extensions</string>
+    <string name="menu_find_in_page">Find in page</string>
+    <string name="menu_desktop_site">Desktop site</string>
+    <string name="menu_add_to_home_screen">Add to Home screen</string>
+    <string name="menu_settings">Settings</string>
+</resources>

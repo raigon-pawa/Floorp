@@ -26,14 +26,14 @@ import org.mozilla.reference.browser.ui.robots.navigationToolbar
  * Including:
  * - Verify all menu items present
  * - Forward button navigates forward to a page
- * - Refresh button refreshes page content
+ * - Reload button refreshes page content
  * - Share button opens app overlay menu
- * - Request desktop site toggle forwards to desktop view of web page (TBD)
+ * - Desktop site toggle forwards to desktop view of web page (TBD)
  * - Find in page button can locate web page text
  * - Open settings button opens Settings sub-menu
  *
  * Not included:
- * - TODO: Request desktop site (user mockWebServer to parse request headers)
+ * - TODO: Desktop site (user mockWebServer to parse request headers)
  * - Stop button stops page loading (covered by smoke tests)
  */
 class ThreeDotMenuTest {
@@ -64,6 +64,7 @@ class ThreeDotMenuTest {
             .openThreeDotMenu {
                 verifyThreeDotMenuExists()
                 // These items should not exist in the home screen menu
+                verifyBackButtonDoesntExist()
                 verifyForwardButtonDoesntExist()
                 verifyReloadButtonDoesntExist()
                 verifyStopButtonDoesntExist()
@@ -72,6 +73,8 @@ class ThreeDotMenuTest {
                 verifyAddToHomescreenButtonDoesntExist()
                 verifyFindInPageButtonDoesntExist()
                 // Only these items should exist in the home screen menu
+                verifyNewTabButtonExists()
+                verifyNewPrivateTabButtonExists()
                 verifyAddOnsButtonExists()
                 verifyOpenSettingsExists()
             }
@@ -89,10 +92,14 @@ class ThreeDotMenuTest {
         navigationToolbar {}
             .openThreeDotMenu {
                 verifyThreeDotMenuExists()
+                verifyBackButtonExists()
                 verifyForwardButtonExists()
+                // Reload and Stop share one slot; the page has finished loading.
                 verifyReloadButtonExists()
-                verifyStopButtonExists()
+                verifyStopButtonDoesntExist()
                 verifyShareButtonExists()
+                verifyNewTabButtonExists()
+                verifyNewPrivateTabButtonExists()
                 verifyRequestDesktopSiteToggleExists()
                 verifyAddToHomescreenButtonExists()
                 verifyFindInPageButtonExists()

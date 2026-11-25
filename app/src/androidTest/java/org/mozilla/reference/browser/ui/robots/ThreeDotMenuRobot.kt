@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser.ui.robots
 
 import androidx.test.espresso.Espresso.onView
+import androidx.test.espresso.ViewInteraction
 import androidx.test.espresso.assertion.ViewAssertions
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.ViewMatchers
@@ -20,9 +21,11 @@ import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
 import org.mozilla.reference.browser.helpers.TestHelper.packageName
 import org.mozilla.reference.browser.helpers.click
 
-/** Implementation of Robot Pattern for three dot menu. */
+/** Implementation of Robot Pattern for three dot menu. Labels come from res/values/archwave_menu.xml. */
 class ThreeDotMenuRobot {
     fun verifyThreeDotMenuExists() = threeDotMenuRecyclerViewExists()
+
+    fun verifyBackButtonExists() = assertVisible(backButton())
 
     fun verifyForwardButtonExists() = assertForwardButton()
 
@@ -41,6 +44,12 @@ class ThreeDotMenuRobot {
     fun verifyAddOnsButtonExists() = assertAddOnsButton()
 
     fun verifyOpenSettingsExists() = assertSettingsButton()
+
+    fun verifyNewTabButtonExists() = assertVisible(newTabButton())
+
+    fun verifyNewPrivateTabButtonExists() = assertVisible(newPrivateTabButton())
+
+    fun verifyBackButtonDoesntExist() = backButton().check(ViewAssertions.doesNotExist())
 
     fun verifyShareButtonDoesntExist() = assertShareButtonDoesntExist()
 
@@ -95,7 +104,7 @@ class ThreeDotMenuRobot {
             interact: NavigationToolbarRobot.() -> Unit
         ): NavigationToolbarRobot.Transition {
             try {
-                mDevice.findObject(UiSelector().textContains("Request desktop site")).waitForExists(waitingTime)
+                mDevice.findObject(UiSelector().textContains("Desktop site")).waitForExists(waitingTime)
                 requestDesktopSiteToggle().click()
                 mDevice.waitForIdle()
                 assertTrue(
@@ -108,8 +117,8 @@ class ThreeDotMenuRobot {
                 // If the click didn't succeed the main menu remains displayed and should be dismissed
                 mDevice.pressBack()
                 threeDotMenuButton().click()
-                mDevice.findObject(UiSelector().textContains("Request desktop site")).waitForExists(waitingTime)
-                // Click again the Request desktop site toggle
+                mDevice.findObject(UiSelector().textContains("Desktop site")).waitForExists(waitingTime)
+                // Click again the Desktop site toggle
                 requestDesktopSiteToggle().click()
                 mDevice.waitForIdle()
                 assertTrue(
@@ -137,6 +146,9 @@ class ThreeDotMenuRobot {
 
         fun openAddonsManager(interact: AddonsManagerRobot.() -> Unit): AddonsManagerRobot.Transition {
             addOnsButton().click()
+            // Once an extension with an action is installed, Extensions opens a submenu that ends in the manager.
+            val manage = mDevice.findObject(UiSelector().text("Manage extensions"))
+            if (manage.waitForExists(SUBMENU_WAIT_MS)) manage.click()
 
             AddonsManagerRobot().interact()
             return AddonsManagerRobot.Transition()
@@ -159,29 +171,40 @@ class ThreeDotMenuRobot {
     }
 }
 
+private const val SUBMENU_WAIT_MS = 2000L
+
 private fun threeDotMenuRecyclerViewExists() {
     onView(withId(menuR.id.mozac_browser_menu_recyclerView)).check(matches(isDisplayed()))
 }
 
 private fun threeDotMenuButton() = onView(withId(toolbarR.id.mozac_browser_toolbar_menu))
 
+private fun backButton() = onView(ViewMatchers.withContentDescription("Back"))
+
+private fun newTabButton() = onView(ViewMatchers.withText("New tab"))
+
+private fun newPrivateTabButton() = onView(ViewMatchers.withText("New private tab"))
+
+private fun assertVisible(item: ViewInteraction) =
+    item.check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+
 private fun forwardButton() = onView(ViewMatchers.withContentDescription("Forward"))
 
-private fun refreshButton() = onView(ViewMatchers.withContentDescription("Refresh"))
+private fun refreshButton() = onView(ViewMatchers.withContentDescription("Reload"))
 
 private fun stopButton() = onView(ViewMatchers.withContentDescription("Stop"))
 
-private fun shareButton() = onView(ViewMatchers.withText("Share"))
+private fun shareButton() = onView(ViewMatchers.withContentDescription("Share"))
 
-private fun requestDesktopSiteToggle() = onView(ViewMatchers.withText("Request desktop site"))
+private fun requestDesktopSiteToggle() = onView(ViewMatchers.withText("Desktop site"))
 
-private fun findInPageButton() = onView(ViewMatchers.withText("Find in Page"))
+private fun findInPageButton() = onView(ViewMatchers.withText("Find in page"))
 
 private fun settingsButton() = onView(ViewMatchers.withText("Settings"))
 
-private fun addToHomescreenButton() = onView(ViewMatchers.withText("Add to homescreen"))
+private fun addToHomescreenButton() = onView(ViewMatchers.withText("Add to Home screen"))
 
-private fun addOnsButton() = onView(ViewMatchers.withText("Add-ons"))
+private fun addOnsButton() = onView(ViewMatchers.withText("Extensions"))
 
 private fun assertShareButtonDoesntExist() = shareButton().check(ViewAssertions.doesNotExist())
 
@@ -229,9 +252,9 @@ private fun assertSettingsButton() =
         .check(ViewAssertions.matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
 private fun assertRequestDesktopSiteIsTurnedOff() {
-    assertFalse(mDevice.findObject(UiSelector().textContains("Request desktop site")).isChecked)
+    assertFalse(mDevice.findObject(UiSelector().textContains("Desktop site")).isChecked)
 }
 
 private fun assertRequestDesktopSiteIsTurnedOn() {
-    assertTrue(mDevice.findObject(UiSelector().textContains("Request desktop site")).isChecked)
+    assertTrue(mDevice.findObject(UiSelector().textContains("Desktop site")).isChecked)
 }
