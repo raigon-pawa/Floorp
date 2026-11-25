@@ -57,8 +57,16 @@ class StartPageIntegration(
             store.flowScoped(dispatcher = Dispatchers.Main) { flow ->
                 flow.map(StartPage::isShown).distinctUntilChanged().collect {
                     shown = it
-                    // The start page cannot scroll the toolbar back in, so never leave it scrolled away by a page.
-                    if (it) toolbar.expand()
+                    // The start page cannot scroll the toolbar back in, so never leave it scrolled away by a page, and
+                    // do
+                    // not let a swipe on a start page tall enough to scroll (landscape, a large font) move it either:
+                    // that slid it half off and showed the engine's background above it.
+                    if (it) {
+                        toolbar.expand()
+                        toolbar.disableScrolling()
+                    } else {
+                        toolbar.enableScrolling()
+                    }
                     render()
                 }
             }
