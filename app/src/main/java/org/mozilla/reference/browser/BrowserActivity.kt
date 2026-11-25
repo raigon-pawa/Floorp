@@ -178,7 +178,14 @@ open class BrowserActivity : AppCompatActivity() {
 
         // Nothing is ever sent, so "unsent" means every crash recorded since then.
         if (components.analytics.crashReporter.unsentCrashReportsSince(lastCheck).any { it.isFatalCrash }) {
-            Snackbar.make(findViewById(android.R.id.content), R.string.archwave_crashed_last_time, LENGTH_LONG).show()
+            val toolbar = findViewById<View>(R.id.toolbar)
+            Snackbar.make(
+                    toolbar ?: findViewById(android.R.id.content),
+                    R.string.archwave_crashed_last_time,
+                    LENGTH_LONG,
+                )
+                .setAnchorView(toolbar?.takeIf { it.isVisible })
+                .show()
         }
     }
 
