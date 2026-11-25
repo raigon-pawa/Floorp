@@ -117,6 +117,9 @@ class WebExtensionPromptFeature(
         // Installs from the add-ons manager register themselves; web and file installs would wait for the next start.
         // The registration is idempotent.
         context.components.core.addonUpdater.registerForFutureUpdates(addon.id)
+        // The engine's handler for runtime.openOptionsPage() can be left holding the metadata from before the options
+        // page URL was known, so the request is dropped until the next start. Listing re-registers it with fresh data.
+        context.components.core.engine.listInstalledWebExtensions(onSuccess = {}, onError = {})
         showPostInstallationDialog(addon)
     }
 
