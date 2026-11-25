@@ -8,6 +8,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.widget.Button
+import android.widget.CompoundButton
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
@@ -46,14 +47,22 @@ class WebExtensionPromptFeature(
     private var scope: CoroutineScope? = null
 
     /**
-     * The library fills both permission buttons with the primary colour; Cancel is the safe choice, so tone it down.
+     * The library fills both permission buttons with the primary colour; Cancel is the safe choice, so tone it down. It
+     * also ticks the technical-and-interaction data box ("opt-out"); this build shares no data unless the user opts in,
+     * so untick it once per dialog, leaving a choice restored after a rotation alone.
      */
     private val denyButtonStyler =
         object : FragmentManager.FragmentLifecycleCallbacks() {
             override fun onFragmentStarted(fm: FragmentManager, f: Fragment) {
-                (f as? PermissionsDialogFragment)?.dialog?.findViewById<Button>(addonsR.id.deny_button)?.run {
+                val dialog = (f as? PermissionsDialogFragment)?.dialog ?: return
+                dialog.findViewById<Button>(addonsR.id.deny_button)?.run {
                     backgroundTintList = ColorStateList.valueOf(context.getColor(R.color.aw_surface_3))
                     setTextColor(context.getColor(R.color.aw_text_1))
+                }
+                val arguments = f.arguments ?: return
+                if (!arguments.getBoolean(KEY_DATA_COLLECTION_DEFAULT_APPLIED)) {
+                    dialog.findViewById<CompoundButton>(addonsR.id.technical_and_interaction_data)?.isChecked = false
+                    arguments.putBoolean(KEY_DATA_COLLECTION_DEFAULT_APPLIED, true)
                 }
             }
         }
@@ -402,5 +411,6 @@ class WebExtensionPromptFeature(
     companion object {
         private const val PERMISSIONS_DIALOG_FRAGMENT_TAG = "ADDONS_PERMISSIONS_DIALOG_FRAGMENT"
         private const val POST_INSTALLATION_DIALOG_FRAGMENT_TAG = "ADDONS_INSTALLATION_DIALOG_FRAGMENT"
+        private const val KEY_DATA_COLLECTION_DEFAULT_APPLIED = "archwave_data_collection_default_applied"
     }
 }
