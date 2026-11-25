@@ -16,15 +16,25 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
 import mozilla.components.browser.toolbar.R as toolbarR
 import org.hamcrest.CoreMatchers.allOf
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.helpers.Constants.LONG_CLICK_DURATION
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
+import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.reference.browser.helpers.TestHelper.packageName
 import org.mozilla.reference.browser.helpers.click
 
 /** Implementation of Robot Pattern for awesomebar. */
 class AwesomeBarRobot {
     fun verifySearchSuggestion(searchSuggestionTitle: String) = assertSearchSuggestion(searchSuggestionTitle)
+
+    /** Asserts that no suggestion shows [searchSuggestionTitle]. */
+    fun verifyNoSearchSuggestion(searchSuggestionTitle: String) {
+        mDevice.waitForIdle()
+        assertFalse(
+            mDevice.findObject(UiSelector().textContains(searchSuggestionTitle)).waitForExists(waitingTimeShort)
+        )
+    }
 
     fun verifyLinkFromClipboard(clipboardLink: String) = assertLinkFromClipboard(clipboardLink)
 

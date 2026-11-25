@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- Preference keys -->
+    <string name="pref_key_search_engine" translatable="false">pref_key_search_engine</string>
+    <string name="pref_key_open_links_in_private" translatable="false">pref_key_open_links_in_private</string>
+    <string name="pref_key_clear_browsing_data" translatable="false">pref_key_clear_browsing_data</string>
+
+    <!-- Defaults: the preference XML and Settings.kt both read these, so they cannot drift apart -->
+    <bool name="pref_default_open_links_in_private">false</bool>
+
+    <!-- Settings: group headings on the top-level page -->
+    <string name="archwave_settings_general_category">General</string>
+    <string name="archwave_settings_privacy_category">Privacy and security</string>
+
+    <!-- Settings: row that picks the default search engine; its summary is the engine in use -->
+    <string name="archwave_settings_search_engine">Search engine</string>
+    <!-- Settings: summary of the search engine row while the list of engines is still loading -->
+    <string name="archwave_settings_search_engine_loading">Loading search engines…</string>
+
+    <!-- Settings: switch that opens links sent by other apps in a private tab -->
+    <string name="archwave_settings_open_links_in_private">Open links from other apps in a private tab</string>
+
+    <!-- Settings: row and dialog title for clearing browsing data -->
+    <string name="archwave_settings_clear_data">Clear browsing data</string>
+    <!-- Clear browsing data dialog: title when an earlier clear stopped before it finished (the app was closed) -->
+    <string name="archwave_clear_data_interrupted">Clearing did not finish. Clear again?</string>
+    <!-- Clear browsing data dialog: the choices -->
+    <string name="archwave_clear_data_tabs">Open tabs</string>
+    <string name="archwave_clear_data_history">Browsing history</string>
+    <string name="archwave_clear_data_cookies">Cookies and site data</string>
+    <string name="archwave_clear_data_cache">Cached images and files</string>
+    <string name="archwave_clear_data_permissions">Site permissions</string>
+    <string name="archwave_clear_data_downloads">Downloads list</string>
+    <!-- Clear browsing data dialog: buttons -->
+    <string name="archwave_clear_data_clear">Clear</string>
+    <string name="archwave_clear_data_cancel">Cancel</string>
+    <!-- Clear browsing data: message when it is done, and when something could not be cleared -->
+    <string name="archwave_clear_data_done">Browsing data cleared</string>
+    <string name="archwave_clear_data_failed">Some browsing data could not be cleared. Try again.</string>
+
+</resources>

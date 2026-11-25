@@ -56,23 +56,30 @@ class Utilities(
      * Provides intent processing functionality for ACTION_VIEW and ACTION_SEND intents, along with external intent
      * processors.
      */
-    val intentProcessors by lazy {
-        externalIntentProcessors +
-            WaitForSearchEnginesProcessor(
-                store,
-                applicationScope,
-                TabIntentProcessor(
-                    tabsUseCases,
-                    searchUseCases.newTabSearch,
-                    // Without the engine, the processor warms up DNS for the link through the system resolver,
-                    // bypassing DNS over HTTPS; with it, it only resolves the DoH provider's host. The engine also
-                    // makes it open a speculative connection to each link, which the Gecko config file turns off
-                    // (network.http.speculative-parallel-limit = 0).
-                    engine = context.components.core.engine,
-                    applicationScope = applicationScope,
-                ),
-            )
-    }
+    val intentProcessors by lazy { externalIntentProcessors + tabIntentProcessor(private = false) }
+
+    /**
+     * Like [intentProcessors], but links open in private tabs. A processor's private flag is fixed when it is built, so
+     * the caller picks one of the two lists for each intent.
+     */
+    val privateIntentProcessors by lazy { externalIntentProcessors + tabIntentProcessor(private = true) }
+
+    private fun tabIntentProcessor(private: Boolean) =
+        WaitForSearchEnginesProcessor(
+            store,
+            applicationScope,
+            TabIntentProcessor(
+                tabsUseCases,
+                if (private) searchUseCases.newPrivateTabSearch else searchUseCases.newTabSearch,
+                isPrivate = private,
+                // Without the engine, the processor warms up DNS for the link through the system resolver,
+                // bypassing DNS over HTTPS; with it, it only resolves the DoH provider's host. The engine also
+                // makes it open a speculative connection to each link, which the Gecko config file turns off
+                // (network.http.speculative-parallel-limit = 0).
+                engine = context.components.core.engine,
+                applicationScope = applicationScope,
+            ),
+        )
 
     val publicSuffixList by lazy {
         PublicSuffixList(context)
