@@ -11,12 +11,21 @@ import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import mozilla.components.browser.session.storage.AutoSave
+import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.action.SystemAction
+import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.concept.engine.webextension.isUnsupported
 import mozilla.components.feature.addons.update.GlobalAddonDependencyProvider
+import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.AppServicesInitializer
 import mozilla.components.support.AppServicesInitializer.Config as AppServicesConfig
 import mozilla.components.support.base.log.Log
@@ -139,12 +148,40 @@ open class BrowserApplication : Application() {
         components.useCases.tabsUseCases.restore(sessionStorage)
 
         // Now that we have restored our previous state (if there's one) let's setup auto saving the state while
-        // the app is used.
-        sessionStorage
-            .autoSave(store)
+        // the app is used. One writer at a time: AutoSave and the save after a navigation write the same file.
+        val storage =
+            object : AutoSave.Storage {
+                @Synchronized override fun save(state: BrowserState) = sessionStorage.save(state)
+            }
+        AutoSave(store, storage, AutoSave.DEFAULT_INTERVAL_MILLISECONDS, applicationScope)
             .periodicallyInForeground(interval = 30, unit = TimeUnit.SECONDS)
             .whenGoingToBackground()
             .whenSessionsChange()
+
+        // AutoSave also saves when a load finishes, but Gecko sends a tab's new history only when asked for it or at
+        // its next collection, often much later, so a process killed in the foreground came back navigations behind.
+        // Ask for it when a load finishes, and save once it has arrived.
+        launch(Dispatchers.IO) {
+            store
+                .flow()
+                .map { state -> state.selectedTab?.takeUnless { it.content.loading }?.id }
+                .distinctUntilChanged()
+                .collect { id -> id?.let { store.dispatch(EngineAction.FlushEngineSessionStateAction(it)) } }
+        }
+        launch(Dispatchers.IO) {
+            store
+                .flow()
+                .map { state -> state.normalTabs.map { it.engineState.engineSessionState } }
+                .distinctUntilChanged()
+                .collectLatest {
+                    delay(SESSION_SAVE_DELAY_MS)
+                    storage.save(store.state)
+                }
+        }
+    }
+
+    private companion object {
+        const val SESSION_SAVE_DELAY_MS = 2000L
     }
 }
 
