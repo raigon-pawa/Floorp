@@ -4,6 +4,9 @@
 
 package org.mozilla.reference.browser.customtabs
 
+import android.net.Uri
+import android.os.Bundle
+import androidx.browser.customtabs.CustomTabsSessionToken
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.customtabs.AbstractCustomTabsService
 import mozilla.components.feature.customtabs.store.CustomTabsServiceStore
@@ -16,4 +19,15 @@ import org.mozilla.reference.browser.ext.components
 class CustomTabsService : AbstractCustomTabsService() {
     override val customTabsServiceStore: CustomTabsServiceStore by lazy { components.core.customTabsStore }
     override val engine: Engine by lazy { components.core.engine }
+
+    /**
+     * Accepts the hint and does nothing with it: any installed app may call this, and the base class would open
+     * connections to up to 51 hosts of its choice before the user has seen anything.
+     */
+    override fun mayLaunchUrl(
+        sessionToken: CustomTabsSessionToken,
+        url: Uri?,
+        extras: Bundle?,
+        otherLikelyBundles: List<Bundle>?,
+    ) = true
 }
