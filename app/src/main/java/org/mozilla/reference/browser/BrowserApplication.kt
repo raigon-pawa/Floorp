@@ -112,6 +112,7 @@ open class BrowserApplication : Application() {
 
         applicationScope.launch(Dispatchers.IO) {
             components.core.fileUploadsDirCleaner.cleanUploadsDirectory()
+            deleteMinidumps()
         }
     }
 
@@ -137,6 +138,21 @@ open class BrowserApplication : Application() {
             .whenGoingToBackground()
             .whenSessionsChange()
     }
+}
+
+/**
+ * Crashes are recorded in the crash database and never sent, so the memory images Gecko writes for them (private tabs
+ * included) would only pile up: delete those left by earlier runs.
+ */
+private fun BrowserApplication.deleteMinidumps() {
+    val mozilla = filesDir.resolve("mozilla")
+    val dirs =
+        listOf(mozilla.resolve("Crash Reports/pending"), filesDir.resolve("minidumps")) +
+            mozilla.listFiles().orEmpty().map { it.resolve("minidumps") }
+    dirs
+        .flatMap { it.listFiles().orEmpty().asList() }
+        .filter { it.isFile && (it.extension == "dmp" || it.extension == "extra") }
+        .forEach { it.delete() }
 }
 
 private fun setupCrashReporting(application: BrowserApplication) {
