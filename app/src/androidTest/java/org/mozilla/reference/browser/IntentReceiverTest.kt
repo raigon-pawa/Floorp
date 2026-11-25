@@ -10,14 +10,18 @@ import android.os.SystemClock
 import android.provider.Browser
 import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
+import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
 import mozilla.components.feature.intent.processing.TabIntentProcessor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -116,10 +120,31 @@ class IntentReceiverTest {
         assertTrue(waitFor { after in tabUrls() })
     }
 
+    private fun resumedBrowserActivity(): BrowserActivity? {
+        var resumed: BrowserActivity? = null
+        instrumentation.runOnMainSync {
+            resumed =
+                ActivityLifecycleMonitorRegistry.getInstance()
+                    .getActivitiesInStage(Stage.RESUMED)
+                    .filterIsInstance<BrowserActivity>()
+                    .firstOrNull()
+        }
+        return resumed
+    }
+
     @Test
-    fun aForgedSessionIdIsIgnored() {
+    fun aForgedSessionIdIsNotForwarded() {
         val url = "https://example.org/receiver-session"
-        fire(view(url).putExtra("activeSessionId", "not-a-tab"))
+        val otherTab = checkNotNull(store.state.selectedTabId)
+        // A running BrowserActivity takes the intent in onNewIntent, which never reads the id; a new one builds its
+        // browser for the tab of that id.
+        val old = activityTestRule.activity
+        instrumentation.runOnMainSync { old.finish() }
+        assertTrue(waitFor { old.isDestroyed })
+
+        fire(view(url).putExtra(EXTRA_SESSION_ID, otherTab))
+        assertTrue(waitFor { resumedBrowserActivity() != null })
+        assertNull(resumedBrowserActivity()?.intent?.getStringExtra(EXTRA_SESSION_ID))
         assertTrue(waitFor { store.state.selectedTab?.content?.url == url })
     }
 
