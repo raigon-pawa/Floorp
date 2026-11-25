@@ -44,8 +44,10 @@ class LicensesFragment : PreferenceFragmentCompat() {
                 LICENSES.forEach { (title, asset, components) ->
                     row(title, components.joinToString(", ")) { showPage(TextPageFragment.fromAsset(title, asset)) }
                 }
-                row(R.string.archwave_licenses_native, getString(R.string.archwave_licenses_native_summary)) {
-                    showPage(TextPageFragment.fromAsset(R.string.archwave_licenses_native, NATIVE_LIBRARIES))
+                NATIVE_LIBRARIES.forEach { (title, asset) ->
+                    row(title, getString(R.string.archwave_licenses_native_summary)) {
+                        showPage(TextPageFragment.fromAsset(title, asset))
+                    }
                 }
                 row(R.string.archwave_licenses_gecko, getString(R.string.archwave_licenses_gecko_summary)) {
                     openInNewTab(GECKO_LICENSES)
@@ -102,7 +104,13 @@ class LicensesFragment : PreferenceFragmentCompat() {
                 ),
                 License(R.string.archwave_licenses_ofl, "licenses/JetBrainsMono-OFL.txt", listOf("JetBrains Mono")),
             )
-        const val NATIVE_LIBRARIES = "licenses/native-libraries.txt"
+        // The notices both projects publish for their binaries, at the versions the app ships (megazords/full/
+        // DEPENDENCIES.md of application-services v160.0, DEPENDENCIES.md of glean v70.3.0); replace them on an update.
+        val NATIVE_LIBRARIES =
+            listOf(
+                R.string.archwave_licenses_native_app_services to "licenses/application-services-dependencies.md",
+                R.string.archwave_licenses_native_glean to "licenses/glean-dependencies.md",
+            )
         const val GECKO_LICENSES = "about:license"
         const val PLAY_SERVICES =
             "Google Play services (base, basement, FIDO, tasks), used by GeckoView for security keys"

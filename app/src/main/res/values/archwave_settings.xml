@@ -63,8 +63,9 @@
     <string name="archwave_licenses_mpl">Mozilla Public License 2.0</string>
     <string name="archwave_licenses_apache">Apache License 2.0</string>
     <string name="archwave_licenses_ofl">SIL Open Font License 1.1</string>
-    <string name="archwave_licenses_native">Native libraries</string>
-    <string name="archwave_licenses_native_summary">Compiled into Application Services and Glean: each library and its licence</string>
+    <string name="archwave_licenses_native_app_services">Native libraries in Application Services</string>
+    <string name="archwave_licenses_native_glean">Native libraries in Glean</string>
+    <string name="archwave_licenses_native_summary">The licence notices of the libraries compiled into it</string>
     <string name="archwave_licenses_gecko">Libraries inside GeckoView</string>
     <string name="archwave_licenses_gecko_summary">The engine\'s own licence page (about:license)</string>
     <string name="archwave_licenses_play">Android Software Development Kit License</string>
