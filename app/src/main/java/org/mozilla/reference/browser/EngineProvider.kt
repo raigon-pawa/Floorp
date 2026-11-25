@@ -5,6 +5,8 @@
 package org.mozilla.reference.browser
 
 import android.content.Context
+import java.io.File
+import java.io.IOException
 import mozilla.components.browser.engine.gecko.GeckoEngine
 import mozilla.components.browser.engine.gecko.fetch.GeckoViewFetchClient
 import mozilla.components.concept.engine.DefaultSettings
@@ -12,6 +14,7 @@ import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.fetch.Client
 import mozilla.components.feature.webcompat.WebCompatFeature
 import mozilla.components.lib.crash.handler.CrashHandlerService
+import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
 
@@ -33,11 +36,31 @@ object EngineProvider {
             // About config it's no longer enabled by default
             builder.aboutConfigEnabled(true)
             builder.extensionsWebAPIEnabled(true)
+            copyConfigFile(context)?.let { builder.configFilePath(it.absolutePath) }
             runtime = GeckoRuntime.create(context, builder.build())
         }
 
         return runtime!!
     }
+
+    /**
+     * GeckoView reads its start-up prefs (privacy prefs that have no typed setting) from a real file, so the bundled
+     * asset is copied on every start; app updates refresh it. Written to a temporary file and renamed so a crash
+     * mid-copy cannot leave a truncated file behind. If the copy fails, a previous copy is still used.
+     */
+    private fun copyConfigFile(context: Context): File? {
+        val target = File(context.filesDir, CONFIG_FILE)
+        try {
+            val temp = File(context.filesDir, "$CONFIG_FILE.tmp")
+            context.assets.open(CONFIG_FILE).use { input -> temp.outputStream().use(input::copyTo) }
+            if (!temp.renameTo(target)) throw IOException("Cannot rename $temp")
+        } catch (e: IOException) {
+            Logger.error("Could not copy the GeckoView config file", e)
+        }
+        return target.takeIf { it.exists() }
+    }
+
+    private const val CONFIG_FILE = "archwave-geckoview-config.yaml"
 
     /** Creates the engine on the shared runtime and installs [WebCompatFeature] on it. */
     fun createEngine(
