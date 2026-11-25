@@ -14,8 +14,9 @@ object IncomingIntentRules {
     /** Longest search made from shared text; search engines refuse much longer queries anyway. */
     const val MAX_SEARCH_LENGTH = 1000
 
-    // (?i) is ASCII-only in Java regexes, so look-alike letters such as U+017F do not pass for an "s".
-    private val webUrl = Regex("(?i)https?:.+")
+    // Letter classes, not (?i): Android's ICU regexes fold case by Unicode, where U+017F passes for an "s". An authority
+    // is required, so "http:javascript:alert(1)" does not open a blank tab that shows that address.
+    private val webUrl = Regex("[hH][tT][tT][pP][sS]?://[^/?#\\s]+.*")
 
     // Any scheme as Android's Uri reads it, which is what the processors check. java.net.URI is stricter: it finds no
     // scheme in "data:text/html,<h1>x</h1>" at all.

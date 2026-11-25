@@ -88,6 +88,9 @@ class IntentReceiverTest {
             view("intent://example.org#Intent;scheme=https;end"),
             view("android-app://com.example/https/example.org"),
             view("java\tscript:alert(1)"),
+            // Android's regexes fold case by Unicode, where U+017F matches "s" in a case-insensitive pattern.
+            view("http\u017f://example.org"),
+            view("http:javascript:alert(1)"),
             Intent(Intent.ACTION_MAIN).setData("about:config".toUri()),
         )
     }

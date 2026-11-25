@@ -59,6 +59,15 @@ class IncomingIntentRulesTest {
     }
 
     @Test
+    fun `web URLs without an authority are refused`() {
+        assertNull(webUrlOrNull("http:javascript:alert(1)"))
+        assertNull(webUrlOrNull("https:example.org"))
+        assertNull(webUrlOrNull("https:/example.org"))
+        assertNull(webUrlOrNull("https:///example.org"))
+        assertNull(webUrlOrNull("https://?javascript:alert(1)"))
+    }
+
+    @Test
     fun `spaces or control characters inside are refused`() {
         assertNull(webUrlOrNull("https://exa mple.org"))
         assertNull(webUrlOrNull("https://example.org/\njavascript:alert(1)"))
