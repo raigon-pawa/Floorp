@@ -4,6 +4,7 @@
 
 package org.mozilla.reference.browser.components
 
+import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import kotlinx.coroutines.CoroutineScope
@@ -13,6 +14,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.customtabs.CustomTabIntentProcessor
 import mozilla.components.feature.intent.processing.IntentProcessor
@@ -20,11 +22,13 @@ import mozilla.components.feature.intent.processing.TabIntentProcessor
 import mozilla.components.feature.pwa.ManifestStorage
 import mozilla.components.feature.pwa.intent.WebAppIntentProcessor
 import mozilla.components.feature.search.SearchUseCases
+import mozilla.components.feature.search.ext.buildSearchUrl
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
 import mozilla.components.lib.state.ext.flow
+import org.mozilla.reference.browser.IncomingIntentRules
 import org.mozilla.reference.browser.ext.components
 
 /** Component group for miscellaneous components. */
@@ -73,6 +77,7 @@ class Utilities(
             store,
             applicationScope,
             pendingIntentTabs,
+            private,
             TabIntentProcessor(
                 tabsUseCases,
                 if (private) searchUseCases.newPrivateTabSearch else searchUseCases.newTabSearch,
@@ -100,10 +105,13 @@ private class WaitForSearchEnginesProcessor(
     private val store: BrowserStore,
     private val scope: CoroutineScope,
     private val pending: MutableStateFlow<Int>,
+    private val private: Boolean,
     private val delegate: IntentProcessor,
 ) : IntentProcessor {
     override fun process(intent: Intent): Boolean {
-        if (store.state.search.complete || intent.action !in SEARCH_ACTIONS) return delegate.process(intent)
+        if (store.state.search.complete || intent.action !in SEARCH_ACTIONS) {
+            return delegate.process(withSearchUrl(intent))
+        }
         val copy = Intent(intent) // The caller changes the original before forwarding it.
         // Keeps EnsureTabFeature from opening a start-page tab in the meantime, which the search tab would then join.
         pending.update { it + 1 }
@@ -111,12 +119,19 @@ private class WaitForSearchEnginesProcessor(
             try {
                 // Search loading has no failure state, so do not wait forever; the processor then logs and drops it.
                 withTimeoutOrNull(SEARCH_ENGINES_TIMEOUT_MS) { store.flow().first { it.search.complete } }
-                delegate.process(copy)
+                delegate.process(withSearchUrl(copy))
             } finally {
                 pending.update { it - 1 }
             }
         }
         return true
+    }
+
+    // Shared text that holds only addresses the processor must not load is searched for by the engine's address.
+    private fun withSearchUrl(intent: Intent): Intent {
+        val terms = intent.getStringExtra(IncomingIntentRules.EXTRA_SEARCH_TERMS) ?: return intent
+        val url = store.state.search.selectedOrDefaultSearchEngine(private)?.buildSearchUrl(terms) ?: return intent
+        return intent.putExtra(if (intent.action == Intent.ACTION_SEND) Intent.EXTRA_TEXT else SearchManager.QUERY, url)
     }
 
     private companion object {

@@ -12,10 +12,12 @@ import android.os.Bundle
 import android.os.Process
 import android.provider.Browser
 import androidx.core.net.toUri
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
 import mozilla.components.feature.intent.ext.sanitize
 import mozilla.components.feature.intent.processing.TabIntentProcessor
 import mozilla.components.feature.media.service.AbstractMediaSessionService
+import mozilla.components.feature.search.ext.buildSearchUrl
 import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.support.utils.WebURLFinder
 import org.mozilla.reference.browser.ext.components
@@ -90,8 +92,17 @@ class IntentReceiverActivity : Activity() {
     }
 
     private fun Intent.restrictText(extra: String, findUrl: (String) -> String?) {
-        val text = IncomingIntentRules.sharedTextOrNull(getStringExtra(extra), findUrl)
+        var searchTerms: String? = null
+        val text =
+            IncomingIntentRules.sharedTextOrNull(getStringExtra(extra), findUrl) { terms ->
+                searchTerms = terms
+                components.core.store.state.search
+                    .selectedOrDefaultSearchEngine(Settings.isOpenLinksInPrivate(this@IntentReceiverActivity))
+                    ?.buildSearchUrl(terms)
+            }
         if (text == null) removeExtra(extra) else putExtra(extra, text)
+        // The search engines are still loading: the tab intent processor builds the address once they are there.
+        if (text == null) searchTerms?.let { putExtra(IncomingIntentRules.EXTRA_SEARCH_TERMS, it) }
     }
 
     // shortcut: before Android 14 the launching app is unknown, so the tab id, a random UUID, is the only guard.
@@ -108,6 +119,7 @@ class IntentReceiverActivity : Activity() {
                 // app; only WebAppInterceptor sets it, and the app does not use that.
                 "mozilla.components.feature.pwa.EXTRA_URL_OVERRIDE",
                 NotificationManager.EXTRA_WEB_NOTIFICATION,
+                IncomingIntentRules.EXTRA_SEARCH_TERMS,
                 // Added to the load flags unchecked: it could load a page without Safe Browsing, tracking protection or
                 // the request interceptor. Nothing in the app sets it.
                 TabIntentProcessor.EXTRA_APP_LINK_LAUNCH_TYPE,

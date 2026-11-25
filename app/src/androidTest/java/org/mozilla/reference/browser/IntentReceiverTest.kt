@@ -18,9 +18,11 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
 import mozilla.components.feature.intent.processing.TabIntentProcessor
+import mozilla.components.feature.search.ext.buildSearchUrl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -104,11 +106,14 @@ class IntentReceiverTest {
     }
 
     @Test
-    fun sharedAddressesOfOtherSchemesOpenNothing() {
-        assertNothingOpens(
-            Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "about:config"),
-            Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "see data:text/html,x"),
-        )
+    fun sharedTextWithAddressesOfOtherSchemesOpensASearch() {
+        assertTrue(waitFor { store.state.search.selectedOrDefaultSearchEngine != null })
+        val engine = requireNotNull(store.state.search.selectedOrDefaultSearchEngine)
+        listOf("about:config", "see data:text/html,x", "how to use std::vector in c++").forEach { text ->
+            fire(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text))
+            assertTrue("no search for $text", waitFor { engine.buildSearchUrl(text) in tabUrls() })
+        }
+        assertTrue(tabUrls().none { it.startsWith("about:") && it != "about:blank" || it.startsWith("data:") })
     }
 
     @Test
