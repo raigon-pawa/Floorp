@@ -221,11 +221,12 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             }
     }
 
+    /** Takes the page out of history, as hiding the row lasts only until the next keystroke. */
     private fun deleteHistorySuggestion(suggestion: Suggestion) {
+        val url = suggestion.description ?: return
+        val historyStorage = requireComponents.core.historyStorage
         lifecycleScope.launch(Dispatchers.IO) {
-            suggestion.description?.let {
-                requireComponents.core.historyStorage.deleteHistoryMetadataForUrl(it)
-            }
+            historyStorage.deleteVisitsFor(url)
         }
     }
 
