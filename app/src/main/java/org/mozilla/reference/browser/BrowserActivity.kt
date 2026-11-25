@@ -7,6 +7,7 @@ package org.mozilla.reference.browser
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
@@ -56,8 +57,13 @@ open class BrowserActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.activity_main)
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
-        window.setupPersistentInsets()
+        // Below Android 13 nothing applies the system bar and keyboard insets (setupPersistentInsets and the toolbar's
+        // ImeInsetsSynchronizer start at 13), so the toolbar would sit under the navigation bar and the keyboard over
+        // the address field. Those versions keep the classic window, which adjustResize resizes for the keyboard.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
+            window.setupPersistentInsets()
+        }
 
         components.notificationsDelegate.bindToActivity(this)
 
