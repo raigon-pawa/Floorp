@@ -99,6 +99,8 @@ class ToolbarIntegration(
     private val publicSuffixList = context.components.utils.publicSuffixList.also { it.prefetch() }
 
     private val scope = MainScope()
+    private var extensionIcons = mutableMapOf<List<Any?>, AsyncDrawableMenuIcon>()
+    private var previousExtensionIcons = emptyMap<List<Any?>, AsyncDrawableMenuIcon>()
     private var menuUpdateJob: Job? = null
     private var toolbarUpdateJob: Job? = null
 
@@ -227,6 +229,9 @@ class ToolbarIntegration(
      */
     private fun extensionsMenuItem(state: BrowserState, tab: SessionState?): MenuCandidate {
         val title = context.getString(R.string.menu_extensions)
+        // Keep only the icons of this build's rows.
+        previousExtensionIcons = extensionIcons
+        extensionIcons = mutableMapOf()
         val actions =
             state.extensions.values
                 .filter { it.enabled && (tab?.content?.private != true || it.allowedInPrivateBrowsing) }
@@ -272,37 +277,52 @@ class ToolbarIntegration(
 
     private fun extensionActionItem(action: Action, name: String, onClick: () -> Unit): MenuCandidate {
         val enabled = action.enabled != false
-        val density = context.resources.displayMetrics.density
-        val fallback = ContextCompat.getDrawable(context, iconsR.drawable.mozac_ic_extension_24)
         return TextMenuCandidate(
             text = action.title?.takeIf { it.isNotBlank() } ?: name,
-            start =
-                AsyncDrawableMenuIcon(
-                    // The view is not measured yet when the icon is requested, so ask for the size it will have.
-                    loadDrawable = { _, _ ->
-                        val icon =
-                            action.loadIcon?.invoke((MENU_ICON_DP * density).toInt())?.toDrawable(context.resources)
-                        val badge = action.badgeText?.takeIf { it.isNotEmpty() }
-                        if (icon == null || badge == null) {
-                            icon
-                        } else {
-                            BadgedIcon(
-                                icon,
-                                badge,
-                                action.badgeTextColor ?: ContextCompat.getColor(context, R.color.aw_black),
-                                action.badgeBackgroundColor ?: ContextCompat.getColor(context, R.color.aw_text_2),
-                                density,
-                            )
-                        }
-                    },
-                    loadingDrawable = fallback,
-                    fallbackDrawable = fallback,
-                ),
+            start = extensionIcon(action, onClick),
             textStyle =
                 TextStyle(color = if (enabled) null else ContextCompat.getColor(context, R.color.aw_text_disabled)),
             containerStyle = ContainerStyle(isEnabled = enabled),
             onClick = onClick,
         )
+    }
+
+    /**
+     * The row's icon, reused while its icon and badge stay the same: the menu reloads an icon whenever it gets a new
+     * instance, and the menu is rebuilt often (a badge count changes many times while a page loads).
+     */
+    private fun extensionIcon(action: Action, onClick: () -> Unit): AsyncDrawableMenuIcon {
+        // The click handler tells rows apart; it stays the same while the extension does.
+        val key = listOf(onClick, action.loadIcon, action.badgeText, action.badgeTextColor, action.badgeBackgroundColor)
+        return extensionIcons.getOrPut(key) {
+            previousExtensionIcons[key]?.let {
+                return@getOrPut it
+            }
+            val density = context.resources.displayMetrics.density
+            val placeholder = { ContextCompat.getDrawable(context, iconsR.drawable.mozac_ic_extension_24) }
+            AsyncDrawableMenuIcon(
+                // The view is not measured yet when the icon is requested, so ask for the size it will have.
+                loadDrawable = { _, _ ->
+                    val icon =
+                        action.loadIcon?.invoke((MENU_ICON_DP * density).toInt())?.toDrawable(context.resources)
+                            ?: placeholder()
+                    val badge = action.badgeText?.takeIf { it.isNotEmpty() }
+                    if (icon == null || badge == null) {
+                        icon
+                    } else {
+                        BadgedIcon(
+                            icon,
+                            badge,
+                            action.badgeTextColor ?: ContextCompat.getColor(context, R.color.aw_black),
+                            action.badgeBackgroundColor ?: ContextCompat.getColor(context, R.color.aw_text_2),
+                            density,
+                        )
+                    }
+                },
+                loadingDrawable = placeholder(),
+                fallbackDrawable = placeholder(),
+            )
+        }
     }
 
     private fun leaveEditMode() {
