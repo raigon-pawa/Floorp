@@ -101,6 +101,9 @@ if __name__ == "__main__":
         stale = [name for name, text in FILES.items() if (RES / name).read_text() != text]
         if stale:
             sys.exit("out of date, run tools/gen_icons.py: " + ", ".join(stale))
+    elif sys.argv[1:]:
+        # Anything else (--help, a typo) must not fall through to writing.
+        sys.exit(__doc__)
     else:
         for name, text in FILES.items():
             (RES / name).write_text(text)
