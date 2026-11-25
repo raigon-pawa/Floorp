@@ -16,10 +16,14 @@ import android.widget.Toast
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.flow.map
@@ -45,8 +49,7 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
     private var adapter: AddonsManagerAdapter? = null
     private var loadJob: Job? = null
 
-    /** The running install started from this screen, if any; it can be cancelled until the engine asks for consent. */
-    private var installOperation: CancellableOperation? = null
+    private val installState by lazy { ViewModelProvider(this)[InstallState::class.java] }
     private lateinit var addonFilePicker: AddonFilePicker
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,7 +86,18 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
         // One layout manager for the fragment's life, so the scroll position survives reloads of the list.
         rootView.findViewById<RecyclerView>(R.id.add_ons_list).layoutManager = LinearLayoutManager(requireContext())
         rootView.findViewById<View>(R.id.add_ons_retry).setOnClickListener { bindRecyclerView() }
-        rootView.findViewById<View>(R.id.cancel_install).setOnClickListener { cancelInstall() }
+        val cancelInstall = rootView.findViewById<View>(R.id.cancel_install)
+        cancelInstall.setOnClickListener {
+            // The install still ends in onSuccess (the cancel came too late) or onError, which hides the overlay.
+            installState.operation.value?.cancel()
+            cancelInstall.isEnabled = false
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            installState.operation.collect {
+                rootView.findViewById<View>(R.id.addonProgressOverlay).isVisible = it != null
+                cancelInstall.isEnabled = true
+            }
+        }
         requireActivity().addMenuProvider(this, viewLifecycleOwner)
 
         // Installs from a file or from the addons.mozilla.org page finish outside this screen's callbacks.
@@ -103,16 +117,12 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
     override fun onStart() {
         super.onStart()
         bindRecyclerView()
-        addonProgressOverlay.isVisible = installOperation != null
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         adapter = null
     }
-
-    private val addonProgressOverlay: View
-        get() = requireView().findViewById(R.id.addonProgressOverlay)
 
     private fun bindRecyclerView() {
         val rootView = view ?: return
@@ -128,6 +138,8 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                     try {
                         addonManager.getAddons()
                     } catch (e: AddonManagerException) {
+                        // A newer load cancelled this one (the manager wraps the cancellation): leave the views to it.
+                        ensureActive()
                         logger.error("Failed to load add-ons", e)
                         null
                     }
@@ -178,11 +190,12 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
     }
 
     override fun onInstallAddonButtonClicked(addon: Addon) {
-        if (installOperation != null) {
+        val state = installState
+        if (state.operation.value != null) {
             return
         }
-        addonProgressOverlay.isVisible = true
-        installOperation =
+        var operation: CancellableOperation? = null
+        operation =
             requireContext()
                 .components
                 .core
@@ -190,19 +203,10 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                 .installAddon(
                     url = addon.downloadUrl,
                     // The list follows the store's extensions, so only the overlay is left to update here.
-                    onSuccess = { runIfFragmentIsAttached { onInstallFinished() } },
-                    onError = { _ -> runIfFragmentIsAttached { onInstallFinished() } },
+                    onSuccess = { state.operation.compareAndSet(operation, null) },
+                    onError = { _ -> state.operation.compareAndSet(operation, null) },
                 )
-    }
-
-    private fun cancelInstall() {
-        installOperation?.cancel()
-        onInstallFinished()
-    }
-
-    private fun onInstallFinished() {
-        installOperation = null
-        view?.findViewById<View>(R.id.addonProgressOverlay)?.isVisible = false
+        state.operation.value = operation
     }
 
     override fun shouldShowFindMoreAddonsButton() = true
@@ -222,4 +226,13 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
     }
 
     override fun onMenuItemSelected(menuItem: MenuItem) = false
+}
+
+/**
+ * The install started from the manager, if any. It outlives a rotation, and an earlier install's late callback (after a
+ * cancel that came too late) cannot end the one running now. It can be cancelled until the engine asks for consent.
+ */
+class InstallState : ViewModel() {
+    /** The running install operation. */
+    val operation = MutableStateFlow<CancellableOperation?>(null)
 }

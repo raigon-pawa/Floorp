@@ -6,6 +6,7 @@ package org.mozilla.reference.browser.addons
 
 import android.content.Intent
 import android.graphics.Color
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
@@ -166,6 +167,11 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
     private fun bindCheckForUpdates(addon: Addon) {
         val view = findViewById<TextView>(R.id.check_for_updates)
         view.setOnClickListener {
+            // Offline, the engine reports "no update available" without having checked anything.
+            if (getSystemService(ConnectivityManager::class.java)?.activeNetwork == null) {
+                Toast.makeText(this, R.string.archwave_addons_update_check_failed, Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
             view.isEnabled = false
             view.setText(R.string.archwave_addons_checking_for_updates)
             components.core.addonManager.updateAddon(addon.id) { status ->
