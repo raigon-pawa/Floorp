@@ -197,14 +197,14 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             viewLifecycleOwner.lifecycleScope.launch {
                 // A fresh picture of the tab being left: the one taken when its page loaded can be far out of date. It
                 // is saved before the tray opens, or the tray would read the old one from disk. The tray shows its own
-                // card for a start-page tab.
-                if (tab != null && !StartPage.isStartTab(tab) && !lowOnMemory) {
+                // card for a start-page tab, and none is kept of a private one.
+                if (tab != null && !tab.content.private && !StartPage.isStartTab(tab) && !lowOnMemory) {
                     withTimeoutOrNull(THUMBNAIL_TIMEOUT_MS) {
                         val bitmap = suspendCancellableCoroutine { continuation ->
                             engineView.captureThumbnail { if (continuation.isActive) continuation.resume(it) }
                         }
                         bitmap
-                            ?.let { thumbnailStorage.saveThumbnail(ImageSaveRequest(tab.id, tab.content.private), it) }
+                            ?.let { thumbnailStorage.saveThumbnail(ImageSaveRequest(tab.id, isPrivate = false), it) }
                             ?.join()
                     }
                 }

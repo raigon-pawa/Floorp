@@ -13,7 +13,9 @@ import kotlinx.coroutines.CoroutineScope
 import mozilla.components.browser.engine.gecko.permission.GeckoSitePermissionsStorage
 import mozilla.components.browser.icons.BrowserIcons
 import mozilla.components.browser.session.storage.SessionStorage
+import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.engine.EngineMiddleware
+import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
@@ -123,6 +125,14 @@ class Core(
                                     },
                                 ),
                         ),
+                        // Private browsing leaves nothing on disk, so no pictures of private tabs: the storage would
+                        // keep them until the next start. The tabs tray shows a placeholder for them.
+                        { store, next, action ->
+                            val privateThumbnail =
+                                action is ContentAction.UpdateThumbnailAction &&
+                                    store.state.findTab(action.sessionId)?.content?.private == true
+                            if (!privateThumbnail) next(action)
+                        },
                         ThumbnailsMiddleware(thumbnailStorage),
                         ReaderViewMiddleware(),
                         RegionMiddleware(
