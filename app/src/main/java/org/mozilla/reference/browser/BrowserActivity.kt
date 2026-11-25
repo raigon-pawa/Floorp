@@ -181,7 +181,11 @@ open class BrowserActivity : AppCompatActivity() {
             EngineView::class.java.name -> {
                 components.core.engine.createView(context, attrs).asView().also {
                     // Until a page paints, GeckoView shows a dark grey (#2A2A2E) cover; the browser is black.
-                    ((it as? ViewGroup)?.getChildAt(0) as? GeckoView)?.coverUntilFirstPaint(Color.BLACK)
+                    // shortcut: GeckoEngineView (Android Components 160) holds its GeckoView as child 0 and has no
+                    // API for the cover colour; the warning tells when an upgrade moves it.
+                    val geckoView = (it as? ViewGroup)?.getChildAt(0) as? GeckoView
+                    geckoView?.coverUntilFirstPaint(Color.BLACK)
+                        ?: Logger.warn("No GeckoView at child 0 of the engine view: its pre-paint cover stays grey")
                 }
             }
 
