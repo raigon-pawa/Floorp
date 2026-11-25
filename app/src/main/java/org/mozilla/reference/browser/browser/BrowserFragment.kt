@@ -22,7 +22,6 @@ import mozilla.components.feature.awesomebar.AwesomeBarFeature
 import mozilla.components.feature.awesomebar.provider.SearchActionProvider
 import mozilla.components.feature.awesomebar.provider.SearchSuggestionProvider
 import mozilla.components.feature.readerview.view.ReaderViewControlsBar
-import mozilla.components.feature.tabs.WindowFeature
 import mozilla.components.feature.tabs.toolbar.TabsToolbarFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
@@ -36,7 +35,6 @@ import org.mozilla.reference.browser.tabs.TabsTrayFragment
 class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val thumbnailsFeature = ViewBoundFeatureWrapper<BrowserThumbnails>()
     private val readerViewFeature = ViewBoundFeatureWrapper<ReaderViewIntegration>()
-    private val windowFeature = ViewBoundFeatureWrapper<WindowFeature>()
 
     private val awesomeBar: AwesomeBarWrapper
         get() = requireView().findViewById(R.id.awesomeBar)
@@ -89,14 +87,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                 toolbar,
                 readerViewBar,
                 readerViewAppearanceButton,
-            ),
-        )
-
-        windowFeature.bind(
-            view,
-            WindowFeature(
-                store = requireComponents.core.store,
-                tabsUseCases = requireComponents.useCases.tabsUseCases,
             ),
         )
     }
