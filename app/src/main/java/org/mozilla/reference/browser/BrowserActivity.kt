@@ -12,10 +12,12 @@ import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
+import android.view.inputmethod.InputMethodManager
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
+import androidx.core.content.getSystemService
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -149,6 +151,22 @@ open class BrowserActivity : AppCompatActivity() {
                 }
             },
         )
+    }
+
+    override fun onRestoreInstanceState(savedInstanceState: Bundle) {
+        super.onRestoreInstanceState(savedInstanceState)
+        // The window gives focus back to the field that had it, even inside a bar that came back hidden (the address
+        // editor, find in page): the keyboard would type into it and Enter would submit text nobody can see. Checked
+        // once the views are attached, before which nothing counts as shown.
+        val decor = window.decorView
+        decor.post {
+            currentFocus
+                ?.takeUnless { it.isShown }
+                ?.let { hidden ->
+                    hidden.clearFocus()
+                    getSystemService<InputMethodManager>()?.hideSoftInputFromWindow(decor.windowToken, 0)
+                }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
