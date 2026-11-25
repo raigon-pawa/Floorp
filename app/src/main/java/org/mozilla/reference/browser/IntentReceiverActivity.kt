@@ -18,6 +18,7 @@ import mozilla.components.feature.intent.ext.sanitize
 import mozilla.components.feature.intent.processing.TabIntentProcessor
 import mozilla.components.feature.media.service.AbstractMediaSessionService
 import mozilla.components.feature.search.ext.buildSearchUrl
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.support.utils.WebURLFinder
 import org.mozilla.reference.browser.ext.components
@@ -31,6 +32,7 @@ class IntentReceiverActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val intent = (intent?.let { Intent(it) } ?: Intent()).sanitize()
+        intent.removeUnreadableExtras()
         restrictToWhatOtherAppsMaySend(intent)
 
         // Tapping the media notification brings back the tab that plays.
@@ -103,6 +105,24 @@ class IntentReceiverActivity : Activity() {
         if (text == null) removeExtra(extra) else putExtra(extra, text)
         // The search engines are still loading: the tab intent processor builds the address once they are there.
         if (text == null) searchTerms?.let { putExtra(IncomingIntentRules.EXTRA_SEARCH_TERMS, it) }
+    }
+
+    /**
+     * Since Android 13 each extra is unparcelled when first read, so sanitize() does not see one holding a class only
+     * the sending app has (also inside a bundle, such as the custom tab headers); reading it later would crash the
+     * app. Read them all here and drop those that fail.
+     */
+    @Suppress("DEPRECATION", "TooGenericExceptionCaught") // Bundle.get reads any type; unparcelling throws several.
+    private fun Intent.removeUnreadableExtras() {
+        fun Bundle.readAll(): Unit = keySet().forEach { key -> (get(key) as? Bundle)?.readAll() }
+        extras?.keySet()?.forEach { key ->
+            try {
+                extras?.run { (get(key) as? Bundle)?.readAll() }
+            } catch (e: RuntimeException) {
+                Logger.warn("Dropping the unreadable extra $key", e)
+                removeExtra(key)
+            }
+        }
     }
 
     // shortcut: before Android 14 the launching app is unknown, so the tab id, a random UUID, is the only guard.

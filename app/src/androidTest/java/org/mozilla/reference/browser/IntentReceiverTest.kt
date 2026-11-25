@@ -6,6 +6,8 @@ package org.mozilla.reference.browser
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
 import android.os.SystemClock
 import android.provider.Browser
 import androidx.core.content.edit
@@ -201,6 +203,48 @@ class IntentReceiverTest {
         // A web app manifest whose scope covers the page would hide the toolbar right after the window opens.
         SystemClock.sleep(SETTLE)
         assertTrue("custom tab toolbar hidden", device.hasObject(By.res(context.packageName, "toolbar")))
+    }
+
+    /** An extra holding a class only another app has: unparcelling it throws. */
+    private fun foreignParcelable(key: String): Bundle {
+        val parcel = Parcel.obtain()
+        try {
+            Bundle().apply { putParcelable(key, Marker()) }.writeToParcel(parcel, 0)
+            val known = Marker::class.java.name.toByteArray(Charsets.UTF_16LE)
+            val foreign = Marker::class.java.name.replace("Marker", "Xarker").toByteArray(Charsets.UTF_16LE)
+            val bytes = parcel.marshall()
+            val at = (0..bytes.size - known.size).first { i -> known.indices.all { bytes[i + it] == known[it] } }
+            foreign.copyInto(bytes, at)
+            parcel.unmarshall(bytes, 0, bytes.size)
+            parcel.setDataPosition(0)
+            return Bundle.CREATOR.createFromParcel(parcel)
+        } finally {
+            parcel.recycle()
+        }
+    }
+
+    @Test
+    fun extrasWithAForeignClassAreDropped() {
+        val url = "https://example.org/receiver-foreign"
+        fire(view(url).putExtras(foreignParcelable("x")))
+        assertTrue(waitFor { url in tabUrls() })
+        fire(createCustomTabIntent("$url-headers").putExtra(Browser.EXTRA_HEADERS, foreignParcelable("a")))
+        assertTrue(waitFor { store.state.customTabs.any { it.content.url == "$url-headers" } })
+        assertNothingOpens(Intent(Intent.ACTION_SEND).setType("text/plain").putExtras(foreignParcelable(Intent.EXTRA_TEXT)))
+    }
+
+    /** Stands in for a class of another app. */
+    class Marker : Parcelable {
+        override fun describeContents() = 0
+
+        override fun writeToParcel(dest: Parcel, flags: Int) = Unit
+
+        /** Unparcels a [Marker]. */
+        companion object CREATOR : Parcelable.Creator<Marker> {
+            override fun createFromParcel(source: Parcel) = Marker()
+
+            override fun newArray(size: Int) = arrayOfNulls<Marker>(size)
+        }
     }
 
     private companion object {
