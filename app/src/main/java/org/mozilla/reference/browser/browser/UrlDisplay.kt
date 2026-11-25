@@ -77,5 +77,5 @@ object UrlDisplay {
     }
 
     private fun percentEncode(text: String): String =
-        text.toByteArray(Charsets.UTF_8).joinToString("") { "%%%02X".format(it.toInt() and 0xFF) }
+        text.toByteArray(Charsets.UTF_8).joinToString("") { "%%%02X".format(it.toUByte().toInt()) }
 }

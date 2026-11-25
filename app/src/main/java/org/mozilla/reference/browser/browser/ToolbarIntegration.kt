@@ -15,7 +15,6 @@ import android.window.OnBackInvokedDispatcher
 import androidx.annotation.DrawableRes
 import androidx.annotation.RequiresApi
 import androidx.annotation.StringRes
-import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toDrawable
@@ -253,7 +252,7 @@ class ToolbarIntegration(
     private fun extensionActionItem(action: Action, name: String, onClick: () -> Unit): MenuCandidate {
         val enabled = action.enabled != false
         val density = context.resources.displayMetrics.density
-        val fallback = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_extension_24)
+        val fallback = ContextCompat.getDrawable(context, iconsR.drawable.mozac_ic_extension_24)
         return TextMenuCandidate(
             text = action.title?.takeIf { it.isNotBlank() } ?: name,
             start =
@@ -279,8 +278,7 @@ class ToolbarIntegration(
                     fallbackDrawable = fallback,
                 ),
             textStyle =
-                if (enabled) TextStyle()
-                else TextStyle(color = ContextCompat.getColor(context, R.color.aw_text_disabled)),
+                TextStyle(color = if (enabled) null else ContextCompat.getColor(context, R.color.aw_text_disabled)),
             containerStyle = ContainerStyle(isEnabled = enabled),
             onClick = onClick,
         )
