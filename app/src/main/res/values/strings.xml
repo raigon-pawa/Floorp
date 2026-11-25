@@ -73,7 +73,7 @@
     <string name="privacy">Privacy</string>
 
     <!-- Preference summary for privacy -->
-    <string name="preferences_privacy_summary">Tracking protection, HTTPS-only, DNS over HTTPS, search suggestions</string>
+    <string name="preferences_privacy_summary">Tracking protection, HTTPS-only, DNS over HTTPS, Global Privacy Control, search suggestions</string>
 
     <!-- Preference category for sync settings -->
     <string name="sync_category">Choose what to sync</string>
