@@ -12,6 +12,8 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
+import mozilla.components.feature.intent.processing.TabIntentProcessor
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -110,6 +112,15 @@ class IntentReceiverTest {
         val url = "https://example.org/receiver-session"
         fire(view(url).putExtra("activeSessionId", "not-a-tab"))
         assertTrue(waitFor { store.state.selectedTab?.content?.url == url })
+    }
+
+    @Test
+    fun loadFlagsFromTheCallerAreIgnored() {
+        val url = "https://example.org/receiver-flags"
+        fire(view(url).putExtra(TabIntentProcessor.EXTRA_APP_LINK_LAUNCH_TYPE, LoadUrlFlags.BYPASS_CLASSIFIER))
+        assertTrue(waitFor { url in tabUrls() })
+        val tab = store.state.tabs.first { it.content.url == url }
+        assertEquals(LoadUrlFlags.external().value, tab.engineState.initialLoadFlags.value)
     }
 
     @Test

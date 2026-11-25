@@ -13,6 +13,7 @@ import android.os.Process
 import androidx.core.net.toUri
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
 import mozilla.components.feature.intent.ext.sanitize
+import mozilla.components.feature.intent.processing.TabIntentProcessor
 import mozilla.components.feature.media.service.AbstractMediaSessionService
 import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.support.utils.WebURLFinder
@@ -104,6 +105,9 @@ class IntentReceiverActivity : Activity() {
                 // app; only WebAppInterceptor sets it, and the app does not use that.
                 "mozilla.components.feature.pwa.EXTRA_URL_OVERRIDE",
                 NotificationManager.EXTRA_WEB_NOTIFICATION,
+                // Added to the load flags unchecked: it could load a page without Safe Browsing, tracking protection or
+                // the request interceptor. Nothing in the app sets it.
+                TabIntentProcessor.EXTRA_APP_LINK_LAUNCH_TYPE,
             )
 
         const val GRANT_FLAGS =
