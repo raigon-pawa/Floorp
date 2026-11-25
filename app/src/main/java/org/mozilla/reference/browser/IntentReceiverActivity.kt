@@ -109,8 +109,8 @@ class IntentReceiverActivity : Activity() {
 
     /**
      * Since Android 13 each extra is unparcelled when first read, so sanitize() does not see one holding a class only
-     * the sending app has (also inside a bundle, such as the custom tab headers); reading it later would crash the
-     * app. Read them all here and drop those that fail.
+     * the sending app has (also inside a bundle, such as the custom tab headers); reading it later would crash the app.
+     * Read them all here and drop those that fail.
      */
     @Suppress("DEPRECATION", "TooGenericExceptionCaught") // Bundle.get reads any type; unparcelling throws several.
     private fun Intent.removeUnreadableExtras() {

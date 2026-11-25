@@ -37,22 +37,23 @@ class MessageDialogFragment : DialogFragment() {
         private const val KEY_REQUEST = "request"
 
         /**
-         * A dialog with [title] and [message]. Without [requestKey] it has only OK; with it, Cancel and [confirm], which
-         * sets a fragment result under [requestKey].
+         * A dialog with [title] and [message]. Without [requestKey] it has only OK; with it, Cancel and [confirm],
+         * which sets a fragment result under [requestKey].
          */
         fun newInstance(
             title: String,
             message: String,
             confirm: String? = null,
             requestKey: String? = null,
-        ) = MessageDialogFragment().apply {
-            arguments =
-                Bundle().apply {
-                    putString(KEY_TITLE, title)
-                    putString(KEY_MESSAGE, message)
-                    putString(KEY_CONFIRM, confirm)
-                    putString(KEY_REQUEST, requestKey)
-                }
-        }
+        ) =
+            MessageDialogFragment().apply {
+                arguments =
+                    Bundle().apply {
+                        putString(KEY_TITLE, title)
+                        putString(KEY_MESSAGE, message)
+                        putString(KEY_CONFIRM, confirm)
+                        putString(KEY_REQUEST, requestKey)
+                    }
+            }
     }
 }

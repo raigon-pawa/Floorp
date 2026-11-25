@@ -64,8 +64,13 @@ class ReaderViewIntegration(
             feature.showControls()
             // The controls are inflated when first shown; their layout hard-codes purple text on the light and sepia
             // scheme buttons.
-            listOf(readerviewR.id.mozac_feature_readerview_color_light, readerviewR.id.mozac_feature_readerview_color_sepia)
-                .forEach { (view as? View)?.findViewById<TextView>(it)?.setTextColor(context.getColor(R.color.aw_black)) }
+            listOf(
+                    readerviewR.id.mozac_feature_readerview_color_light,
+                    readerviewR.id.mozac_feature_readerview_color_sepia,
+                )
+                .forEach {
+                    (view as? View)?.findViewById<TextView>(it)?.setTextColor(context.getColor(R.color.aw_black))
+                }
         }
     }
 

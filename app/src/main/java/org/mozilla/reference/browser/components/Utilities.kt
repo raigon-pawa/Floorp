@@ -14,8 +14,8 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
-import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.customtabs.CustomTabIntentProcessor
 import mozilla.components.feature.intent.processing.IntentProcessor
@@ -98,11 +98,11 @@ class Utilities(
 }
 
 /**
- * Search engines and the previous session load asynchronously at start-up. A search from a share or search intent
- * that arrives before the engines are loaded is dropped ("No default search engine"), and a link that arrives before
- * the tabs are restored cannot find the open tab for its URL, so a cold start opened a duplicate each time. Such intents
- * wait; all others pass straight through. Returning true early is safe: this is the last processor, and the intent
- * goes to the browser either way.
+ * Search engines and the previous session load asynchronously at start-up. A search from a share or search intent that
+ * arrives before the engines are loaded is dropped ("No default search engine"), and a link that arrives before the
+ * tabs are restored cannot find the open tab for its URL, so a cold start opened a duplicate each time. Such intents
+ * wait; all others pass straight through. Returning true early is safe: this is the last processor, and the intent goes
+ * to the browser either way.
  */
 private class WaitForStartupProcessor(
     private val store: BrowserStore,

@@ -43,18 +43,20 @@ class PendingUntilCompleteFileWriter(
         block: (OutputStream) -> Unit,
     ) {
         val fileName = download.fileName
-        if (
-            Build.VERSION.SDK_INT < Build.VERSION_CODES.Q ||
-                !shouldUseScopedStorage ||
-                fileName == null ||
-                download.directoryPath != publicDownloads()
-        ) {
+        val inPublicDownloads = fileName != null && download.directoryPath == publicDownloads()
+        // shortcut: needs Android 11 to find pending entries; Android 10 keeps the library's behaviour.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R || !shouldUseScopedStorage || !inPublicDownloads) {
             fallback.useFileStream(download, append, shouldUseScopedStorage, onUpdateState, block)
             return
         }
-        val named = if (append) download else download.copy(
-            fileName = downloadFileUtils.uniqueFileName(download.directoryPath, fileName)
-        )
+        val named =
+            if (append) {
+                download
+            } else {
+                download.copy(
+                    fileName = downloadFileUtils.uniqueFileName(download.directoryPath, requireNotNull(fileName))
+                )
+            }
         onUpdateState(named)
         val name = requireNotNull(named.fileName)
         val resolver = context.contentResolver
@@ -66,7 +68,10 @@ class PendingUntilCompleteFileWriter(
                         put(MediaStore.Downloads.DISPLAY_NAME, name)
                         put(MediaStore.Downloads.IS_PENDING, 1)
                         put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
-                        put(MediaStore.MediaColumns.MIME_TYPE, downloadFileUtils.getSafeContentType(name, named.contentType))
+                        put(
+                            MediaStore.MediaColumns.MIME_TYPE,
+                            downloadFileUtils.getSafeContentType(name, named.contentType),
+                        )
                     },
                 )
                 ?: throw IOException("Could not create the download $name")
@@ -79,7 +84,9 @@ class PendingUntilCompleteFileWriter(
                 }
         // The stream also ends when the download is paused, cancelled or the connection drops.
         val complete = named.contentLength?.let { size >= it } ?: isStillDownloading(named)
-        if (complete) resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
+        if (complete) {
+            resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
+        }
     }
 }
 
@@ -89,7 +96,7 @@ private fun collection(): Uri = MediaStore.Downloads.getContentUri(MediaStore.VO
 private fun publicDownloads() = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
 
 /** The app's download entry named [fileName] in the public Downloads folder, pending or not. */
-@RequiresApi(Build.VERSION_CODES.Q)
+@RequiresApi(Build.VERSION_CODES.R)
 private fun ContentResolver.findDownload(fileName: String): Uri? {
     val args =
         Bundle().apply {
@@ -103,8 +110,8 @@ private fun ContentResolver.findDownload(fileName: String): Uri? {
 }
 
 /**
- * Resuming a paused download first checks that its file exists, and the library looks only for published entries, so
- * a download kept pending by [PendingUntilCompleteFileWriter] would fail to resume. Finds pending ones as well.
+ * Resuming a paused download first checks that its file exists, and the library looks only for published entries, so a
+ * download kept pending by [PendingUntilCompleteFileWriter] would fail to resume. Finds pending ones as well.
  */
 class PendingAwareDownloadFileUtils(
     private val context: Context,
@@ -112,9 +119,7 @@ class PendingAwareDownloadFileUtils(
 ) : DownloadFileUtils by delegate {
     override fun fileExists(directoryPath: String, fileName: String?): Boolean =
         delegate.fileExists(directoryPath, fileName) ||
-            (
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
-                    fileName != null &&
-                    context.contentResolver.findDownload(fileName) != null
-            )
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                fileName != null &&
+                context.contentResolver.findDownload(fileName) != null)
 }

@@ -112,7 +112,8 @@ class IntentReceiverTest {
         assertTrue(waitFor { store.state.search.selectedOrDefaultSearchEngine != null })
         val host = requireNotNull(store.state.search.selectedOrDefaultSearchEngine).buildSearchUrl("x").toUri().host
         // The search engine may redirect, so compare the decoded query.
-        fun searched(text: String) = tabUrls().any { it.toUri().host == host && it.toUri().getQueryParameter("q") == text }
+        fun searched(text: String) =
+            tabUrls().any { it.toUri().host == host && it.toUri().getQueryParameter("q") == text }
         listOf("about:config", "see data:text/html,x", "how to use std::vector in c++").forEach { text ->
             fire(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text))
             assertTrue("no search for $text in ${tabUrls()}", waitFor { searched(text) })
@@ -230,7 +231,9 @@ class IntentReceiverTest {
         assertTrue(waitFor { url in tabUrls() })
         fire(createCustomTabIntent("$url-headers").putExtra(Browser.EXTRA_HEADERS, foreignParcelable("a")))
         assertTrue(waitFor { store.state.customTabs.any { it.content.url == "$url-headers" } })
-        assertNothingOpens(Intent(Intent.ACTION_SEND).setType("text/plain").putExtras(foreignParcelable(Intent.EXTRA_TEXT)))
+        assertNothingOpens(
+            Intent(Intent.ACTION_SEND).setType("text/plain").putExtras(foreignParcelable(Intent.EXTRA_TEXT))
+        )
     }
 
     /** Stands in for a class of another app. */
