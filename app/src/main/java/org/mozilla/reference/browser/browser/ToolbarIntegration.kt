@@ -234,22 +234,9 @@ class ToolbarIntegration(
         previousExtensionIcons = extensionIcons
         extensionIcons = mutableMapOf()
         val actions =
-            state.extensions.values
-                .filter { it.enabled && (tab?.content?.private != true || it.allowedInPrivateBrowsing) }
-                .sortedBy { it.name }
-                .flatMap { extension ->
-                    val overrides = tab?.extensionState?.get(extension.id)
-                    val browserAction =
-                        extension.browserAction?.let { it to it.copyWithOverride(overrides?.browserAction) }
-                    val pageAction =
-                        extension.pageAction
-                            ?.let { it to it.copyWithOverride(overrides?.pageAction) }
-                            ?.takeIf { (_, shown) -> shown.enabled == true }
-                    listOfNotNull(browserAction, pageAction).map { (global, shown) ->
-                        // The toolbar used to click the global action too; the engine applies it to the current tab.
-                        extensionActionItem(shown, extension.name.orEmpty(), onClick = global.onClick)
-                    }
-                }
+            extensionMenuActions(state.extensions.values, tab).map {
+                extensionActionItem(it.shown, it.name, it.onClick)
+            }
         if (actions.isEmpty()) {
             return TextMenuCandidate(title) { startActivity(AddonsActivity::class.java) }
         }
