@@ -57,6 +57,9 @@ class BrowserRobot {
         assertTrue(
             mDevice.findObject(UiSelector().resourceId("$packageName:id/version_info")).waitForExists(waitingTime)
         )
+        listOf("about_source_code", "about_licenses", "about_connections").forEach { id ->
+            assertTrue(id, mDevice.findObject(UiSelector().resourceId("$packageName:id/$id")).exists())
+        }
     }
 
     fun longClickMatchingText(expectedText: String) {

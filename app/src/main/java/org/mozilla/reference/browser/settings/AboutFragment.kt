@@ -7,24 +7,23 @@ package org.mozilla.reference.browser.settings
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.pm.PackageManager
+import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.text.HtmlCompat
 import androidx.core.text.HtmlCompat.FROM_HTML_SEPARATOR_LINE_BREAK_LIST_ITEM
 import androidx.fragment.app.Fragment
-import mozilla.components.Build
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_BUILDID
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
+import org.mozilla.reference.browser.BrowserActivity
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.requireComponents
 
-/** About page. Tapping the version line copies it to the clipboard. */
+/** About page. Tapping the version lines copies them to the clipboard. */
 class AboutFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -37,53 +36,52 @@ class AboutFragment : Fragment() {
         savedInstanceState: Bundle?,
     ) {
         super.onViewCreated(view, savedInstanceState)
+        val context = requireContext()
 
-        val appName = requireContext().resources.getString(R.string.app_name)
-        (activity as AppCompatActivity).title = getString(R.string.preferences_about_page)
-
-        val aboutText =
-            try {
-                val packageInfo = requireContext().packageManager.getPackageInfo(requireContext().packageName, 0)
-                val geckoVersion =
-                    PackageInfoCompat.getLongVersionCode(packageInfo).toString() +
-                        " GV: " +
-                        MOZ_APP_VERSION +
-                        "-" +
-                        MOZ_APP_BUILDID
-                String.format(
-                    "%s (Build #%s)\n",
-                    packageInfo.versionName,
-                    geckoVersion,
-                )
-            } catch (e: PackageManager.NameNotFoundException) {
-                ""
-            }
-
+        val versionName = context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty()
         val versionInfo =
-            String.format(
-                "%s \uD83D\uDCE6: %s, %s\n\uD83D\uDEA2: %s",
-                aboutText,
-                Build.VERSION,
-                Build.GIT_HASH,
-                Build.APPLICATION_SERVICES_VERSION,
-            )
-        val content =
+            getString(R.string.archwave_about_version, versionName) +
+                "\n" +
+                getString(R.string.archwave_about_engine, MOZ_APP_VERSION, MOZ_APP_BUILDID)
+        view.findViewById<TextView>(R.id.version_info).apply {
+            text = versionInfo
+            setOnClickListener {
+                val clipBoard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                clipBoard.setPrimaryClip(ClipData.newPlainText(versionInfo, versionInfo))
+                Toast.makeText(context, getString(R.string.toast_copied), Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        view.findViewById<TextView>(R.id.about_content).text =
             HtmlCompat.fromHtml(
-                resources.getString(R.string.about_content, appName),
+                getString(R.string.about_content, getString(R.string.app_name)),
                 FROM_HTML_SEPARATOR_LINE_BREAK_LIST_ITEM,
             )
 
-        val aboutView = view.findViewById<TextView>(R.id.about_content)
-        aboutView.text = content
-
-        val versionInfoView = view.findViewById<TextView>(R.id.version_info)
-        versionInfoView.text = versionInfo
-
-        versionInfoView.setOnClickListener { v ->
-            val clipBoard = requireContext().getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            clipBoard.setPrimaryClip(ClipData.newPlainText(versionInfo, versionInfo))
-
-            Toast.makeText(requireContext(), getString(R.string.toast_copied), Toast.LENGTH_SHORT).show()
+        view.findViewById<View>(R.id.about_source_code).setOnClickListener {
+            openInNewTab(getString(R.string.archwave_source_url))
+        }
+        view.findViewById<View>(R.id.about_licenses).setOnClickListener { showPage(LicensesFragment()) }
+        view.findViewById<View>(R.id.about_connections).setOnClickListener {
+            showPage(TextPageFragment.fromText(R.string.archwave_about_connections, R.string.archwave_connections_text))
         }
     }
+
+    override fun onResume() {
+        super.onResume()
+        // Here rather than at navigation, so the title also comes back after rotation and process death.
+        (activity as SettingsFragment.ActionBarUpdater).updateTitle(R.string.preferences_about_page)
+    }
+}
+
+/** Opens a sub-page of the settings on top of this one. */
+internal fun Fragment.showPage(page: Fragment) {
+    parentFragmentManager.beginTransaction().replace(R.id.container, page).addToBackStack(null).commit()
+}
+
+/** Opens [url] in a new tab of the browser and leaves the settings, so links never leave the app. */
+internal fun Fragment.openInNewTab(url: String) {
+    requireComponents.useCases.tabsUseCases.addTab(url, selectTab = true)
+    startActivity(Intent(requireContext(), BrowserActivity::class.java))
+    requireActivity().finish()
 }

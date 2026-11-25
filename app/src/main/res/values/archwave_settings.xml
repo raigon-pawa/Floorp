@@ -41,4 +41,47 @@
     <string name="archwave_clear_data_done">Browsing data cleared</string>
     <string name="archwave_clear_data_failed">Some browsing data could not be cleared. Try again.</string>
 
+    <!-- About: version line; %1$s is the version, for example 0.1.0 -->
+    <string name="archwave_about_version">Version %1$s</string>
+    <!-- About: engine line; %1$s is the GeckoView version, %2$s its build id -->
+    <string name="archwave_about_engine">GeckoView %1$s, build %2$s</string>
+    <!-- About: rows -->
+    <string name="archwave_about_source_code">Source code</string>
+    <string name="archwave_about_licenses">Open-source licences</string>
+    <string name="archwave_about_connections">What Archwave connects to</string>
+    <string name="archwave_source_url" translatable="false">https://github.com/raigon-pawa/Floorp/tree/archwave-android</string>
+
+    <!-- What Archwave connects to: the whole page -->
+    <string name="archwave_connections_text">Archwave sends no telemetry and no crash reports. It connects to:
+        \n\n• The sites you visit, and your search engine when you search.
+        \n\n• The DNS-over-HTTPS resolver you chose (Quad9 unless you changed it), to look up the addresses of sites.
+        \n\n• Mozilla Remote Settings, for blocklists and security data such as revoked certificates.
+        \n\n• Google Safe Browsing, for lists of dangerous sites. Only shortened fingerprints of an address are ever sent, and only when an address needs checking.
+        \n\n• addons.mozilla.org, when you browse or install extensions, and once a day to look for updates to the extensions you installed.</string>
+
+    <!-- Open-source licences: rows; the summary of each lists the components under that licence -->
+    <string name="archwave_licenses_mpl">Mozilla Public License 2.0</string>
+    <string name="archwave_licenses_apache">Apache License 2.0</string>
+    <string name="archwave_licenses_ofl">SIL Open Font License 1.1</string>
+    <string name="archwave_licenses_native">Native libraries</string>
+    <string name="archwave_licenses_native_summary">Compiled into Application Services and Glean: each library and its licence</string>
+    <string name="archwave_licenses_gecko">Libraries inside GeckoView</string>
+    <string name="archwave_licenses_gecko_summary">The engine\'s own licence page (about:license)</string>
+    <string name="archwave_licenses_play">Android Software Development Kit License</string>
+
+    <!-- Text pages (licences, What Archwave connects to) -->
+    <dimen name="archwave_text_page_padding">16dp</dimen>
+    <item name="archwave_text_page" type="id" />
+
+    <!-- About: a tappable row under the text -->
+    <style name="ArchwaveAboutRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingHorizontal">24dp</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:textColor">@color/aw_text_1</item>
+        <item name="android:textSize">16sp</item>
+    </style>
 </resources>

@@ -1,0 +1,484 @@
+Native libraries compiled into Mozilla Application Services and Glean. Each is listed with its licence and the address of its licence text, as the published package descriptions (Maven POM files) state.
+
+adler2: Apache 2.0
+  https://github.com/oyvindln/adler2
+aho-corasick: MIT
+  https://github.com/BurntSushi/aho-corasick/blob/master/LICENSE-MIT
+android_log-sys: Apache 2.0
+  https://github.com/nercury/android_log-sys-rs
+android_logger: Apache 2.0
+  https://github.com/Nercury/android_logger-rs
+android_system_properties: Apache 2.0
+  https://github.com/nical/android_system_properties/blob/main/LICENSE-APACHE
+anyhow: Apache 2.0
+  https://github.com/dtolnay/anyhow/blob/master/LICENSE-APACHE
+arrayref: BSD-2-Clause
+  https://github.com/droundy/arrayref/blob/main/LICENSE
+askama: Apache 2.0
+  https://github.com/askama-rs/askama/blob/main/LICENSE-APACHE
+askama_derive: Apache 2.0
+  https://github.com/askama-rs/askama/blob/main/LICENSE-APACHE
+askama_macros: Apache 2.0
+  https://github.com/askama-rs/askama/blob/main/LICENSE-APACHE
+askama_parser: Apache 2.0
+  https://github.com/askama-rs/askama/blob/main/LICENSE-APACHE
+async-trait: Apache 2.0
+  https://github.com/dtolnay/async-trait/blob/master/LICENSE-APACHE
+autocfg: Apache 2.0
+  https://github.com/cuviper/autocfg/blob/master/LICENSE-APACHE
+base16: CC0-1.0
+  https://github.com/thomcc/rust-base16/blob/master/LICENSE-APACHE
+base64: Apache 2.0
+  https://github.com/marshallpierce/rust-base64/blob/master/LICENSE-APACHE
+basic-toml: Apache 2.0
+  https://github.com/dtolnay/basic-toml/blob/master/LICENSE-APACHE
+bhttp: Apache 2.0
+  https://github.com/martinthomson/ohttp/blob/main/LICENSE-APACHE
+bincode: MIT
+  https://git.sr.ht/~stygianentity/bincode/blob/trunk/LICENSE.md
+bindgen: BSD-3-Clause
+  https://github.com/rust-lang/rust-bindgen/blob/main/LICENSE
+bitflags: Apache 2.0
+  https://github.com/bitflags/bitflags/blob/main/LICENSE-APACHE
+block-buffer: Apache 2.0
+  https://github.com/RustCrypto/utils/blob/master/block-buffer/LICENSE-APACHE
+byteorder: MIT
+  https://github.com/BurntSushi/byteorder/blob/master/LICENSE-MIT
+bytes: MIT
+  https://github.com/tokio-rs/bytes/blob/master/LICENSE
+camino: Apache 2.0
+  https://github.com/camino-rs/camino/blob/main/LICENSE-APACHE
+cargo-platform: Apache 2.0
+  https://github.com/rust-lang/cargo/blob/master/LICENSE-APACHE
+cargo_metadata: MIT
+  https://github.com/oli-obk/cargo_metadata/blob/main/LICENSE-MIT
+cc: Apache 2.0
+  https://github.com/rust-lang/cc-rs/blob/main/LICENSE-APACHE
+cexpr: Apache 2.0
+  https://github.com/jethrogb/rust-cexpr/blob/master/LICENSE-APACHE
+cfg-if: Apache 2.0
+  https://github.com/alexcrichton/cfg-if/blob/main/LICENSE-APACHE
+chrono: Apache 2.0
+  https://github.com/chronotope/chrono/blob/main/LICENSE.txt
+clang-sys: Apache 2.0
+  https://github.com/KyleMayes/clang-sys/blob/master/LICENSE.txt
+core-foundation-sys: Apache 2.0
+  https://github.com/servo/core-foundation-rs/blob/main/LICENSE-APACHE
+core_maths: MIT
+  https://github.com/robertbastian/core_maths/blob/main/LICENSE
+cpufeatures: Apache 2.0
+  https://github.com/RustCrypto/utils/blob/master/cpufeatures/LICENSE-APACHE
+crc32fast: Apache 2.0
+  https://github.com/srijs/rust-crc32fast
+crossbeam-channel: Apache 2.0
+  https://github.com/crossbeam-rs/crossbeam
+crossbeam-utils: Apache 2.0
+  https://github.com/crossbeam-rs/crossbeam
+crypto-common: Apache 2.0
+  https://github.com/RustCrypto/traits/blob/master/crypto-common/LICENSE-APACHE
+dashmap: MIT
+  https://github.com/xacrimon/dashmap
+digest: Apache 2.0
+  https://github.com/RustCrypto/traits/blob/master/digest/LICENSE-APACHE
+displaydoc: Apache 2.0
+  https://github.com/yaahc/displaydoc/blob/master/LICENSE-APACHE
+dogear: Apache 2.0
+  https://github.com/mozilla/dogear/blob/master/LICENSE
+ece: MPL 2.0
+  https://github.com/mozilla/rust-ece/blob/main/LICENSE
+either: Apache 2.0
+  https://github.com/bluss/either/blob/main/LICENSE-APACHE
+env_logger: Apache 2.0
+  https://github.com/rust-cli/env_logger/blob/main/LICENSE-APACHE
+equivalent: Apache 2.0
+  https://github.com/cuviper/equivalent/blob/main/LICENSE-APACHE
+errno: Apache 2.0
+  https://github.com/lambda-fairy/rust-errno/blob/main/LICENSE-APACHE
+extend: MIT
+  https://github.com/davidpdrsn/extend/blob/master/LICENSE
+fallible-iterator: Apache 2.0
+  https://github.com/sfackler/rust-fallible-iterator/blob/master/LICENSE-APACHE
+fallible-streaming-iterator: Apache 2.0
+  https://github.com/sfackler/fallible-streaming-iterator/blob/master/LICENSE-APACHE
+fastrand: Apache 2.0
+  https://github.com/smol-rs/fastrand/blob/master/LICENSE-APACHE
+ffi-support: Apache 2.0
+  https://raw.githubusercontent.com/mozilla/ffi-support/main/LICENSE-APACHE
+find-msvc-tools: Apache 2.0
+  https://github.com/rust-lang/cc-rs/blob/main/LICENSE-APACHE
+flate2: Apache 2.0
+  https://github.com/rust-lang/flate2-rs
+foldhash: Zlib
+  https://github.com/orlp/foldhash/blob/master/LICENSE
+form_urlencoded: Apache 2.0
+  https://github.com/servo/rust-url/blob/main/LICENSE-APACHE
+fs-err: Apache 2.0
+  https://github.com/andrewhickman/fs-err/blob/main/LICENSE-APACHE
+generic-array: MIT
+  https://github.com/fizyk20/generic-array/blob/master/LICENSE
+getrandom: Apache 2.0
+  https://github.com/rust-random/getrandom/blob/master/LICENSE-APACHE
+glean: MPL 2.0
+  https://github.com/mozilla/glean
+glean-build: MPL 2.0
+  https://github.com/mozilla/glean/blob/main/LICENSE
+glean-bundle: MPL 2.0
+  https://github.com/mozilla/glean
+glean-bundle-android: MPL 2.0
+  https://github.com/mozilla/glean
+glean-core: MPL 2.0
+  https://github.com/mozilla/glean
+glean-sym: MPL 2.0
+  https://github.com/mozilla/glean/blob/main/LICENSE
+glean-sym-parser: MPL 2.0
+  https://github.com/mozilla/glean
+glean-tests: MPL 2.0
+  https://crates.io/crates/glean-tests
+glob: Apache 2.0
+  https://github.com/rust-lang/glob/blob/main/LICENSE-APACHE
+goblin: MIT
+  https://github.com/m4b/goblin/blob/master/LICENSE
+hashbrown: Apache 2.0
+  https://github.com/rust-lang/hashbrown/blob/main/LICENSE-APACHE
+hashlink: Apache 2.0
+  https://github.com/kyren/hashlink/blob/main/LICENSE-APACHE
+hawk: MPL 2.0
+  https://github.com/taskcluster/rust-hawk/blob/main/LICENSE
+heck: Apache 2.0
+  https://github.com/withoutboats/heck/blob/master/LICENSE-APACHE
+hex: Apache 2.0
+  https://github.com/KokaKiwi/rust-hex/blob/main/LICENSE-APACHE
+humantime: Apache 2.0
+  https://github.com/tailhook/humantime
+iana-time-zone: Apache 2.0
+  https://github.com/strawlab/iana-time-zone/blob/main/LICENSE-APACHE
+icu_casemap: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_casemap_data: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_collections: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_locale: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_locale_core: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_locale_data: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_normalizer: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_normalizer_data: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_properties: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_properties_data: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_provider: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_segmenter: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+icu_segmenter_data: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+id-arena: Apache 2.0
+  https://github.com/fitzgen/id-arena/blob/master/LICENSE-APACHE
+idna: Apache 2.0
+  https://github.com/servo/rust-url/blob//main/LICENSE-APACHE
+idna_adapter: Apache 2.0
+  https://github.com/hsivonen/idna_adapter/blob/main/LICENSE-APACHE
+indexmap: Apache 2.0
+  https://github.com/indexmap-rs/indexmap/blob/main/LICENSE-APACHE
+inherent: Apache 2.0
+  https://github.com/dtolnay/inherent
+io-lifetimes: Apache 2.0
+  https://github.com/sunfishcode/io-lifetimes/blob/main/LICENSE-APACHE
+itertools: Apache 2.0
+  https://github.com/rust-itertools/itertools/blob/master/LICENSE-APACHE
+itoa: Apache 2.0
+  https://github.com/dtolnay/itoa/blob/master/LICENSE-APACHE
+jexl-eval: MPL 2.0
+  https://github.com/mozilla/jexl-rs/blob/main/LICENSE
+jexl-parser: MPL 2.0
+  https://github.com/mozilla/jexl-rs/blob/main/LICENSE
+jna: Apache 2.0
+  https://github.com/java-native-access/jna/blob/master/AL2.0
+lalrpop-util: Apache 2.0
+  https://github.com/lalrpop/lalrpop/blob/master/LICENSE-APACHE
+lazy_static: Apache 2.0
+  https://github.com/rust-lang-nursery/lazy-static.rs/blob/master/LICENSE-APACHE
+libc: Apache 2.0
+  https://github.com/rust-lang/libc/blob/main/LICENSE-APACHE
+libloading: ISC
+  https://github.com/nagisa/rust_libloading/blob//master/LICENSE
+libm: Apache 2.0
+  https://github.com/rust-lang/libm/blob/master/libm/LICENSE.txt
+libsqlite3-sys: MIT
+  https://github.com/rusqlite/rusqlite/blob/master/LICENSE
+linux-raw-sys: Apache 2.0
+  https://github.com/sunfishcode/linux-raw-sys/blob/main/LICENSE-APACHE
+litemap: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+lock_api: Apache 2.0
+  https://github.com/Amanieu/parking_lot/blob/master/LICENSE-APACHE
+log: Apache 2.0
+  https://github.com/rust-lang/log/blob/master/LICENSE-APACHE
+malloc_size_of_derive: Apache 2.0
+  https://github.com/bholley/malloc_size_of_derive
+memchr: MIT
+  https://github.com/BurntSushi/memchr/blob/master/LICENSE-MIT
+minimal-lexical: Apache 2.0
+  https://github.com/Alexhuszagh/minimal-lexical/blob/main/LICENSE-APACHE
+miniz_oxide: Apache 2.0
+  https://github.com/Frommi/miniz_oxide/tree/master/miniz_oxide
+nom: MIT
+  https://github.com/Geal/nom/blob/main/LICENSE
+NSPR: MPL 2.0
+  https://github.com/mozilla/nspr/blob/main/LICENSE
+NSS: MPL 2.0
+  https://hg.mozilla.org/projects/nss/raw-file/tip/COPYING
+num-traits: Apache 2.0
+  https://github.com/rust-num/num-traits/blob/main/LICENSE-APACHE
+num_cpus: Apache 2.0
+  https://github.com/seanmonstar/num_cpus
+ohttp: Apache 2.0
+  https://github.com/martinthomson/ohttp/blob/main/LICENSE-APACHE
+once_cell: Apache 2.0
+  https://github.com/matklad/once_cell/blob/master/LICENSE-APACHE
+ordered-float: MIT
+  https://github.com/reem/rust-ordered-float/blob/master/LICENSE-MIT
+oslog: MIT
+  https://github.com/steven-joruk/oslog
+parking_lot: Apache 2.0
+  https://github.com/Amanieu/parking_lot/blob/master/LICENSE-APACHE
+parking_lot_core: Apache 2.0
+  https://github.com/Amanieu/parking_lot/blob/master/LICENSE-APACHE
+percent-encoding: Apache 2.0
+  https://github.com/servo/rust-url/blob//main/LICENSE-APACHE
+pin-project-lite: Apache 2.0
+  https://github.com/taiki-e/pin-project-lite/blob/main/LICENSE-APACHE
+pkg-config: Apache 2.0
+  https://github.com/rust-lang/pkg-config-rs/blob/master/LICENSE-APACHE
+plain: Apache 2.0
+  https://github.com/randomites/plain/blob/master/LICENSE-APACHE
+pollster: Apache 2.0
+  https://github.com/zesterer/pollster/blob/master/LICENSE-APACHE
+potential_utf: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+ppv-lite86: Apache 2.0
+  https://github.com/cryptocorrosion/cryptocorrosion/blob/master/utils-simd/ppv-lite86/LICENSE-APACHE
+prettyplease: Apache 2.0
+  https://github.com/dtolnay/prettyplease
+proc-macro2: Apache 2.0
+  https://github.com/dtolnay/proc-macro2/blob/master/LICENSE-APACHE
+protobuf: BSD-3-Clause
+  https://github.com/protocolbuffers/protobuf/blob/master/LICENSE
+quote: Apache 2.0
+  https://github.com/dtolnay/quote/blob/master/LICENSE-APACHE
+rand: Apache 2.0
+  https://github.com/rust-random/rand/blob/master/LICENSE-APACHE
+rand_chacha: Apache 2.0
+  https://github.com/rust-random/rand/blob/master/LICENSE-APACHE
+rand_core: Apache 2.0
+  https://github.com/rust-random/rand/blob/master/LICENSE-APACHE
+rapid-metrics: MPL 2.0
+  https://crates.io/crates/rapid-metrics
+regex: Apache 2.0
+  https://github.com/rust-lang/regex/blob/master/LICENSE-APACHE
+regex-automata: Apache 2.0
+  https://github.com/rust-lang/regex/blob/master/LICENSE-APACHE
+regex-syntax: Apache 2.0
+  https://github.com/rust-lang/regex/blob/master/LICENSE-APACHE
+ring: ISC
+  https://github.com/briansmith/ring/blob/master/LICENSE
+rkv: Apache 2.0
+  https://github.com/mozilla/rkv/blob/main/LICENSE
+rmp: MIT
+  https://github.com/3Hren/msgpack-rust
+rmp-serde: MIT
+  https://github.com/3Hren/msgpack-rust
+rusqlite: MIT
+  https://github.com/rusqlite/rusqlite/blob/master/LICENSE
+rustc-hash: Apache 2.0
+  https://github.com/rust-lang/rustc-hash/blob/main/LICENSE-APACHE
+rustix: Apache 2.0
+  https://github.com/bytecodealliance/rustix/blob/main/LICENSE-APACHE
+ryu: Apache 2.0
+  https://github.com/dtolnay/ryu/blob/master/LICENSE-APACHE
+sample: MPL 2.0
+  https://crates.io/crates/sample
+scopeguard: Apache 2.0
+  https://github.com/bluss/scopeguard/blob/master/LICENSE-APACHE
+scroll: MIT
+  https://github.com/m4b/scroll/blob/master/LICENSE
+scroll_derive: MIT
+  https://github.com/m4b/scroll/blob/master/LICENSE
+semver: Apache 2.0
+  https://github.com/dtolnay/semver/blob/master/LICENSE-APACHE
+serde: Apache 2.0
+  https://github.com/serde-rs/serde/blob/master/LICENSE-APACHE
+serde_core: Apache 2.0
+  https://github.com/serde-rs/serde/blob/master/LICENSE-APACHE
+serde_derive: Apache 2.0
+  https://github.com/serde-rs/serde/blob/master/LICENSE-APACHE
+serde_json: Apache 2.0
+  https://github.com/serde-rs/json/blob/master/LICENSE-APACHE
+serde_path_to_error: Apache 2.0
+  https://github.com/dtolnay/path-to-error/blob/master/LICENSE-APACHE
+serde_spanned: Apache 2.0
+  https://github.com/toml-rs/toml/blob/main/LICENSE-APACHE
+sha2: Apache 2.0
+  https://github.com/RustCrypto/hashes/blob/master/sha2/LICENSE-APACHE
+sharded-slab: MIT
+  https://github.com/hawkw/sharded-slab/blob/main/LICENSE
+shlex: Apache 2.0
+  https://www.apache.org/licenses/LICENSE-2.0.txt
+simd-adler32: MIT
+  https://github.com/mcountryman/simd-adler32
+siphasher: Apache 2.0
+  https://github.com/jedisct1/rust-siphash/blob/master/COPYING
+smallbitvec: Apache 2.0
+  https://github.com/servo/smallbitvec/blob/main/LICENSE-APACHE
+smallvec: Apache 2.0
+  https://github.com/servo/rust-smallvec/blob/master/LICENSE-APACHE
+smawk: MIT
+  https://github.com/mgeisler/smawk/blob/main/LICENSE
+SQLite: Public domain
+  https://sqlite.org/copyright.html
+stable_deref_trait: Apache 2.0
+  https://github.com/storyyeller/stable_deref_trait/blob/master/LICENSE-APACHE
+static_assertions: Apache 2.0
+  https://github.com/nvzqz/static-assertions-rs/blob/master/LICENSE-APACHE
+syn: Apache 2.0
+  https://github.com/dtolnay/syn/blob/master/LICENSE-APACHE
+synstructure: MIT
+  https://github.com/mystor/synstructure/blob/main/LICENSE
+tempfile: Apache 2.0
+  https://github.com/Stebalien/tempfile/blob/master/LICENSE-APACHE
+textwrap: MIT
+  https://github.com/mgeisler/textwrap/blob/main/LICENSE
+thiserror: Apache 2.0
+  https://github.com/dtolnay/thiserror/blob/master/LICENSE-APACHE
+thiserror-impl: Apache 2.0
+  https://github.com/dtolnay/thiserror/blob/master/LICENSE-APACHE
+thread_local: Apache 2.0
+  https://github.com/Amanieu/thread_local-rs/blob/master/LICENSE-APACHE
+tinystr: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+tinyvec: Apache 2.0
+  https://github.com/Lokathor/tinyvec
+tinyvec_macros: Apache 2.0
+  https://github.com/Soveu/tinyvec_macros
+toml: Apache 2.0
+  https://github.com/toml-rs/toml/blob/main/LICENSE-APACHE
+toml_datetime: Apache 2.0
+  https://github.com/toml-rs/toml/blob/main/LICENSE-APACHE
+toml_parser: Apache 2.0
+  https://github.com/toml-rs/toml/blob/main/LICENSE-APACHE
+toml_writer: Apache 2.0
+  https://github.com/toml-rs/toml/blob/main/LICENSE-APACHE
+tracing: MIT
+  https://github.com/tokio-rs/tracing/blob/master/LICENSE
+tracing-attributes: MIT
+  https://github.com/tokio-rs/tracing/blob/main/LICENSE
+tracing-core: MIT
+  https://github.com/tokio-rs/tracing/blob/main/LICENSE
+tracing-subscriber: MIT
+  https://github.com/tokio-rs/tracing/blob/main/LICENSE
+typenum: Apache 2.0
+  https://github.com/paholg/typenum/blob/main/LICENSE-APACHE
+unicode-bidi: Apache 2.0
+  https://github.com/servo/unicode-bidi
+unicode-ident: (MIT OR Apache-2.0) AND Unicode-3.0
+  https://github.com/dtolnay/unicode-ident/LICENSE-APACHE
+unicode-normalization: Apache 2.0
+  https://github.com/unicode-rs/unicode-normalization
+uniffi: MPL 2.0
+  https://github.com/mozilla/uniffi-rs/blob/main/LICENSE
+uniffi-bindgen: MPL 2.0
+  https://crates.io/crates/uniffi-bindgen
+uniffi_bindgen: MPL 2.0
+  https://github.com/mozilla/uniffi-rs/blob/main/LICENSE
+uniffi_build: MPL 2.0
+  https://github.com/mozilla/uniffi-rs/blob/main/LICENSE
+uniffi_core: MPL 2.0
+  https://github.com/mozilla/uniffi-rs/blob/main/LICENSE
+uniffi_internal_macros: MPL 2.0
+  https://github.com/mozilla/uniffi-rs/blob/main/LICENSE
+uniffi_macros: MPL 2.0
+  https://github.com/mozilla/uniffi-rs/blob/main/LICENSE
+uniffi_meta: MPL 2.0
+  https://github.com/mozilla/uniffi-rs/blob/main/LICENSE
+uniffi_pipeline: MPL 2.0
+  https://github.com/mozilla/uniffi-rs/blob/main/LICENSE
+uniffi_udl: MPL 2.0
+  https://github.com/mozilla/uniffi-rs/blob/main/LICENSE
+url: Apache 2.0
+  https://github.com/servo/rust-url/blob/main/LICENSE-APACHE
+utf8_iter: Apache 2.0
+  https://github.com/hsivonen/utf8_iter/blob/main/LICENSE-APACHE
+uuid: Apache 2.0
+  https://github.com/uuid-rs/uuid/blob/main/LICENSE-APACHE
+vcpkg: Apache 2.0
+  https://github.com/mcgoo/vcpkg-rs/blob/master/LICENSE-APACHE
+version_check: Apache 2.0
+  https://github.com/SergioBenitez/version_check/blob/master/LICENSE-APACHE
+weedle2: MIT
+  https://github.com/mozilla/uniffi-rs/blob/main/weedle2/LICENSE.md
+whatsys: MIT
+  https://github.com/badboy/whatsys
+winapi: Apache 2.0
+  https://github.com/retep998/winapi-rs
+winapi-x86_64-pc-windows-gnu: Apache 2.0
+  https://github.com/retep998/winapi-rs
+windows-core: Apache 2.0
+  https://github.com/microsoft/windows-rs
+windows-implement: Apache 2.0
+  https://github.com/microsoft/windows-rs
+windows-interface: Apache 2.0
+  https://github.com/microsoft/windows-rs
+windows-link: Apache 2.0
+  https://github.com/microsoft/windows-rs/blob/master/license-apache-2.0
+windows-result: Apache 2.0
+  https://github.com/microsoft/windows-rs
+windows-strings: Apache 2.0
+  https://github.com/microsoft/windows-rs
+windows-sys: Apache 2.0
+  https://github.com/microsoft/windows-rs/blob/master/license-mit
+windows-targets: Apache 2.0
+  https://github.com/microsoft/windows-rs/blob/master/license-mit
+windows_x86_64_gnu: Apache 2.0
+  https://github.com/microsoft/windows-rs/blob/master/license-mit
+windows_x86_64_msvc: Apache 2.0
+  https://github.com/microsoft/windows-rs/blob/master/license-mit
+winnow: MIT
+  https://github.com/winnow-rs/winnow/blob/main/LICENSE-MIT
+wr_malloc_size_of: Apache 2.0
+  https://crates.io/crates/wr_malloc_size_of
+writeable: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+xflags: Apache 2.0
+  https://github.com/matklad/xflags
+xflags-macros: Apache 2.0
+  https://github.com/matklad/xflags
+xshell: Apache 2.0
+  https://github.com/matklad/xshell/blob/master/LICENSE-APACHE
+xshell-macros: Apache 2.0
+  https://github.com/matklad/xshell/blob/master/LICENSE-APACHE
+xshell-venv: MIT
+  https://github.com/badboy/xshell-venv/blob/main/LICENSE
+yoke: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+yoke-derive: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+zeitstempel: MPL 2.0
+  https://github.com/badboy/zeitstempel
+zerofrom: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+zerofrom-derive: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+zerotrie: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+zerovec: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+zerovec-derive: Unicode 3.0
+  https://github.com/unicode-org/icu4x/blob/main/LICENSE
+zmij: MIT
+  https://github.com/dtolnay/zmij
