@@ -10,7 +10,6 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.isVisible
@@ -24,7 +23,6 @@ import mozilla.components.feature.addons.ui.translateName
 import mozilla.components.feature.addons.update.AddonUpdater
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
-import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
@@ -44,6 +42,8 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
             }
 
         bindAddon(addon)
+        // Also answers a confirmation restored after a rotation.
+        supportFragmentManager.setFragmentResultListener(REQUEST_REMOVE, this) { _, _ -> removeAddon(addon) }
     }
 
     private fun bindAddon(addon: Addon) {
@@ -192,13 +192,13 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
     private fun bindRemoveButton(addon: Addon) {
         findViewById<View>(R.id.remove_add_on).setOnClickListener {
             // Removing deletes the extension's settings and data at once, so it is confirmed first.
-            AlertDialog.Builder(this)
-                .setTitle(getString(R.string.archwave_addons_remove_title, addon.translateName(this)))
-                .setMessage(R.string.archwave_addons_remove_message)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(addonsR.string.mozac_feature_addons_remove) { _, _ -> removeAddon(addon) }
-                .show()
-                .withCenterAlignedButtons()
+            MessageDialogFragment.newInstance(
+                    title = getString(R.string.archwave_addons_remove_title, addon.translateName(this)),
+                    message = getString(R.string.archwave_addons_remove_message),
+                    confirm = getString(addonsR.string.mozac_feature_addons_remove),
+                    requestKey = REQUEST_REMOVE,
+                )
+                .show(supportFragmentManager, REQUEST_REMOVE)
         }
     }
 
@@ -223,4 +223,8 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
     // A disabled add-on's options page is not loaded: it opened as a blank tab that stayed dead.
     private fun shouldSettingsBeVisible(addon: Addon) =
         addon.isEnabled() && !addon.installedState?.optionsPageUrl.isNullOrEmpty()
+
+    private companion object {
+        const val REQUEST_REMOVE = "archwave_remove_addon"
+    }
 }

@@ -78,12 +78,16 @@ class IncomingIntentRulesTest {
     // WebURLFinder needs the Android runtime, so these tests stand in for it with what it returns on a device.
     private val noUrl: (String) -> String? = { null }
 
+    private fun search(text: String) = "https://search.example/?q=${text.replace(' ', '+')}"
+
+    private fun shared(text: String?, findUrl: (String) -> String?) = sharedTextOrNull(text, findUrl, ::search)
+
     @Test
     fun `shared text without an address becomes a search`() {
         var scanned: String? = null
         assertEquals(
             "hello world",
-            sharedTextOrNull("  hello world ") {
+            shared("  hello world ") {
                 scanned = it
                 null
             },
@@ -94,13 +98,13 @@ class IncomingIntentRulesTest {
     @Test
     fun `a long search is shortened`() {
         val text = "a".repeat(MAX_SEARCH_LENGTH * 50)
-        assertEquals("a".repeat(MAX_SEARCH_LENGTH), sharedTextOrNull(text, noUrl))
+        assertEquals("a".repeat(MAX_SEARCH_LENGTH), shared(text, noUrl))
     }
 
     @Test
     fun `only the start of very long shared text is scanned`() {
         var scanned = ""
-        sharedTextOrNull("a".repeat(MAX_SHARED_TEXT_LENGTH * 2)) {
+        shared("a".repeat(MAX_SHARED_TEXT_LENGTH * 2)) {
             scanned = it
             null
         }
@@ -111,38 +115,44 @@ class IncomingIntentRulesTest {
     fun `a web address in shared text is kept on its own`() {
         assertEquals(
             "https://example.org/x",
-            sharedTextOrNull("Look at this: https://example.org/x") { "https://example.org/x" },
+            shared("Look at this: https://example.org/x") { "https://example.org/x" },
         )
         // The processor loads an address without a scheme as http.
-        assertEquals("example.org", sharedTextOrNull("example.org") { "example.org" })
+        assertEquals("example.org", shared("example.org") { "example.org" })
     }
 
     @Test
-    fun `shared addresses of other schemes are dropped`() {
+    fun `shared text with addresses of other schemes is searched for through the search engine's address`() {
         // The finder already leaves out javascript:, file: and content:, which then become a search.
-        listOf("about:config", "data:text/html,<h1>x</h1>", "moz-extension://1234/page.html").forEach { url ->
-            assertNull(url, sharedTextOrNull("see $url") { url })
+        listOf("about:config", "data:text/html,<h1>x</h1>", "moz-extension://1234/page.html", "std::vector").forEach {
+            url ->
+            assertEquals(url, search("see $url"), shared("see $url") { url })
         }
     }
 
     @Test
+    fun `shared text with addresses of other schemes is dropped without a search engine`() {
+        assertNull(sharedTextOrNull("re:invent 2026", { "re:invent" }, { null }))
+    }
+
+    @Test
     fun `a shared host and port is loaded as http`() {
-        assertEquals("http://localhost:3000", sharedTextOrNull("localhost:3000") { "localhost:3000" })
-        assertEquals("http://example.com:8080/a", sharedTextOrNull("example.com:8080/a") { "example.com:8080/a" })
+        assertEquals("http://localhost:3000", shared("localhost:3000") { "localhost:3000" })
+        assertEquals("http://example.com:8080/a", shared("example.com:8080/a") { "example.com:8080/a" })
     }
 
     @Test
     fun `a web address after an address of another scheme is kept`() {
         // Like WebURLFinder, which returns the first address with a scheme.
         val finder = { text: String -> listOf("note:see", "mailto:a@b.c", "https://x.org").firstOrNull { it in text } }
-        assertEquals("https://x.org", sharedTextOrNull("note:see https://x.org", finder))
-        assertEquals("https://x.org", sharedTextOrNull("mailto:a@b.c note:see https://x.org", finder))
-        assertNull(sharedTextOrNull("note:see mailto:a@b.c", finder))
+        assertEquals("https://x.org", shared("note:see https://x.org", finder))
+        assertEquals("https://x.org", shared("mailto:a@b.c note:see https://x.org", finder))
+        assertEquals(search("note:see mailto:a@b.c"), shared("note:see mailto:a@b.c", finder))
     }
 
     @Test
     fun `blank shared text is dropped`() {
-        assertNull(sharedTextOrNull(null, noUrl))
-        assertNull(sharedTextOrNull(" \n ", noUrl))
+        assertNull(shared(null, noUrl))
+        assertNull(shared(" \n ", noUrl))
     }
 }

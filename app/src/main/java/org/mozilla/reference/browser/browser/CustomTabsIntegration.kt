@@ -62,7 +62,7 @@ class CustomTabsIntegration(
     init {
         if (session == null) {
             logger.warn("The session for this ID, no longer exists. Finishing activity.")
-            activity?.finish()
+            closeActivity()
         }
         toolbar.display.setUrlBackground(null)
     }
@@ -143,7 +143,7 @@ class CustomTabsIntegration(
                 }
 
                 // Close this activity since it is no longer displaying any session
-                activity?.finish()
+                closeActivity()
 
                 // Now switch to the actual browser which should now display our new selected session
                 val intent = Intent(context, BrowserActivity::class.java)
@@ -169,8 +169,14 @@ class CustomTabsIntegration(
                     updateSystemNavigationBarColor = false,
                     updateToolbarsColor = false,
                 ),
-            closeListener = { activity?.finish() },
+            closeListener = { closeActivity() },
         )
+
+    // Opened in a task of its own (a link from an app that starts a new task), a closed custom tab left a card in
+    // Recents that opened nothing. In the calling app's task, only this activity goes.
+    private fun closeActivity() {
+        activity?.run { if (isTaskRoot) finishAndRemoveTask() else finish() }
+    }
 
     // Cancelled in stop(): left running, the store kept this integration and its activity alive after the tab closed.
     private var menuScope: CoroutineScope? = null

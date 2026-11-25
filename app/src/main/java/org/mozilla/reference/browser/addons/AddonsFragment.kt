@@ -12,6 +12,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
@@ -21,7 +22,9 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.util.Locale
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -39,6 +42,7 @@ import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
+import org.mozilla.reference.browser.settings.Settings
 
 private const val FIND_MORE_URL = "https://addons.mozilla.org/android/"
 
@@ -143,12 +147,14 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                         logger.error("Failed to load add-ons", e)
                         null
                     }
+                // The spinner stays until the list shows, so the screen is never blank while the catalogue loads.
+                val listed = addons?.let { withCatalogueData(it) }
                 loading.isVisible = false
                 // The manager hides catalogue errors and returns the installed add-ons alone.
                 // shortcut: also shown if every recommended add-on is installed; fine while the collection is large.
                 loadError.isVisible = addons == null || addons.none { !it.isInstalled() }
-                if (addons == null) return@launch
-                val listed = withCatalogueData(addons)
+                showLoadErrorText(rootView)
+                if (listed == null) return@launch
 
                 // Updating the existing adapter, instead of a new one, keeps the scroll position.
                 adapter?.updateAddons(listed)
@@ -167,6 +173,21 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
             }
     }
 
+    /** Retry cannot fix a custom collection that does not exist, so name it and point to its setting. */
+    private fun showLoadErrorText(rootView: View) {
+        val context = rootView.context
+        rootView.findViewById<TextView>(R.id.add_ons_load_error_text).text =
+            if (Settings.isAmoCollectionOverrideConfigured(context)) {
+                getString(
+                    R.string.archwave_addons_custom_collection_failed,
+                    Settings.getOverrideAmoUser(context),
+                    Settings.getOverrideAmoCollection(context),
+                )
+            } else {
+                getString(R.string.archwave_addons_load_failed)
+            }
+    }
+
     /**
      * Installed add-ons are built from the extension alone, so they show 0 stars, "Reviews: 0" and no description. Give
      * those in the recommended collection their catalogue rating and description. Only when the catalogue just loaded,
@@ -177,10 +198,16 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
         if (addons.none { !it.isInstalled() } || addons.none { it.isInstalled() }) return addons
         val catalogue =
             try {
-                requireContext().components.core.addonProvider.getFeaturedAddons(allowCache = true).associateBy {
-                    it.id
-                }
+                // The language the manager asks for: the provider caches one file per language and deletes the others.
+                requireContext()
+                    .components
+                    .core
+                    .addonProvider
+                    .getFeaturedAddons(allowCache = true, language = Locale.getDefault().language)
+                    .associateBy { it.id }
             } catch (e: Exception) {
+                // The view went away: rethrow the cancellation instead of building a list for a detached fragment.
+                currentCoroutineContext().ensureActive()
                 logger.warn("Could not read the catalogue for installed add-ons", e)
                 return addons
             }

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!-- Archwave: overrides Android Components' layout (feature-prompts 160.0.1) so the text lines up with the dialog title
+     at ?attr/dialogPreferredPadding (the field's own inset aside); the library indents it by 16dp. -->
+
+<ScrollView
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        tools:ignore="UnusedResources"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingTop="?android:attr/listPreferredItemPaddingLeft"
+            android:paddingStart="?attr/dialogPreferredPadding"
+            android:paddingEnd="?attr/dialogPreferredPadding">
+
+        <TextView
+                android:id="@+id/input_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
+                tools:text="Please enter your name"
+                android:labelFor="@+id/input_value"
+                android:contentDescription="@string/mozac_feature_prompts_content_description_input_label"/>
+
+        <EditText
+                android:id="@+id/input_value"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:inputType="text"
+                android:importantForAutofill="no"/>
+
+        <CheckBox
+                android:id="@id/mozac_feature_prompts_no_more_dialogs_check_box"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/mozac_feature_prompts_no_more_dialogs"
+                android:visibility="gone"
+                tools:visibility="visible"
+                android:textColor="#aaa"/>
+
+    </LinearLayout>
+</ScrollView>

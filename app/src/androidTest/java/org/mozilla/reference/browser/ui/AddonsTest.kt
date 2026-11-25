@@ -103,7 +103,9 @@ class AddonsTest {
                 dismissAddonDownloadCompletedPrompt(addonName)
                 openAddon(addonName)
                 clickRemoveAddonButton()
-                verifyAddonsRecommendedView()
+                // Listed again under Recommended (below the Enabled section it was in), and gone from the engine.
+                verifyAddonInSection(addonName, addonsR.string.mozac_feature_addons_recommended_section)
+                verifyAddonNotInstalled("uBlock0@raymondhill.net")
             }
     }
 

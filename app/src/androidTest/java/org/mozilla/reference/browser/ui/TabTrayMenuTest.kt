@@ -4,9 +4,12 @@
 
 package org.mozilla.reference.browser.ui
 
+import android.os.SystemClock
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiSelector
 import mockwebserver3.MockWebServer
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -93,6 +96,16 @@ class TabTrayMenuTest {
                 checkNumberOfTabsTabCounter("1")
             }
         startPage { verifyStartPage() }
+
+        // The snackbar's Undo brings both tabs back.
+        val store = InstrumentationRegistry.getInstrumentation().targetContext.components.core.store
+        assertTrue(mDevice.findObject(UiSelector().text("Undo")).waitForExists(TestAssetHelper.waitingTime))
+        mDevice.findObject(UiSelector().text("Undo")).click()
+        val restored = { store.state.tabs.any { it.content.url == genericURL.url.toString() } }
+        val end = SystemClock.uptimeMillis() + TestAssetHelper.waitingTime
+        while (!restored() && SystemClock.uptimeMillis() < end) SystemClock.sleep(100)
+        assertTrue("Undo did not restore the tabs", restored())
+        navigationToolbar { checkNumberOfTabsTabCounter("2") }
     }
 
     // This test verifies that close all tabs option works as expected

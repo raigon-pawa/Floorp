@@ -25,6 +25,12 @@ object IncomingIntentRules {
     // A host and port, which Android's Uri reads as a scheme ("localhost:3000").
     private val hostAndPort = Regex("(localhost|[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)+):[0-9]{1,5}([/?#].*)?")
 
+    /**
+     * Set by [IntentReceiverActivity] on shared text that must be searched for while the search engines still load; the
+     * tab intent processor turns it into the search engine's address once they are there.
+     */
+    const val EXTRA_SEARCH_TERMS = "org.mozilla.reference.browser.EXTRA_SEARCH_TERMS"
+
     /** How many addresses of other schemes in shared text are skipped in the search for a web address. */
     private const val MAX_SKIPPED_ADDRESSES = 20
 
@@ -38,11 +44,13 @@ object IncomingIntentRules {
 
     /**
      * What to keep of text shared with the app: the web address [findUrl] finds in it, or the text itself (shortened)
-     * for a search when it holds no address. Addresses of other schemes are skipped; null when it is blank or holds
-     * only those. [findUrl] is the tab intent processor's own finder, which runs again on whatever is kept, so text
-     * with such an address cannot be kept for a search: the processor would find and load that address.
+     * for a search when it holds no address. Addresses of other schemes are skipped; null when it is blank. [findUrl]
+     * is the tab intent processor's own finder, which runs again on whatever is kept, so text with such an address
+     * ("std::vector", "about:config") cannot be kept for a search: the processor would find and load that address. That
+     * text is searched for through [toSearchUrl], the search engine's address for it, instead; null if there is no
+     * search engine yet.
      */
-    fun sharedTextOrNull(text: String?, findUrl: (String) -> String?): String? {
+    fun sharedTextOrNull(text: String?, findUrl: (String) -> String?, toSearchUrl: (String) -> String?): String? {
         val scanned = text?.take(MAX_SHARED_TEXT_LENGTH)?.trim().orEmpty()
         if (scanned.isEmpty()) return null
         val first = findUrl(scanned) ?: return scanned.take(MAX_SEARCH_LENGTH)
@@ -55,6 +63,7 @@ object IncomingIntentRules {
             }
             .take(MAX_SKIPPED_ADDRESSES)
             .firstNotNullOfOrNull(::keptAddressOrNull)
+            ?: toSearchUrl(scanned.take(MAX_SEARCH_LENGTH))?.let(::webUrlOrNull)
     }
 
     private fun keptAddressOrNull(url: String): String? =

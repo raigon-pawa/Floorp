@@ -6,6 +6,8 @@ package org.mozilla.reference.browser
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Parcel
+import android.os.Parcelable
 import android.os.SystemClock
 import android.provider.Browser
 import androidx.core.content.edit
@@ -18,9 +20,11 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.Until
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.concept.engine.EngineSession.LoadUrlFlags
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
 import mozilla.components.feature.intent.processing.TabIntentProcessor
+import mozilla.components.feature.search.ext.buildSearchUrl
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
@@ -104,11 +108,17 @@ class IntentReceiverTest {
     }
 
     @Test
-    fun sharedAddressesOfOtherSchemesOpenNothing() {
-        assertNothingOpens(
-            Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "about:config"),
-            Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "see data:text/html,x"),
-        )
+    fun sharedTextWithAddressesOfOtherSchemesOpensASearch() {
+        assertTrue(waitFor { store.state.search.selectedOrDefaultSearchEngine != null })
+        val host = requireNotNull(store.state.search.selectedOrDefaultSearchEngine).buildSearchUrl("x").toUri().host
+        // The search engine may redirect, so compare the decoded query.
+        fun searched(text: String) =
+            tabUrls().any { it.toUri().host == host && it.toUri().getQueryParameter("q") == text }
+        listOf("about:config", "see data:text/html,x", "how to use std::vector in c++").forEach { text ->
+            fire(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, text))
+            assertTrue("no search for $text in ${tabUrls()}", waitFor { searched(text) })
+        }
+        assertTrue(tabUrls().none { it == "about:config" || it == "data:text/html,x" })
     }
 
     @Test
@@ -131,6 +141,17 @@ class IntentReceiverTest {
         fire(view(url))
         assertTrue(waitFor { url in tabUrls() })
         assertTrue("opened in a normal tab", store.state.tabs.first { it.content.url == url }.content.private)
+    }
+
+    @Test
+    fun customTabsOpenPrivatelyWhenLinksDo() {
+        PreferenceManager.getDefaultSharedPreferences(context).edit {
+            putBoolean(context.getString(R.string.pref_key_open_links_in_private), true)
+        }
+        val url = "https://example.org/receiver-private-custom-tab"
+        fire(createCustomTabIntent(url))
+        assertTrue(waitFor { store.state.customTabs.any { it.content.url == url } })
+        assertTrue("opened a normal custom tab", store.state.customTabs.first { it.content.url == url }.content.private)
     }
 
     private fun resumedBrowserActivity(): BrowserActivity? {
@@ -194,6 +215,50 @@ class IntentReceiverTest {
         // A web app manifest whose scope covers the page would hide the toolbar right after the window opens.
         SystemClock.sleep(SETTLE)
         assertTrue("custom tab toolbar hidden", device.hasObject(By.res(context.packageName, "toolbar")))
+    }
+
+    /** An extra holding a class only another app has: unparcelling it throws. */
+    private fun foreignParcelable(key: String): Bundle {
+        val parcel = Parcel.obtain()
+        try {
+            Bundle().apply { putParcelable(key, Marker()) }.writeToParcel(parcel, 0)
+            val known = Marker::class.java.name.toByteArray(Charsets.UTF_16LE)
+            val foreign = Marker::class.java.name.replace("Marker", "Xarker").toByteArray(Charsets.UTF_16LE)
+            val bytes = parcel.marshall()
+            val at = (0..bytes.size - known.size).first { i -> known.indices.all { bytes[i + it] == known[it] } }
+            foreign.copyInto(bytes, at)
+            parcel.unmarshall(bytes, 0, bytes.size)
+            parcel.setDataPosition(0)
+            return Bundle.CREATOR.createFromParcel(parcel)
+        } finally {
+            parcel.recycle()
+        }
+    }
+
+    @Test
+    fun extrasWithAForeignClassAreDropped() {
+        val url = "https://example.org/receiver-foreign"
+        fire(view(url).putExtras(foreignParcelable("x")))
+        assertTrue(waitFor { url in tabUrls() })
+        fire(createCustomTabIntent("$url-headers").putExtra(Browser.EXTRA_HEADERS, foreignParcelable("a")))
+        assertTrue(waitFor { store.state.customTabs.any { it.content.url == "$url-headers" } })
+        assertNothingOpens(
+            Intent(Intent.ACTION_SEND).setType("text/plain").putExtras(foreignParcelable(Intent.EXTRA_TEXT))
+        )
+    }
+
+    /** Stands in for a class of another app. */
+    class Marker : Parcelable {
+        override fun describeContents() = 0
+
+        override fun writeToParcel(dest: Parcel, flags: Int) = Unit
+
+        /** Unparcels a [Marker]. */
+        companion object CREATOR : Parcelable.Creator<Marker> {
+            override fun createFromParcel(source: Parcel) = Marker()
+
+            override fun newArray(size: Int) = arrayOfNulls<Marker>(size)
+        }
     }
 
     private companion object {

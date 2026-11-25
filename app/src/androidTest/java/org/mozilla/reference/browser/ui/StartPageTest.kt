@@ -82,11 +82,14 @@ class StartPageTest {
     @Test
     fun backOnStartPageLeavesTheAppTest() {
         startPage { verifyStartPage() }
+        val store = InstrumentationRegistry.getInstrumentation().targetContext.components.core.store
+        val startTab = store.state.selectedTabId
         mDevice.pressBack()
         assertTrue("still on screen", mDevice.wait(Until.gone(By.pkg(packageName)), TestAssetHelper.waitingTime))
         assertFalse("the browser was closed", activityTestRule.activity.isFinishing)
-        val store = InstrumentationRegistry.getInstrumentation().targetContext.components.core.store
-        assertEquals(1, store.state.tabs.size)
+        // The same tab, not a fresh start tab opened after it was closed.
+        assertEquals(listOf(startTab), store.state.tabs.map { it.id })
+        assertEquals(startTab, store.state.selectedTabId)
     }
 
     // Closing the last tab: TabTrayMenuTest.closeOneTabXButtonTest.

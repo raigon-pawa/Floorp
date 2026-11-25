@@ -4,6 +4,7 @@
 
 package org.mozilla.reference.browser.ui.robots
 
+import android.os.SystemClock
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
@@ -22,8 +23,10 @@ import androidx.test.uiautomator.Until
 import mozilla.components.feature.addons.R as addonsR
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.containsString
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.waitAndInteract
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTimeShort
@@ -105,6 +108,14 @@ class AddonsManagerRobot {
         val row = itemWithResIdContainingText("$packageName:id/add_on_name", addonName)
         assertTrue(row.waitForExists(waitingTime))
         assertTrue("$addonName is not below that section", section.bounds.top < row.bounds.top)
+    }
+
+    /** The engine has no extension with the id [addonId] (waits for an uninstall to finish). */
+    fun verifyAddonNotInstalled(addonId: String) {
+        val store = appContext.components.core.store
+        val end = SystemClock.uptimeMillis() + waitingTime
+        while (addonId in store.state.extensions && SystemClock.uptimeMillis() < end) SystemClock.sleep(100)
+        assertFalse("$addonId is still installed", addonId in store.state.extensions)
     }
 
     fun clickFindMoreExtensions() {

@@ -8,16 +8,20 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
+import android.view.Gravity
 import android.widget.Button
 import android.widget.CompoundButton
+import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.withTimeoutOrNull
@@ -35,8 +39,7 @@ import mozilla.components.feature.addons.ui.PermissionsDialogFragment
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.content.appVersionName
-import mozilla.components.ui.widgets.withCenterAlignedButtons
+import org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
 
@@ -64,6 +67,16 @@ class WebExtensionPromptFeature(
                 dialog.findViewById<Button>(addonsR.id.deny_button)?.run {
                     backgroundTintList = ColorStateList.valueOf(context.getColor(R.color.aw_surface_3))
                     setTextColor(context.getColor(R.color.aw_text_1))
+                }
+                // The one-line link is 19dp high: give it the height of the 48dp buttons next to it as touch target.
+                dialog.findViewById<TextView>(addonsR.id.learn_more_link)?.run {
+                    (layoutParams as? RelativeLayout.LayoutParams)?.run {
+                        topMargin = 0
+                        addRule(RelativeLayout.ALIGN_TOP, addonsR.id.deny_button)
+                        addRule(RelativeLayout.ALIGN_BOTTOM, addonsR.id.deny_button)
+                    }
+                    gravity = Gravity.CENTER_VERTICAL
+                    requestLayout()
                 }
                 val arguments = f.arguments ?: return
                 if (!arguments.getBoolean(KEY_DATA_COLLECTION_DEFAULT_APPLIED)) {
@@ -127,6 +140,8 @@ class WebExtensionPromptFeature(
         try {
             withTimeoutOrNull(ICON_TIMEOUT_MS) { extension.loadIcon(AddonManager.ADDON_ICON_SIZE) }
         } catch (e: Exception) {
+            // stop() cancelled the scope: no prompt may be shown now, the next start() shows it again.
+            currentCoroutineContext().ensureActive()
             Logger.warn("Could not load the icon of ${extension.id}", e)
             null
         }
@@ -187,26 +202,24 @@ class WebExtensionPromptFeature(
 
     private fun showPostInstallationDialog(addon: Addon) {
         if (!isInstallationInProgress && !hasExistingAddonPostInstallationDialogFragment()) {
-            val dialog =
-                AddonInstallationDialogFragment.newInstance(
-                    addon = addon,
-                    onDismissed = {
-                        consumePromptRequest()
-                    },
-                    onConfirmButtonClicked = { _ ->
-                        consumePromptRequest()
-                    },
-                    onExtensionSettingsLinkClicked = { installed ->
-                        consumePromptRequest()
-                        context.startActivity(
-                            Intent(context, InstalledAddonDetailsActivity::class.java)
-                                .putExtra("add_on", installed)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        )
-                    },
-                )
+            val dialog = attachCallbacks(AddonInstallationDialogFragment.newInstance(addon = addon))
             dialog.show(fragmentManager, POST_INSTALLATION_DIALOG_FRAGMENT_TAG)
         }
+    }
+
+    // The fragment does not save its callbacks: set them on a new sheet and again on one restored after a rotation.
+    private fun attachCallbacks(dialog: AddonInstallationDialogFragment): AddonInstallationDialogFragment {
+        dialog.onDismissed = { consumePromptRequest() }
+        dialog.onConfirmButtonClicked = { _ -> consumePromptRequest() }
+        dialog.onExtensionSettingsLinkClicked = { installed ->
+            consumePromptRequest()
+            context.startActivity(
+                Intent(context, InstalledAddonDetailsActivity::class.java)
+                    .putExtra("add_on", installed)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+        return dialog
     }
 
     /** Stops observing the selected session for incoming window requests. */
@@ -267,7 +280,21 @@ class WebExtensionPromptFeature(
     }
 
     private fun tryToReAttachButtonHandlersToPreviousDialog() {
+        // A prompt restored after the process died has no request behind it any more (the engine forgot the install),
+        // so its buttons could do nothing: close it.
+        val request = store.state.webExtensionPromptRequest
+        findPostInstallationDialogFragment()?.let { dialog ->
+            if (request is WebExtensionPromptRequest.AfterInstallation.PostInstallation) {
+                attachCallbacks(dialog)
+            } else {
+                dialog.dismiss()
+            }
+        }
         findPreviousDialogFragment()?.let { dialog ->
+            if (request !is WebExtensionPromptRequest.AfterInstallation.Permissions) {
+                dialog.dismiss()
+                return
+            }
             dialog.onPositiveButtonClicked = { addon, privateBrowsingAllowed, technicalDataAllowed ->
                 store.state.webExtensionPromptRequest?.let { promptRequest ->
                     if (
@@ -345,9 +372,10 @@ class WebExtensionPromptFeature(
     private fun findPreviousDialogFragment(): PermissionsDialogFragment? =
         fragmentManager.findFragmentByTag(PERMISSIONS_DIALOG_FRAGMENT_TAG) as? PermissionsDialogFragment
 
-    private fun hasExistingAddonPostInstallationDialogFragment(): Boolean =
-        fragmentManager.findFragmentByTag(POST_INSTALLATION_DIALOG_FRAGMENT_TAG) as? AddonInstallationDialogFragment !=
-            null
+    private fun hasExistingAddonPostInstallationDialogFragment(): Boolean = findPostInstallationDialogFragment() != null
+
+    private fun findPostInstallationDialogFragment(): AddonInstallationDialogFragment? =
+        fragmentManager.findFragmentByTag(POST_INSTALLATION_DIALOG_FRAGMENT_TAG) as? AddonInstallationDialogFragment
 
     private fun handleBeforeInstallationRequest(promptRequest: WebExtensionPromptRequest.BeforeInstallation) {
         when (promptRequest) {
@@ -404,12 +432,12 @@ class WebExtensionPromptFeature(
                 }
 
                 is WebExtensionInstallException.Incompatible -> {
-                    val version = context.appVersionName
+                    // The extension's minimum and maximum versions are Gecko versions, not the app's.
                     context.getString(
                         addonsR.string.mozac_feature_addons_failed_to_install_incompatible_error,
                         addonName,
                         appName,
-                        version,
+                        context.getString(R.string.archwave_addons_engine_version, MOZ_APP_VERSION),
                     )
                 }
 
@@ -429,20 +457,14 @@ class WebExtensionPromptFeature(
         title: String,
         message: String,
     ) {
-        context.let {
-            AlertDialog.Builder(it)
-                .setTitle(title)
-                .setPositiveButton(android.R.string.ok) { _, _ -> }
-                .setCancelable(false)
-                .setMessage(message)
-                .show()
-                .withCenterAlignedButtons()
-        }
+        // A fragment, so the message survives a rotation.
+        MessageDialogFragment.newInstance(title, message).show(fragmentManager, INSTALL_ERROR_DIALOG_FRAGMENT_TAG)
     }
 
     companion object {
         private const val PERMISSIONS_DIALOG_FRAGMENT_TAG = "ADDONS_PERMISSIONS_DIALOG_FRAGMENT"
         private const val POST_INSTALLATION_DIALOG_FRAGMENT_TAG = "ADDONS_INSTALLATION_DIALOG_FRAGMENT"
+        private const val INSTALL_ERROR_DIALOG_FRAGMENT_TAG = "ARCHWAVE_INSTALL_ERROR_DIALOG_FRAGMENT"
         private const val KEY_DATA_COLLECTION_DEFAULT_APPLIED = "archwave_data_collection_default_applied"
         private const val ICON_TIMEOUT_MS = 1000L
         private const val KEY_PRIVATE_BROWSING_DEFAULT = "archwave_private_browsing_default"

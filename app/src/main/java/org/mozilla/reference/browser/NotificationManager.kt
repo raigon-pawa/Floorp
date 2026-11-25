@@ -24,18 +24,24 @@ import java.lang.ref.WeakReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
+import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.TabData
+import mozilla.components.feature.intent.ext.getSessionId
 import mozilla.components.feature.sitepermissions.NotificationPermissionDialogFragment
 import mozilla.components.feature.webnotifications.WebNotificationIntentProcessor
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.ids.SharedIdsHelper
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.kotlin.getOrigin
 import mozilla.components.support.ktx.kotlin.isSameOriginAs
 import mozilla.components.support.ktx.kotlin.stripDefaultPort
+import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 import org.mozilla.geckoview.WebNotification
+import org.mozilla.reference.browser.ext.components
 
 /** Manages notification channels and allows displaying different supported types of notifications. */
 object NotificationManager {
@@ -65,15 +71,40 @@ object NotificationManager {
                 val dialog = WeakReference(f)
                 val host = WeakReference(activity)
                 val dismiss = { dialog.get()?.takeIf { it.isAdded }?.dismissAllowingStateLoss() }
+                // The site that was just allowed: the custom tab of this window, or the selected tab.
+                val tab =
+                    activity.components.core.store.state.findTabOrCustomTabOrSelectedTab(
+                        SafeIntent(activity.intent).getSessionId()
+                    )
+                val origin = tab?.content?.url?.getOrigin()?.let { it to tab.content.private }
                 delegate.requestNotificationPermission(
                     onPermissionGranted = { dismiss() },
                     // True right after a "no" in the prompt; false when Android refused without asking.
                     onPermissionRejected = {
-                        if (host.get()?.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS) == true) dismiss()
+                        if (host.get()?.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS) == true) {
+                            dismiss()
+                            forgetNotificationGrant(activity.components, origin)
+                        }
                     },
                 )
             }
         }
+
+    /**
+     * The site was allowed to notify, then Android's notification permission refused: notifications would be dropped
+     * silently, and start once the app may post them for some other reason. Do not keep "Always allow" for the site, so
+     * it asks again.
+     */
+    private fun forgetNotificationGrant(components: Components, origin: Pair<String, Boolean>?) {
+        val (url, private) = origin ?: return
+        val storage = components.core.geckoSitePermissionsStorage
+        components.applicationScope.launch(Dispatchers.Main) {
+            val permissions = storage.findSitePermissionsBy(url, includeTemporary = false, private = private)
+            if (permissions?.notification == SitePermissions.Status.ALLOWED) {
+                storage.update(permissions.copy(notification = SitePermissions.Status.NO_DECISION), private)
+            }
+        }
+    }
 
     /**
      * Passes a tap on a web notification to the page and brings its site forward: the tab that shows it, or a new tab

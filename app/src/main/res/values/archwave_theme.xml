@@ -26,6 +26,8 @@
     <color name="mozac_feature_readerview_text_color" tools:ignore="UnusedResources">@color/aw_text_2</color>
     <color name="mozac_feature_readerview_selected" tools:ignore="UnusedResources">@color/aw_text_1</color>
     <color name="mozac_feature_readerview_text_color_disabled" tools:ignore="UnusedResources">@color/aw_text_disabled</color>
+    <color name="mozac_feature_readerview_dark_background" tools:ignore="UnusedResources">@color/aw_surface_3</color>
+    <color name="mozac_feature_readerview_light_background" tools:ignore="UnusedResources">#FFEEEEEE</color>
     <color name="mozac_feature_addons_text_color_accent" tools:ignore="UnusedResources">@color/aw_text_1</color>
     <color name="mozac_feature_addons_messagebar_warning_background_color" tools:ignore="UnusedResources">@color/aw_warning</color>
     <color name="mozac_feature_addons_messagebar_error_background_color" tools:ignore="UnusedResources">@color/aw_error</color>
@@ -61,6 +63,19 @@
     <!-- Black like the rest of the window, so the status bar area above it matches. -->
     <style name="ArchwaveActionBar" parent="Widget.Material3.ActionBar.Solid">
         <item name="background">@color/aw_black</item>
+    </style>
+
+    <!-- On and off differ by the track (light or dark grey) as well as the thumb (white or grey). -->
+    <style name="ArchwaveSwitch" parent="Widget.AppCompat.CompoundButton.Switch">
+        <item name="track">@drawable/archwave_switch_track</item>
+    </style>
+
+    <!-- The smallest touch target the app allows. -->
+    <dimen name="archwave_min_touch_target">48dp</dimen>
+
+    <!-- AppCompat's overflow button is 40dp wide. -->
+    <style name="ArchwaveActionOverflow" parent="Widget.AppCompat.ActionButton.Overflow">
+        <item name="android:minWidth">@dimen/archwave_min_touch_target</item>
     </style>
 
     <!-- The time picker tells the selected hour/minute field and AM/PM half apart only by these container roles,

@@ -2,9 +2,11 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Add-ons manager: shown above the list when the recommended extensions could not be downloaded. -->
     <string name="archwave_addons_load_failed">Couldn’t load the recommended extensions.</string>
+    <!-- Add-ons manager: shown instead of archwave_addons_load_failed when a custom collection is set and could not be loaded, for example because it does not exist. %1$s is the collection's owner, %2$s its name. -->
+    <string name="archwave_addons_custom_collection_failed">Couldn’t load the collection %1$s/%2$s. Check “Custom add-on collection” in Settings, or clear it to see the recommended extensions.</string>
     <!-- Add-ons manager: button next to archwave_addons_load_failed that loads the list again. -->
     <string name="archwave_addons_retry">Retry</string>
     <!-- Add-ons manager: overflow menu item that installs an extension from a .xpi file on the device. -->
@@ -27,4 +29,8 @@
     <string name="archwave_addons_remove_title">Remove %1$s?</string>
     <!-- Installed add-on details: text of the confirmation before Remove. -->
     <string name="archwave_addons_remove_message">The extension and its settings and data will be deleted.</string>
+    <!-- Extension install error: the version named in "… is not compatible with Archwave %3$s." %1$s is the GeckoView version, which extension compatibility is checked against. -->
+    <string name="archwave_addons_engine_version">(GeckoView %1$s)</string>
+    <!-- Overrides the Android Components text in the add-ons list, whose %3$s is the app version (0.1.0); compatibility is checked against the engine version, so it is left out. %1$s is the extension's name, %2$s the app name. -->
+    <string name="mozac_feature_addons_status_incompatible" tools:ignore="UnusedResources">%1$s is not compatible with the engine of your version of %2$s.</string>
 </resources>
