@@ -24,8 +24,6 @@ import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 
-private const val LEARN_MORE_URL = "https://support.mozilla.org/kb/permission-request-messages-firefox-extensions"
-
 /**
  * Shows the permissions of an add-on: the required ones and its data collection, then the optional permissions, site
  * access and data collection with a switch each, so a grant made after install can be seen and revoked.
@@ -148,7 +146,7 @@ class PermissionsDetailsActivity : AppCompatActivity(), View.OnClickListener {
         DATA_COLLECTION,
     }
 
-    override fun onClick(v: View?) = openInBrowserTab(LEARN_MORE_URL)
+    override fun onClick(v: View?) = openInBrowserTab(PERMISSIONS_LEARN_MORE_URL)
 
     override fun onSupportNavigateUp(): Boolean {
         finish()

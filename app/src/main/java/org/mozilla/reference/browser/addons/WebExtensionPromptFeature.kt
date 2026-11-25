@@ -234,6 +234,7 @@ class WebExtensionPromptFeature(
                         }
                         consumePromptRequest()
                     },
+                    onLearnMoreClicked = ::openLearnMore,
                 )
             dialog.show(
                 fragmentManager,
@@ -259,6 +260,7 @@ class WebExtensionPromptFeature(
                     }
                 }
             }
+            dialog.onLearnMoreClicked = ::openLearnMore
             dialog.onNegativeButtonClicked = {
                 store.state.webExtensionPromptRequest?.let { promptRequest ->
                     handlePermissions(
@@ -271,6 +273,9 @@ class WebExtensionPromptFeature(
             }
         }
     }
+
+    // The prompt stays up behind the new tab, so the user can come back and answer it.
+    private fun openLearnMore() = context.openInBrowserTab(PERMISSIONS_LEARN_MORE_URL)
 
     private fun handlePermissions(
         promptRequest: WebExtensionPromptRequest,

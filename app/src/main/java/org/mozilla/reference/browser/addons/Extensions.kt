@@ -32,6 +32,10 @@ internal inline fun Fragment.runIfFragmentIsAttached(block: () -> Unit) {
     }
 }
 
+/** Mozilla's explanation of extension permissions, opened by every "Learn more" about them. */
+internal const val PERMISSIONS_LEARN_MORE_URL =
+    "https://support.mozilla.org/kb/permission-request-messages-firefox-extensions"
+
 /** Whether [url] is an ordinary web address, the only kind that add-on metadata may open. */
 internal fun isWebUrl(url: String?): Boolean = url != null && (url.startsWith("https://") || url.startsWith("http://"))
 
