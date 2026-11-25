@@ -13,6 +13,7 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.uiautomator.UiSelector
 import junit.framework.AssertionFailedError
+import org.hamcrest.CoreMatchers.not
 import mozilla.components.browser.menu.R as menuR
 import mozilla.components.browser.toolbar.R as toolbarR
 import org.junit.Assert.assertFalse
@@ -26,6 +27,12 @@ class ThreeDotMenuRobot {
     fun verifyThreeDotMenuExists() = threeDotMenuRecyclerViewExists()
 
     fun verifyBackButtonExists() = assertVisible(backButton())
+
+    /** On the start page there is nothing to go back or forward to, or to share: the buttons show but do nothing. */
+    fun verifyBackForwardAndShareDisabled() =
+        listOf(backButton(), forwardButton(), shareButton()).forEach {
+            it.check(matches(not(ViewMatchers.isEnabled())))
+        }
 
     fun verifyForwardButtonExists() = assertForwardButton()
 
@@ -70,6 +77,20 @@ class ThreeDotMenuRobot {
     fun verifyRequestDesktopSiteIsTurnedOn() = assertRequestDesktopSiteIsTurnedOn()
 
     class Transition {
+        fun openNewTab(interact: NavigationToolbarRobot.() -> Unit): NavigationToolbarRobot.Transition {
+            newTabButton().click()
+            mDevice.waitForIdle()
+            NavigationToolbarRobot().interact()
+            return NavigationToolbarRobot.Transition()
+        }
+
+        fun openNewPrivateTab(interact: NavigationToolbarRobot.() -> Unit): NavigationToolbarRobot.Transition {
+            newPrivateTabButton().click()
+            mDevice.waitForIdle()
+            NavigationToolbarRobot().interact()
+            return NavigationToolbarRobot.Transition()
+        }
+
         fun goForward(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
             forwardButton().click()
             mDevice

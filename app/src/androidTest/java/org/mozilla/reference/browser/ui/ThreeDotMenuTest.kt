@@ -9,11 +9,17 @@ package org.mozilla.reference.browser.ui
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import mockwebserver3.MockWebServer
+import mozilla.components.browser.state.selector.selectedTab
 import org.junit.After
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.reference.browser.browser.StartPage
+import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.RetryTestRule
@@ -69,6 +75,7 @@ class ThreeDotMenuTest {
                 verifyReloadButtonExists()
                 verifyStopButtonDoesntExist()
                 verifyShareButtonExists()
+                verifyBackForwardAndShareDisabled()
                 // ...but nothing that only makes sense for a web page.
                 verifyRequestDesktopSiteToggleDoesntExist()
                 verifyAddToHomescreenButtonDoesntExist()
@@ -106,6 +113,25 @@ class ThreeDotMenuTest {
                 verifyAddOnsButtonExists()
                 verifyOpenSettingsExists()
             }
+    }
+
+    @Test
+    fun newTabAndNewPrivateTabTest() {
+        val store = InstrumentationRegistry.getInstrumentation().targetContext.components.core.store
+        val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        navigationToolbar {}.enterUrlAndEnterToBrowser(defaultWebPage.url) {}
+        val pageTab = store.state.selectedTabId
+
+        navigationToolbar {}.openThreeDotMenu {}.openNewTab {}
+        val newTab = store.state.selectedTab
+        assertNotEquals(pageTab, newTab?.id)
+        assertTrue("New tab is no start page", newTab?.let(StartPage::isStartTab) ?: false)
+        assertFalse("New tab opened a private tab", newTab?.content?.private ?: true)
+
+        navigationToolbar {}.openThreeDotMenu {}.openNewPrivateTab {}
+        val privateTab = store.state.selectedTab
+        assertNotEquals(newTab?.id, privateTab?.id)
+        assertTrue("New private tab opened a normal tab", privateTab?.content?.private ?: false)
     }
 
     @Test
