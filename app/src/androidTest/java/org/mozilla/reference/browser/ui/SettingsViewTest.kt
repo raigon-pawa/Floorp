@@ -156,8 +156,10 @@ class SettingsViewTest {
             navigationToolbar {}.enterUrlAndEnterToBrowser(current.url) {}
             navigationToolbar {}
                 .clickToolbar {
+                    clickClearToolbarButton() // The edit field starts with the tab's address.
                     typeText("generic1.html")
-                    verifySearchSuggestion(visited.title)
+                    // By address: the title may not be stored yet when the tab moves on.
+                    verifySearchSuggestion(visited.url.toString())
                 }
             mDevice.pressBack()
             navigationToolbar {}
@@ -168,8 +170,9 @@ class SettingsViewTest {
                 }
                 .goBack {}
                 .clickToolbar {
+                    clickClearToolbarButton() // The edit field starts with the tab's address.
                     typeText("generic1.html")
-                    verifyNoSearchSuggestion(visited.title)
+                    verifyNoSearchSuggestion(visited.url.toString())
                 }
         } finally {
             runCatching { mockWebServer.close() }
