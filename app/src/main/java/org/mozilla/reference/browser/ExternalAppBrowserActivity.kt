@@ -15,6 +15,8 @@ import org.mozilla.reference.browser.ext.components
  * web apps.
  */
 class ExternalAppBrowserActivity : BrowserActivity() {
+    override val showsAppNotices = false
+
     override fun createBrowserFragment(sessionId: String?): Fragment =
         if (sessionId != null) {
             // From the tab the web app intent processor made, never from the intent: another app could hide the toolbar

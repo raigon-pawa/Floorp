@@ -62,6 +62,12 @@ open class BrowserActivity : AppCompatActivity() {
         WebExtensionPopupObserver(components.core.store, ::openPopup)
     }
 
+    /**
+     * Whether this screen shows the notices about the app itself (it crashed last time, a clear of browsing data did
+     * not finish). Not over a custom tab or web app, which runs inside another app's flow and would use them up.
+     */
+    protected open val showsAppNotices: Boolean = true
+
     /** Returns a new instance of [BrowserFragment] to display. */
     open fun createBrowserFragment(sessionId: String?): Fragment = BrowserFragment.create(sessionId)
 
@@ -107,9 +113,11 @@ open class BrowserActivity : AppCompatActivity() {
             },
             false,
         )
-        showNoticeIfCrashedSinceLastStart()
-        // A clear of browsing data that the process did not live to finish is offered again at once, not hidden.
-        ClearDataDialogFragment.showIfInterrupted(this, supportFragmentManager)
+        if (showsAppNotices) {
+            showNoticeIfCrashedSinceLastStart()
+            // A clear of browsing data that the process did not live to finish is offered again at once, not hidden.
+            ClearDataDialogFragment.showIfInterrupted(this, supportFragmentManager)
+        }
         lifecycle.addObserver(webExtensionPopupObserver)
         addExtensionObservers()
 
