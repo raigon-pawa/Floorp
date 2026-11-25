@@ -38,6 +38,9 @@ import mozilla.components.feature.session.ScreenOrientationFeature
 import mozilla.components.feature.session.SessionFeature
 import mozilla.components.feature.session.SwipeRefreshFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature
+import mozilla.components.feature.sitepermissions.SitePermissionsRules
+import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.ASK_TO_ALLOW
+import mozilla.components.feature.sitepermissions.SitePermissionsRules.AutoplayAction
 import mozilla.components.feature.tabs.WindowFeature
 import mozilla.components.feature.webauthn.WebAuthnFeature
 import mozilla.components.support.base.feature.ActivityResultHandler
@@ -421,6 +424,21 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                     requestSitePermissionsLauncher.launch(permissions)
                 },
                 onShouldShowRequestPermissionRationale = { shouldShowRequestPermissionRationale(it) },
+                // Every category still asks, as without rules; audible media only plays after a tap.
+                sitePermissionsRules =
+                    SitePermissionsRules(
+                        camera = ASK_TO_ALLOW,
+                        location = ASK_TO_ALLOW,
+                        notification = ASK_TO_ALLOW,
+                        microphone = ASK_TO_ALLOW,
+                        autoplayAudible = AutoplayAction.BLOCKED,
+                        autoplayInaudible = AutoplayAction.ALLOWED,
+                        persistentStorage = ASK_TO_ALLOW,
+                        mediaKeySystemAccess = ASK_TO_ALLOW,
+                        crossOriginStorageAccess = ASK_TO_ALLOW,
+                        localDeviceAccess = ASK_TO_ALLOW,
+                        localNetworkAccess = ASK_TO_ALLOW,
+                    ),
                 promptsStyling =
                     SitePermissionsFeature.PromptsStyling(gravity = Gravity.BOTTOM, shouldWidthMatchParent = true),
                 store = requireComponents.core.store,
