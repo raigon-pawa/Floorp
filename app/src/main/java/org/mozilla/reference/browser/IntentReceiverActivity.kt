@@ -38,15 +38,6 @@ class IntentReceiverActivity : Activity() {
                 ?.let { components.useCases.tabsUseCases.selectTab(it) }
         }
 
-        // Explicitly remove the new task and clear task flags (Our browser activity is a single
-        // task activity and we never want to start a second task here).
-        intent.flags = intent.flags and Intent.FLAG_ACTIVITY_NEW_TASK.inv()
-        intent.flags = intent.flags and Intent.FLAG_ACTIVITY_CLEAR_TASK.inv()
-
-        // LauncherActivity is started with the "excludeFromRecents" flag (set in manifest). We
-        // do not want to propagate this flag from the launcher activity to the browser.
-        intent.flags = intent.flags and Intent.FLAG_ACTIVITY_EXCLUDE_FROM_RECENTS.inv()
-
         val utils = components.utils
 
         val processor = utils.intentProcessors.firstOrNull { it.process(intent) }
@@ -74,7 +65,10 @@ class IntentReceiverActivity : Activity() {
         // Never needed for what the app opens: a selector could redirect the start below to any activity of the app.
         intent.selector = null
         intent.clipData = null
-        intent.flags = intent.flags and GRANT_FLAGS.inv()
+        // The caller's flags (URI grants among them) would apply to the browser activity: a second task, a cleared task
+        // or NO_HISTORY, which finishes the browser as soon as a file picker covers it. Only the one BrowserActivity
+        // reads is kept; the processors set what they need (NEW_DOCUMENT for web apps).
+        intent.flags = intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY
         // The custom tab processor throws on a header that is not a string, which would crash the app.
         intent.getBundleExtra(Browser.EXTRA_HEADERS)?.let { headers ->
             if (headers.keySet().any { headers.getString(it) == null }) intent.removeExtra(Browser.EXTRA_HEADERS)
@@ -114,11 +108,5 @@ class IntentReceiverActivity : Activity() {
                 // the request interceptor. Nothing in the app sets it.
                 TabIntentProcessor.EXTRA_APP_LINK_LAUNCH_TYPE,
             )
-
-        const val GRANT_FLAGS =
-            Intent.FLAG_GRANT_READ_URI_PERMISSION or
-                Intent.FLAG_GRANT_WRITE_URI_PERMISSION or
-                Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION or
-                Intent.FLAG_GRANT_PREFIX_URI_PERMISSION
     }
 }
