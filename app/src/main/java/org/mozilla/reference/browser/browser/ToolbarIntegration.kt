@@ -86,8 +86,10 @@ class ToolbarIntegration(
     private val webAppUseCases: WebAppUseCases,
     private val sessionId: String? = null,
 ) : LifecycleAwareFeature, UserInteractionHandler {
+    // After history. The providers live in a sorted set compared by priority, so with history's default priority
+    // of 0 this provider counted as a duplicate and was silently dropped.
     private val shippedDomainsProvider =
-        ShippedDomainsProvider().also {
+        ShippedDomainsProvider(autocompletePriority = 1).also {
             it.initialize(context)
         }
 
