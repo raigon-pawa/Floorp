@@ -12,8 +12,12 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
+import org.mozilla.reference.browser.browser.StartPage
 
-/** Back on a tab without history: closes a tab opened from another tab and returns to that parent. */
+/**
+ * Back on a tab without history: closes a tab opened from another tab and returns to that parent, and stops a site
+ * still loading over the start page.
+ */
 class LastTabFeature(
     private val store: BrowserStore,
     private val tabId: String? = null,
@@ -40,6 +44,11 @@ class LastTabFeature(
             finishActivity()
             removeTabUseCase(tab.id)
             if (tab is TabSessionState && previous != null) store.dispatch(TabListAction.SelectTabAction(previous.id))
+            true
+        } else if (tab is TabSessionState && tab.content.loading && StartPage.isStartTab(tab)) {
+            // A site just picked on the start page has no history entry until it starts to arrive: Back stops it and
+            // stays on the start page instead of leaving the app while it loads.
+            tab.engineState.engineSession?.stopLoading()
             true
         } else {
             // A tab without a parent stays: Back then leaves the app (BrowserActivity) instead of closing it.

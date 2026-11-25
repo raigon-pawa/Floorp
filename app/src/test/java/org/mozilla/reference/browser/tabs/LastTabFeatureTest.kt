@@ -14,6 +14,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import org.mozilla.reference.browser.browser.StartPage
 
 /** Back on a tab without history: which tabs close and when the app is left alone to go to the background. */
 class LastTabFeatureTest {
@@ -68,6 +69,15 @@ class LastTabFeatureTest {
             )
         val (store, _) = backOn(parent.copy(lastAccess = 1), private, external, selected = "external")
         assertEquals("private", store.state.selectedTabId)
+    }
+
+    @Test
+    fun `Back while a site loads over the start page stays in the app`() {
+        val start = createTab(StartPage.URL, id = "start").let { it.copy(content = it.content.copy(loading = true)) }
+        val (store, handled) = backOn(start, selected = "start")
+        assertTrue(handled)
+        assertEquals(listOf("start"), store.state.tabs.map { it.id })
+        assertFalse(finished)
     }
 
     @Test
