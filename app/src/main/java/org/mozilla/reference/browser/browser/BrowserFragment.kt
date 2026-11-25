@@ -80,6 +80,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             view,
             StartPageIntegration(
                 view.findViewById(R.id.startPage),
+                engineView.asView(),
                 requireComponents.core.store,
                 toolbar,
                 requireComponents.useCases.sessionUseCases.loadUrl,

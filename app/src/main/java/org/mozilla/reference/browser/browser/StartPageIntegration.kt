@@ -4,6 +4,7 @@
 
 package org.mozilla.reference.browser.browser
 
+import android.view.View
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
 import androidx.core.view.isVisible
@@ -25,6 +26,7 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
  */
 class StartPageIntegration(
     private val view: ComposeView,
+    private val engineView: View,
     private val store: BrowserStore,
     private val toolbar: BrowserToolbar,
     private val loadUrl: SessionUseCases.LoadUrlUseCase,
@@ -66,6 +68,10 @@ class StartPageIntegration(
 
     private fun render() {
         view.isVisible = shown && !editing
+        // TalkBack follows the view tree, not what covers what: keep it out of the empty page underneath.
+        engineView.importantForAccessibility =
+            if (view.isVisible) View.IMPORTANT_FOR_ACCESSIBILITY_NO_HIDE_DESCENDANTS
+            else View.IMPORTANT_FOR_ACCESSIBILITY_AUTO
     }
 
     // The address bar would open with the start page's address in it.
