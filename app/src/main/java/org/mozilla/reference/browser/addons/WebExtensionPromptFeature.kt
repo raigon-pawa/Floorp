@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser.addons
 
 import android.content.Context
+import android.content.Intent
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.FragmentManager
@@ -28,6 +29,7 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.android.content.appVersionName
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.components
 
 /** Feature implementation for handling [WebExtensionPromptRequest] and showing the respective UI. */
 class WebExtensionPromptFeature(
@@ -86,6 +88,9 @@ class WebExtensionPromptFeature(
     }
 
     private fun handlePostInstallationRequest(addon: Addon) {
+        // Installs from the add-ons manager register themselves; web and file installs would wait for the next start.
+        // The registration is idempotent.
+        context.components.core.addonUpdater.registerForFutureUpdates(addon.id)
         showPostInstallationDialog(addon)
     }
 
@@ -142,6 +147,14 @@ class WebExtensionPromptFeature(
                     },
                     onConfirmButtonClicked = { _ ->
                         consumePromptRequest()
+                    },
+                    onExtensionSettingsLinkClicked = { installed ->
+                        consumePromptRequest()
+                        context.startActivity(
+                            Intent(context, InstalledAddonDetailsActivity::class.java)
+                                .putExtra("add_on", installed)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        )
                     },
                 )
             dialog.show(fragmentManager, POST_INSTALLATION_DIALOG_FRAGMENT_TAG)
