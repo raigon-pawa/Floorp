@@ -55,7 +55,13 @@ class AskFirstDownloadManager(
             notificationsDelegate.requestNotificationPermission(::startWaiting, ::startWaiting)
         }
         // Nothing to wait for unless a prompt came up (none after two this session, or with no activity on screen).
-        if (!askFirst || !notificationsDelegate.isRequestingPermission) startWaiting()
+        if (!askFirst || !notificationsDelegate.isRequestingPermission) {
+            startWaiting()
+        } else {
+            // Another request (a page's notification, another tab's download) can replace the callbacks above before
+            // the answer, so the app's return from the prompt starts the downloads too.
+            waitUntilForeground()
+        }
         // shortcut: a URL scheme the download manager refuses fails silently here instead of with its toast; Gecko
         // only hands over downloads of schemes it supports, so this has not been seen.
         return download.id
@@ -81,9 +87,10 @@ class AskFirstDownloadManager(
             .lifecycle
             .addObserver(
                 object : DefaultLifecycleObserver {
-                    // Also called at once while the app still counts as resumed, shortly after it was left.
+                    // Also called at once while the app still counts as resumed: shortly after it was left, or with
+                    // the prompt still up.
                     override fun onResume(owner: LifecycleOwner) {
-                        if (!mayStartService()) return
+                        if (!mayStartService() || notificationsDelegate.isRequestingPermission) return
                         owner.lifecycle.removeObserver(this)
                         waitingForForeground = false
                         startWaiting()
