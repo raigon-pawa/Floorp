@@ -41,12 +41,13 @@ class IntentReceiverActivity : Activity() {
 
         val utils = components.utils
 
-        val processors =
-            if (Settings.isOpenLinksInPrivate(this)) utils.privateIntentProcessors else utils.intentProcessors
+        val private = Settings.isOpenLinksInPrivate(this)
+        val processors = if (private) utils.privateIntentProcessors else utils.intentProcessors
+        val external = if (private) utils.privateExternalIntentProcessors else utils.externalIntentProcessors
         val processor = processors.firstOrNull { it.process(intent) }
 
         val className =
-            if (processor in utils.externalIntentProcessors) {
+            if (processor in external) {
                 ExternalAppBrowserActivity::class
             } else {
                 BrowserActivity::class

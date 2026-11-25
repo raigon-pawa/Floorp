@@ -37,19 +37,11 @@ class Utilities(
     private val applicationScope: CoroutineScope,
 ) {
     /** Provides intent processing functionality for Progressive Web App and Custom Tab intents. */
-    val externalIntentProcessors by lazy {
-        listOf(
-            CustomTabIntentProcessor(
-                customTabsUseCases.add,
-                context.resources,
-            ),
-            WebAppIntentProcessor(
-                store,
-                customTabsUseCases.addWebApp,
-                sessionUseCases.loadUrl,
-                ManifestStorage(context),
-            ),
-        )
+    val externalIntentProcessors by lazy { listOf(customTabIntentProcessor(private = false), webAppIntentProcessor) }
+
+    /** Like [externalIntentProcessors], but custom tabs open as private custom tabs. Web apps stay as they are. */
+    val privateExternalIntentProcessors by lazy {
+        listOf(customTabIntentProcessor(private = true), webAppIntentProcessor)
     }
 
     /**
@@ -59,10 +51,17 @@ class Utilities(
     val intentProcessors by lazy { externalIntentProcessors + tabIntentProcessor(private = false) }
 
     /**
-     * Like [intentProcessors], but links open in private tabs. A processor's private flag is fixed when it is built, so
-     * the caller picks one of the two lists for each intent.
+     * Like [intentProcessors], but links and custom tabs open private. A processor's private flag is fixed when it is
+     * built, so the caller picks one of the two lists for each intent.
      */
-    val privateIntentProcessors by lazy { externalIntentProcessors + tabIntentProcessor(private = true) }
+    val privateIntentProcessors by lazy { privateExternalIntentProcessors + tabIntentProcessor(private = true) }
+
+    private val webAppIntentProcessor by lazy {
+        WebAppIntentProcessor(store, customTabsUseCases.addWebApp, sessionUseCases.loadUrl, ManifestStorage(context))
+    }
+
+    private fun customTabIntentProcessor(private: Boolean) =
+        CustomTabIntentProcessor(customTabsUseCases.add, context.resources, isPrivate = private)
 
     private fun tabIntentProcessor(private: Boolean) =
         WaitForSearchEnginesProcessor(
