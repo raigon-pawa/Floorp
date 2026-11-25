@@ -27,7 +27,9 @@ class BrowserRobot {
      * document.querySelector('#testContent').innerText == expectedText
      */
     fun verifyPageContent(expectedText: String) {
-        mDevice.waitForObjects(mDevice.findObject(UiSelector().resourceId("android.webkit.WebView")))
+        // GeckoView exposes the page as a node of class WebView; it has no such resource id, so waiting for one only
+        // timed out (15 s on every call) and passed anyway.
+        mDevice.waitForObjects(mDevice.findObject(UiSelector().className("android.webkit.WebView")))
         assertTrue(mDevice.findObject(UiSelector().textContains(expectedText)).waitForExists(waitingTime))
     }
 
