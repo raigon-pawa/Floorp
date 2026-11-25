@@ -33,6 +33,7 @@ class FindInPageIntegration(
 ) : LifecycleAwareFeature, UserInteractionHandler {
     private val feature = FindInPageFeature(store, view, engineView, ::onClose)
     private var scope: CoroutineScope? = null
+    private val launcher: () -> Unit = ::launch
 
     // The tab being searched, kept while the screen is stopped: a link from another app switches tabs while it is.
     private var boundTabId: String? = null
@@ -49,14 +50,15 @@ class FindInPageIntegration(
                     .collect { id -> if (boundTabId != null && id != boundTabId) feature.unbind() }
             }
 
-        FindInPageIntegration.launch = this::launch
+        FindInPageIntegration.launch = launcher
     }
 
     override fun stop() {
         feature.stop()
         scope?.cancel()
 
-        FindInPageIntegration.launch = null
+        // A screen that started after this one (the browser opened from a custom tab's menu) owns the hook now.
+        if (FindInPageIntegration.launch === launcher) FindInPageIntegration.launch = null
     }
 
     override fun onBackPressed(): Boolean = feature.onBackPressed()
