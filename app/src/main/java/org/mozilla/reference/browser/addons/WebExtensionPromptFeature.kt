@@ -11,7 +11,6 @@ import android.graphics.Bitmap
 import android.widget.Button
 import android.widget.CompoundButton
 import androidx.annotation.VisibleForTesting
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import kotlinx.coroutines.CoroutineDispatcher
@@ -37,7 +36,6 @@ import mozilla.components.feature.addons.ui.PermissionsDialogFragment
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
@@ -446,20 +444,14 @@ class WebExtensionPromptFeature(
         title: String,
         message: String,
     ) {
-        context.let {
-            AlertDialog.Builder(it)
-                .setTitle(title)
-                .setPositiveButton(android.R.string.ok) { _, _ -> }
-                .setCancelable(false)
-                .setMessage(message)
-                .show()
-                .withCenterAlignedButtons()
-        }
+        // A fragment, so the message survives a rotation.
+        MessageDialogFragment.newInstance(title, message).show(fragmentManager, INSTALL_ERROR_DIALOG_FRAGMENT_TAG)
     }
 
     companion object {
         private const val PERMISSIONS_DIALOG_FRAGMENT_TAG = "ADDONS_PERMISSIONS_DIALOG_FRAGMENT"
         private const val POST_INSTALLATION_DIALOG_FRAGMENT_TAG = "ADDONS_INSTALLATION_DIALOG_FRAGMENT"
+        private const val INSTALL_ERROR_DIALOG_FRAGMENT_TAG = "ARCHWAVE_INSTALL_ERROR_DIALOG_FRAGMENT"
         private const val KEY_DATA_COLLECTION_DEFAULT_APPLIED = "archwave_data_collection_default_applied"
         private const val ICON_TIMEOUT_MS = 1000L
         private const val KEY_PRIVATE_BROWSING_DEFAULT = "archwave_private_browsing_default"
