@@ -61,6 +61,7 @@ import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
+import mozilla.components.support.webextensions.WebExtensionSupport
 import mozilla.components.ui.autocomplete.InlineAutocompleteEditText
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.reference.browser.R
@@ -71,6 +72,7 @@ import org.mozilla.reference.browser.settings.SettingsActivity
 
 private const val URL_TEXT_SIZE_SP = 13f
 private const val MENU_ICON_DP = 24
+private const val EXTENSION_SCHEME = "moz-extension://"
 
 /**
  * Wires the browser toolbar to the selected tab, or to the tab given by [sessionId]: URL loading and search,
@@ -358,6 +360,16 @@ class ToolbarIntegration(
         }
     }
 
+    /** An extension's own page is shown by the extension's name, not by its moz-extension://<uuid> address. */
+    private fun extensionPageName(url: String): String? {
+        if (!url.startsWith(EXTENSION_SCHEME)) return null
+        val metadata =
+            WebExtensionSupport.installedExtensions.values
+                .mapNotNull { it.getMetadata() }
+                .firstOrNull { url.startsWith(it.baseUrl) }
+        return metadata?.name?.takeIf { it.isNotBlank() }
+    }
+
     /** True when a page opened the tab (window.open): it can write into the tab's blank page. */
     private fun openedByPage(tab: SessionState? = store.state.findTabOrCustomTabOrSelectedTab(sessionId)) =
         (tab as? TabSessionState)?.parentId != null
@@ -378,7 +390,8 @@ class ToolbarIntegration(
             setUrlBackground(ResourcesCompat.getDrawable(context.resources, R.drawable.url_background, context.theme))
 
             urlFormatter = { url ->
-                UrlDisplay.format(url.toString(), privatePageUrl, openedByPage(), ::registrableDomain)
+                extensionPageName(url.toString())
+                    ?: UrlDisplay.format(url.toString(), privatePageUrl, openedByPage(), ::registrableDomain)
             }
             // A blank page or our private page has nothing worth editing: open an empty field, not its address.
             onUrlClicked = {
@@ -510,14 +523,18 @@ class ToolbarIntegration(
                 .flow()
                 .map { state ->
                     val tab = state.findTabOrCustomTabOrSelectedTab(sessionId)
+                    val url = tab?.content?.url
                     (tab?.content?.private == true) to
-                        (tab != null && UrlDisplay.isHidden(tab.content.url, privatePageUrl, openedByPage(tab)))
+                        (url != null &&
+                            (UrlDisplay.isHidden(url, privatePageUrl, openedByPage(tab)) ||
+                                url.startsWith(EXTENSION_SCHEME)))
                 }
                 .distinctUntilChanged()
                 .collect { (private, hidden) ->
                     // Asks the keyboard not to learn what is typed in a private tab.
                     toolbar.private = private
-                    // The security shields of a blank page or our private page say nothing about a site.
+                    // The security shields of a blank page, our private page or an extension's page say nothing about
+                    // a site (an extension page read as insecure, and its site information was empty).
                     toolbar.display.indicators = if (hidden) emptyList() else pageIndicators
                 }
         }
