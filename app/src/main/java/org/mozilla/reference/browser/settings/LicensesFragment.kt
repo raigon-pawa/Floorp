@@ -7,6 +7,7 @@ package org.mozilla.reference.browser.settings
 import android.os.Bundle
 import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
 import org.mozilla.reference.browser.R
@@ -72,8 +73,8 @@ class LicensesFragment : PreferenceFragmentCompat() {
         @ArrayRes val components: Int,
     )
 
-    private companion object {
-        val LICENSES =
+    internal companion object {
+        private val LICENSES =
             listOf(
                 License(
                     R.string.archwave_licenses_mpl,
@@ -93,12 +94,17 @@ class LicensesFragment : PreferenceFragmentCompat() {
             )
         // The notices both projects publish for their binaries, at the versions the app ships (megazords/full/
         // DEPENDENCIES.md of application-services v160.0, DEPENDENCIES.md of glean v70.3.0); replace them on an update.
-        val NATIVE_LIBRARIES =
+        private val NATIVE_LIBRARIES =
             listOf(
                 R.string.archwave_licenses_native_app_services to "licenses/application-services-dependencies.md",
                 R.string.archwave_licenses_native_glean to "licenses/glean-dependencies.md",
             )
-        const val GECKO_LICENSES = "about:license"
-        const val PLAY_SERVICES_TERMS = "https://developer.android.com/studio/terms"
+        private const val GECKO_LICENSES = "about:license"
+        private const val PLAY_SERVICES_TERMS = "https://developer.android.com/studio/terms"
+
+        /** Every licence text the list opens, read from the assets by name (a missing one crashes on tap). */
+        @VisibleForTesting
+        internal val assetPaths: List<String>
+            get() = LICENSES.map { it.asset } + NATIVE_LIBRARIES.map { it.second }
     }
 }

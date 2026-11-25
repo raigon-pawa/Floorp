@@ -4,15 +4,24 @@
 
 package org.mozilla.reference.browser.ui
 
+import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.By
+import androidx.test.uiautomator.Until
 import mockwebserver3.MockWebServer
 import org.junit.After
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.TestAssetHelper
+import org.mozilla.reference.browser.helpers.TestHelper.packageName
 import org.mozilla.reference.browser.ui.robots.browser
+import org.mozilla.reference.browser.ui.robots.mDevice
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
 import org.mozilla.reference.browser.ui.robots.startPage
 
@@ -67,6 +76,17 @@ class StartPageTest {
         browser {}.goBack {}
         startPage { verifyStartPage() }
         navigationToolbar { checkNumberOfTabsTabCounter("1") }
+    }
+
+    // Decision 11: Back with nothing to go back to leaves the app like Home, keeping the tab, and never closes it.
+    @Test
+    fun backOnStartPageLeavesTheAppTest() {
+        startPage { verifyStartPage() }
+        mDevice.pressBack()
+        assertTrue("still on screen", mDevice.wait(Until.gone(By.pkg(packageName)), TestAssetHelper.waitingTime))
+        assertFalse("the browser was closed", activityTestRule.activity.isFinishing)
+        val store = InstrumentationRegistry.getInstrumentation().targetContext.components.core.store
+        assertEquals(1, store.state.tabs.size)
     }
 
     // Closing the last tab: TabTrayMenuTest.closeOneTabXButtonTest.
