@@ -15,6 +15,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -221,6 +222,8 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
                         view.findViewById<TextView>(R.id.mozac_browser_tabstray_title).text =
                             context.getString(R.string.start_page_tab_title)
                     }
+                    // Without an address the title sits in the middle of the row.
+                    view.findViewById<TextView>(R.id.mozac_browser_tabstray_url).apply { isVisible = text.isNotEmpty() }
                 }
 
                 override fun updateSelectedTabIndicator(showAsSelected: Boolean) =

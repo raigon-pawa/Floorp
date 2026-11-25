@@ -33,6 +33,26 @@
     <color name="mozac_destructive_button_text_color" tools:ignore="UnusedResources">@color/aw_error</color>
     <color name="mozac_feature_qr_scan_success_color" tools:ignore="UnusedResources">@color/aw_text_1</color>
 
+    <!-- Three-dot menu rows: the library keeps them 48dp tall with one line, which cut labels short at a large font
+         size (an extension's badge was lost). They take up to two lines and grow with them. -->
+    <style name="Mozac.Browser.Menu2.Candidate.Container" parent="" tools:ignore="UnusedResources">
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">@dimen/mozac_browser_menu2_candidate_container_layout_height</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:paddingStart">@dimen/mozac_browser_menu2_candidate_container_padding_start</item>
+        <item name="android:paddingEnd">@dimen/mozac_browser_menu2_candidate_container_padding_end</item>
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+    </style>
+    <style name="Mozac.Browser.Menu2.Candidate.Text" parent="@android:style/TextAppearance.Material.Menu" tools:ignore="UnusedResources">
+        <item name="android:background">?android:attr/selectableItemBackground</item>
+        <item name="android:textSize">@dimen/mozac_browser_menu2_candidate_text_size</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+
     <!-- Black like the rest of the window, so the status bar area above it matches. -->
     <style name="ArchwaveActionBar" parent="Widget.Material3.ActionBar.Solid">
         <item name="background">@color/aw_black</item>

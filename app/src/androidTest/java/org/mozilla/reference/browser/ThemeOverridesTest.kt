@@ -43,7 +43,12 @@ class ThemeOverridesTest {
             "mozilla.components.ui.tabcounter" to listOf("mozac_ui_tabcounter_default_tint"),
             "mozilla.components.ui.widgets" to listOf("mozac_destructive_button_text_color"),
         )
-    private val styles = mapOf("mozilla.components.feature.prompts" to "MozDialogStyle")
+    private val styles =
+        mapOf(
+            "mozilla.components.feature.prompts" to listOf("MozDialogStyle"),
+            "mozilla.components.browser.menu2" to
+                listOf("Mozac_Browser_Menu2_Candidate_Container", "Mozac_Browser_Menu2_Candidate_Text"),
+        )
 
     private fun libraryId(
         library: String,
@@ -59,7 +64,7 @@ class ThemeOverridesTest {
 
     @Test
     fun overriddenLibraryStylesStillExist() {
-        styles.forEach { (library, name) -> libraryId(library, "style", name) }
+        styles.forEach { (library, names) -> names.forEach { libraryId(library, "style", it) } }
     }
 
     @Test

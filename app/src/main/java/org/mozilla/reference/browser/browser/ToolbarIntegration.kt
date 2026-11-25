@@ -7,9 +7,11 @@ package org.mozilla.reference.browser.browser
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import android.text.TextUtils
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import androidx.annotation.DrawableRes
@@ -478,7 +480,9 @@ class ToolbarIntegration(
 
         // The whole address bar opens the editor, not only the line of text: the rest of the pill, its icons and the
         // bar's height around it took no taps. The toolbar's own buttons still take theirs.
-        val urlView = toolbar.findViewById<View>(toolbarR.id.mozac_browser_toolbar_url_view)
+        val urlView = toolbar.findViewById<TextView>(toolbarR.id.mozac_browser_toolbar_url_view)
+        // The library fades out a long address but not the hint, which a large font cut mid-letter.
+        urlView.ellipsize = TextUtils.TruncateAt.END
         (toolbar.findViewById<View>(toolbarR.id.mozac_browser_toolbar_background).parent as View).apply {
             setOnClickListener { urlView.performClick() }
             // The URL itself stays TalkBack's button for this.
