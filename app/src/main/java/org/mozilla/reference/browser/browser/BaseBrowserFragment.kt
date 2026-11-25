@@ -60,8 +60,6 @@ import org.mozilla.reference.browser.ext.requireComponents
 import org.mozilla.reference.browser.pip.PictureInPictureIntegration
 import org.mozilla.reference.browser.tabs.LastTabFeature
 
-private const val BOTTOM_TOOLBAR_HEIGHT = 0
-
 /**
  * Base fragment extended by [BrowserFragment] and [ExternalAppBrowserFragment]. This class only contains shared code
  * focused on the main browsing content. UI code specific to the app or to custom tabs can be found in the subclasses.
@@ -185,16 +183,20 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
         setupLinksAndPrompts(view)
         setupPageFeatures(view)
 
+        // The page is laid out for the toolbar shown; as the toolbar scrolls away the clipping moves fixed-bottom
+        // page elements down with it. With zero heights both were no-ops and such elements sat in the wrong place.
+        val toolbarHeight = resources.getDimensionPixelSize(R.dimen.browser_toolbar_height)
         (swipeRefresh.layoutParams as? CoordinatorLayout.LayoutParams)?.apply {
             behavior =
                 EngineViewClippingBehavior(
                     context = requireContext(),
                     attrs = null,
                     engineViewParent = swipeRefresh,
-                    topToolbarHeight = toolbar.height,
-                    bottomToolbarHeight = BOTTOM_TOOLBAR_HEIGHT,
+                    topToolbarHeight = 0,
+                    bottomToolbarHeight = toolbarHeight,
                 )
         }
+        engineView.setDynamicToolbarMaxHeight(toolbarHeight)
         swipeRefreshFeature.bind(
             view,
             SwipeRefreshFeature(
