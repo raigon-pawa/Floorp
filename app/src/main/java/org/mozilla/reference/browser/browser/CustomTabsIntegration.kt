@@ -8,7 +8,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
-import androidx.core.content.res.ResourcesCompat
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -64,7 +63,6 @@ class CustomTabsIntegration(
             activity?.finish()
         }
         toolbar.display.setUrlBackground(null)
-        toolbar.display.typeface = ResourcesCompat.getFont(context, R.font.jetbrains_mono_nl_regular)
     }
 
     private fun menuToolbar(session: SessionState?): RowMenuCandidate {

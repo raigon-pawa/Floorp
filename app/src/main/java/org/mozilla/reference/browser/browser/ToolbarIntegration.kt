@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.menu2.BrowserMenuController
+import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
@@ -225,9 +226,13 @@ class ToolbarIntegration(
         // JetBrains Mono for the address only (shown and edited). It is wider than the system font.
         val mono = ResourcesCompat.getFont(context, R.font.jetbrains_mono_nl_regular)
         toolbar.display.typeface = mono
-        toolbar.display.textSize = URL_TEXT_SIZE_SP
         toolbar.edit.typeface = mono
-        toolbar.edit.textSize = URL_TEXT_SIZE_SP
+        // A custom tab keeps the library's sizes: it shows a title above the URL, and the library resets the URL's
+        // size whenever the title changes.
+        if (sessionId == null || store.state.findCustomTab(sessionId) == null) {
+            toolbar.display.textSize = URL_TEXT_SIZE_SP
+            toolbar.edit.textSize = URL_TEXT_SIZE_SP
+        }
 
         ToolbarAutocompleteFeature(toolbar).apply {
             updateAutocompleteProviders(listOf(historyStorage, shippedDomainsProvider))
