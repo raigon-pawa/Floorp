@@ -8,7 +8,9 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import mozilla.components.browser.menu2.BrowserMenuController
@@ -46,12 +48,12 @@ import org.mozilla.reference.browser.ext.share
 @Suppress("LongParameterList")
 class CustomTabsIntegration(
     private val context: Context,
-    store: BrowserStore,
+    private val store: BrowserStore,
     toolbar: BrowserToolbar,
     private val engineView: EngineView,
     private val sessionUseCases: SessionUseCases,
     private val customTabsUseCases: CustomTabsUseCases,
-    sessionId: String,
+    private val sessionId: String,
     private val activity: Activity?,
 ) : LifecycleAwareFeature, UserInteractionHandler {
     private val session = store.state.findCustomTab(sessionId)
@@ -170,27 +172,32 @@ class CustomTabsIntegration(
             closeListener = { activity?.finish() },
         )
 
+    // Cancelled in stop(): left running, the store kept this integration and its activity alive after the tab closed.
+    private var menuScope: CoroutineScope? = null
+
     init {
         toolbar.display.menuController = menuController
-
-        store.flowScoped(dispatcher = Dispatchers.Main) { flow ->
-            flow
-                .map { state -> state.findCustomTab(sessionId) }
-                .distinctUntilChanged()
-                .collect { tab ->
-                    val items = menuItems(tab)
-                    val customTabItems = tab?.createCustomTabMenuCandidates(context).orEmpty()
-                    menuController.submitList(items + customTabItems)
-                }
-        }
     }
 
     override fun start() {
         feature.start()
+        menuScope =
+            store.flowScoped(dispatcher = Dispatchers.Main) { flow ->
+                flow
+                    .map { state -> state.findCustomTab(sessionId) }
+                    .distinctUntilChanged()
+                    .collect { tab ->
+                        val items = menuItems(tab)
+                        val customTabItems = tab?.createCustomTabMenuCandidates(context).orEmpty()
+                        menuController.submitList(items + customTabItems)
+                    }
+            }
     }
 
     override fun stop() {
         feature.stop()
+        menuScope?.cancel()
+        menuScope = null
     }
 
     override fun onBackPressed(): Boolean = feature.onBackPressed()
