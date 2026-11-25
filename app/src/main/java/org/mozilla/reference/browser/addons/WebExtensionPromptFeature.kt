@@ -54,7 +54,8 @@ class WebExtensionPromptFeature(
     /**
      * The library fills both permission buttons with the primary colour; Cancel is the safe choice, so tone it down. It
      * also ticks the technical-and-interaction data box ("opt-out"); this build shares no data unless the user opts in,
-     * so untick it once per dialog, leaving a choice restored after a rotation alone.
+     * so untick it once per dialog, leaving a choice restored after a rotation alone. Likewise tick the private
+     * browsing box once for an extension that already runs in private tabs.
      */
     private val denyButtonStyler =
         object : FragmentManager.FragmentLifecycleCallbacks() {
@@ -67,6 +68,9 @@ class WebExtensionPromptFeature(
                 val arguments = f.arguments ?: return
                 if (!arguments.getBoolean(KEY_DATA_COLLECTION_DEFAULT_APPLIED)) {
                     dialog.findViewById<CompoundButton>(addonsR.id.technical_and_interaction_data)?.isChecked = false
+                    if (arguments.getBoolean(KEY_PRIVATE_BROWSING_DEFAULT)) {
+                        dialog.findViewById<CompoundButton>(addonsR.id.allow_in_private_browsing)?.isChecked = true
+                    }
                     arguments.putBoolean(KEY_DATA_COLLECTION_DEFAULT_APPLIED, true)
                 }
             }
@@ -250,6 +254,11 @@ class WebExtensionPromptFeature(
                     },
                     onLearnMoreClicked = ::openLearnMore,
                 )
+            // Reinstalling or updating an extension that may run in private tabs: the box starts unticked and Add
+            // would silently revoke that, so start it ticked.
+            if (!forOptionalPermissions && store.state.extensions[addon.id]?.allowedInPrivateBrowsing == true) {
+                dialog.arguments?.putBoolean(KEY_PRIVATE_BROWSING_DEFAULT, true)
+            }
             dialog.show(
                 fragmentManager,
                 PERMISSIONS_DIALOG_FRAGMENT_TAG,
@@ -436,6 +445,7 @@ class WebExtensionPromptFeature(
         private const val POST_INSTALLATION_DIALOG_FRAGMENT_TAG = "ADDONS_INSTALLATION_DIALOG_FRAGMENT"
         private const val KEY_DATA_COLLECTION_DEFAULT_APPLIED = "archwave_data_collection_default_applied"
         private const val ICON_TIMEOUT_MS = 1000L
+        private const val KEY_PRIVATE_BROWSING_DEFAULT = "archwave_private_browsing_default"
     }
 }
 
