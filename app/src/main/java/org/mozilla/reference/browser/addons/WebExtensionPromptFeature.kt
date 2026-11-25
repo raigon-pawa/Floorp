@@ -18,6 +18,8 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.withTimeoutOrNull
@@ -127,6 +129,8 @@ class WebExtensionPromptFeature(
         try {
             withTimeoutOrNull(ICON_TIMEOUT_MS) { extension.loadIcon(AddonManager.ADDON_ICON_SIZE) }
         } catch (e: Exception) {
+            // stop() cancelled the scope: no prompt may be shown now, the next start() shows it again.
+            currentCoroutineContext().ensureActive()
             Logger.warn("Could not load the icon of ${extension.id}", e)
             null
         }
