@@ -43,20 +43,25 @@ object IncomingIntentRules {
      * with such an address cannot be kept for a search: the processor would find and load that address.
      */
     fun sharedTextOrNull(text: String?, findUrl: (String) -> String?): String? {
-        var scanned = text?.take(MAX_SHARED_TEXT_LENGTH)?.trim().orEmpty()
+        val scanned = text?.take(MAX_SHARED_TEXT_LENGTH)?.trim().orEmpty()
         if (scanned.isEmpty()) return null
-        var url = findUrl(scanned) ?: return scanned.take(MAX_SEARCH_LENGTH)
-        repeat(MAX_SKIPPED_ADDRESSES) {
-            when {
-                hostAndPort.matches(url) -> return "http://$url"
-                // Without a scheme the processor loads it as http.
-                !anyScheme.containsMatchIn(url) -> return url
-                webUrlOrNull(url) != null -> return webUrlOrNull(url)
+        val first = findUrl(scanned) ?: return scanned.take(MAX_SEARCH_LENGTH)
+        // Each address that is not kept is cut out before the next search. The finder returns a part of the text, so
+        // the text gets shorter every time.
+        var rest = scanned
+        return generateSequence(first) { skipped ->
+                rest = rest.replace(skipped, " ")
+                findUrl(rest)
             }
-            // The finder returns a part of the text, so this shortens it and the loop ends.
-            scanned = scanned.replace(url, " ")
-            url = findUrl(scanned) ?: return null
-        }
-        return null
+            .take(MAX_SKIPPED_ADDRESSES)
+            .firstNotNullOfOrNull(::keptAddressOrNull)
     }
+
+    private fun keptAddressOrNull(url: String): String? =
+        when {
+            hostAndPort.matches(url) -> "http://$url"
+            // Without a scheme the processor loads it as http.
+            !anyScheme.containsMatchIn(url) -> url
+            else -> webUrlOrNull(url)
+        }
 }
