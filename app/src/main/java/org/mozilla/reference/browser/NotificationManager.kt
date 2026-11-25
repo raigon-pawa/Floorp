@@ -4,6 +4,7 @@
 
 package org.mozilla.reference.browser
 
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -13,12 +14,17 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
 import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.TabData
+import mozilla.components.feature.sitepermissions.NotificationPermissionDialogFragment
 import mozilla.components.feature.webnotifications.WebNotificationIntentProcessor
+import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.ids.SharedIdsHelper
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.kotlin.isSameOriginAs
@@ -39,6 +45,27 @@ object NotificationManager {
     const val EXTRA_WEB_NOTIFICATION = "mozac.feature.webnotifications.generic.onclick"
 
     private val logger = Logger("NotificationManager")
+
+    /**
+     * Once a site may notify, Android Components offers the system notification settings when the app may not post
+     * notifications. This asks Android first instead, and keeps that offer only when Android no longer shows its
+     * prompt. Register it on the activity's fragment manager.
+     */
+    fun askBeforeOfferingSettings(activity: AppCompatActivity, delegate: NotificationsDelegate) =
+        object : FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentStarted(fm: FragmentManager, f: Fragment) {
+                if (f !is NotificationPermissionDialogFragment || SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+                delegate.requestNotificationPermission(
+                    onPermissionGranted = { f.dismissAllowingStateLoss() },
+                    // True right after a "no" in the prompt; false when Android refused without asking.
+                    onPermissionRejected = {
+                        if (activity.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS)) {
+                            f.dismissAllowingStateLoss()
+                        }
+                    },
+                )
+            }
+        }
 
     /**
      * Passes a tap on a web notification to the page and brings its site forward: the tab that shows it, or a new tab

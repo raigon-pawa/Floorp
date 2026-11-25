@@ -69,6 +69,10 @@ open class BrowserActivity : AppCompatActivity() {
         window.setupPersistentInsets()
 
         components.notificationsDelegate.bindToActivity(this)
+        supportFragmentManager.registerFragmentLifecycleCallbacks(
+            NotificationManager.askBeforeOfferingSettings(this, components.notificationsDelegate),
+            true,
+        )
 
         if (savedInstanceState == null) {
             // Not when the system replays the intent of a task reopened from recents.
