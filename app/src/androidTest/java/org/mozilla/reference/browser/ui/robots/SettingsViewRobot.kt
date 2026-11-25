@@ -200,7 +200,7 @@ private fun remoteDebuggingToggle() =
         )
     )
 
-private fun customAddonCollectionButton() = onView(withText("Custom Add-on collection"))
+private fun customAddonCollectionButton() = onView(withText("Custom add-on collection"))
 
 private fun aboutHeading() = Espresso.onView(withText(R.string.mozilla_category))
 

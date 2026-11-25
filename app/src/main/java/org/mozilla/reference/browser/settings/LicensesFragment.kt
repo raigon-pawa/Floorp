@@ -33,7 +33,6 @@ class LicensesFragment : PreferenceFragmentCompat() {
                         Preference(context).apply {
                             setTitle(title)
                             this.summary = summary
-                            isIconSpaceReserved = false
                             isSingleLineTitle = false
                             setOnPreferenceClickListener {
                                 onClick()
