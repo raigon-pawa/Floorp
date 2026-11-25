@@ -31,6 +31,7 @@ import mozilla.components.browser.state.selector.findCustomTab
 import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.SessionState
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.browser.toolbar.BrowserToolbar
@@ -342,6 +343,10 @@ class ToolbarIntegration(
         }
     }
 
+    /** True when a page opened the tab (window.open): it can write into the tab's blank page. */
+    private fun openedByPage(tab: SessionState? = store.state.findTabOrCustomTabOrSelectedTab(sessionId)) =
+        (tab as? TabSessionState)?.parentId != null
+
     private fun startActivity(activity: Class<*>) {
         context.startActivity(Intent(context, activity).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
     }
@@ -359,13 +364,13 @@ class ToolbarIntegration(
 
             // The formatter is synchronous; it only asks the (prefetched) suffix list for hosts too long to show whole.
             urlFormatter = { url ->
-                UrlDisplay.format(url.toString(), privatePageUrl) { host ->
+                UrlDisplay.format(url.toString(), privatePageUrl, openedByPage()) { host ->
                     runBlocking { publicSuffixList.getPublicSuffixPlusOne(host).await() }
                 }
             }
             // A blank page or our private page has nothing worth editing: open an empty field, not its address.
             onUrlClicked = {
-                if (UrlDisplay.isHidden(toolbar.url.toString(), privatePageUrl)) {
+                if (UrlDisplay.isHidden(toolbar.url.toString(), privatePageUrl, openedByPage())) {
                     toolbar.editMode()
                     toolbar.edit.updateUrl("")
                     false
@@ -490,8 +495,9 @@ class ToolbarIntegration(
             store
                 .flow()
                 .map { state ->
-                    val content = state.findTabOrCustomTabOrSelectedTab(sessionId)?.content
-                    (content?.private == true) to (content != null && UrlDisplay.isHidden(content.url, privatePageUrl))
+                    val tab = state.findTabOrCustomTabOrSelectedTab(sessionId)
+                    (tab?.content?.private == true) to
+                        (tab != null && UrlDisplay.isHidden(tab.content.url, privatePageUrl, openedByPage(tab)))
                 }
                 .distinctUntilChanged()
                 .collect { (private, hidden) ->

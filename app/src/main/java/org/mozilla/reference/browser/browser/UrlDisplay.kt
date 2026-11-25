@@ -35,18 +35,27 @@ object UrlDisplay {
             }
                 .also { privatePageUrl = it }
 
-    /** True for the pages whose address is shown as empty: a blank page and our own private browsing page. */
-    fun isHidden(url: String, privatePageUrl: String?): Boolean = url == ABOUT_BLANK || url == privatePageUrl
+    /**
+     * True for the pages whose address is shown as empty: a blank page and our own private browsing page. A blank page
+     * in a tab [openedByPage] keeps its address: the opener can write anything into it.
+     */
+    fun isHidden(url: String, privatePageUrl: String?, openedByPage: Boolean = false): Boolean =
+        (url == ABOUT_BLANK && !openedByPage) || url == privatePageUrl
 
     /**
      * Returns what to show for [url]. `https://` is dropped but `http://` stays, so an insecure page is obvious; user
      * info (`user@`) is dropped so it cannot pose as the host; a bare origin loses its trailing slash; a very long host
      * loses leading subdomain labels but always keeps its registrable domain, as given by [registrableDomain] (public
      * suffix plus one label, or null when unknown, which keeps the whole host). Every other scheme is shown as the
-     * engine gives it.
+     * engine gives it. [openedByPage] is as for [isHidden].
      */
-    fun format(url: String, privatePageUrl: String?, registrableDomain: (String) -> String? = { null }): String {
-        if (isHidden(url, privatePageUrl)) return ""
+    fun format(
+        url: String,
+        privatePageUrl: String?,
+        openedByPage: Boolean = false,
+        registrableDomain: (String) -> String? = { null },
+    ): String {
+        if (isHidden(url, privatePageUrl, openedByPage)) return ""
         val clean = bidiControls.replace(url) { match -> percentEncode(match.value) }
 
         val scheme =

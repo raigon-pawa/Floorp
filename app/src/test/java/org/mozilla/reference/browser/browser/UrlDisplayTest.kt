@@ -53,7 +53,7 @@ class UrlDisplayTest {
         return host.dropLast(suffix.length + 1).substringAfterLast('.') + ".$suffix"
     }
 
-    private fun showLong(url: String) = UrlDisplay.format(url, privatePage, ::registrableDomain)
+    private fun showLong(url: String) = UrlDisplay.format(url, privatePage, registrableDomain = ::registrableDomain)
 
     @Test
     fun `a long host keeps the labels that name the site`() {
@@ -133,6 +133,13 @@ class UrlDisplayTest {
         assertEquals("$privatePage#", show("$privatePage#"))
         assertFalse(UrlDisplay.isHidden(lookalike, privatePage))
         assertFalse(UrlDisplay.isHidden("about:blank#x", privatePage))
+    }
+
+    @Test
+    fun `a blank page opened by another page keeps its address`() {
+        assertEquals("about:blank", UrlDisplay.format("about:blank", privatePage, openedByPage = true))
+        assertFalse(UrlDisplay.isHidden("about:blank", privatePage, openedByPage = true))
+        assertEquals("", UrlDisplay.format(privatePage, privatePage, openedByPage = true))
     }
 
     @Test
