@@ -21,6 +21,7 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.util.Locale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -144,12 +145,13 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                         logger.error("Failed to load add-ons", e)
                         null
                     }
+                // The spinner stays until the list shows, so the screen is never blank while the catalogue loads.
+                val listed = addons?.let { withCatalogueData(it) }
                 loading.isVisible = false
                 // The manager hides catalogue errors and returns the installed add-ons alone.
                 // shortcut: also shown if every recommended add-on is installed; fine while the collection is large.
                 loadError.isVisible = addons == null || addons.none { !it.isInstalled() }
-                if (addons == null) return@launch
-                val listed = withCatalogueData(addons)
+                if (listed == null) return@launch
 
                 // Updating the existing adapter, instead of a new one, keeps the scroll position.
                 adapter?.updateAddons(listed)
@@ -178,9 +180,13 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
         if (addons.none { !it.isInstalled() } || addons.none { it.isInstalled() }) return addons
         val catalogue =
             try {
-                requireContext().components.core.addonProvider.getFeaturedAddons(allowCache = true).associateBy {
-                    it.id
-                }
+                // The language the manager asks for: the provider caches one file per language and deletes the others.
+                requireContext()
+                    .components
+                    .core
+                    .addonProvider
+                    .getFeaturedAddons(allowCache = true, language = Locale.getDefault().language)
+                    .associateBy { it.id }
             } catch (e: Exception) {
                 // The view went away: rethrow the cancellation instead of building a list for a detached fragment.
                 currentCoroutineContext().ensureActive()
