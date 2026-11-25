@@ -11,7 +11,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
-import org.mozilla.reference.browser.helpers.RetryTestRule
 import org.mozilla.reference.browser.helpers.TestAssetHelper
 import org.mozilla.reference.browser.ui.robots.browser
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
@@ -21,9 +20,8 @@ import org.mozilla.reference.browser.ui.robots.startPage
 class StartPageTest {
     private lateinit var mockWebServer: MockWebServer
 
+    // No RetryTestRule: a retry starts on the page the failed attempt left, so it fails again and hides the cause.
     @get:Rule val activityTestRule = BrowserActivityTestRule()
-
-    @Rule @JvmField val retryTestRule = RetryTestRule(3)
 
     @Before
     fun setUp() {
