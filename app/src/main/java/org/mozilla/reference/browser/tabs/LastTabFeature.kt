@@ -13,7 +13,7 @@ import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 
-/** A feature that removes the tab and selects the parent, if one exists. */
+/** Back on a tab without history: closes a tab opened from another tab and returns to that parent. */
 class LastTabFeature(
     private val store: BrowserStore,
     private val tabId: String? = null,
@@ -25,7 +25,8 @@ class LastTabFeature(
     override fun stop() = Unit
 
     /**
-     * Removes the session if it was opened by an ACTION_VIEW intent or if it has a parent session and no more history.
+     * Removes the session if it was opened by an ACTION_VIEW intent or if it has a parent session and no more history;
+     * returns false, changing nothing, for any other tab.
      */
     override fun onBackPressed(): Boolean {
         val tab = store.state.findTabOrCustomTabOrSelectedTab(tabId) ?: return false
@@ -37,9 +38,9 @@ class LastTabFeature(
             removeTabUseCase(tab.id)
             true
         } else {
+            // A tab without a parent stays: Back then leaves the app (BrowserActivity) instead of closing it.
             val hasParent = tab is TabSessionState && tab.parentId != null
-            removeTabUseCase(tab.id, selectParentIfExists = hasParent) // Alternatively, set this to always true.
-            // We want to return to home if this session didn't have a parent session to select.
+            if (hasParent) removeTabUseCase(tab.id, selectParentIfExists = true)
             hasParent
         }
     }

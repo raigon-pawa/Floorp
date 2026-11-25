@@ -95,6 +95,9 @@ open class BrowserActivity : AppCompatActivity() {
                             return
                         }
                     }
+                    // Nothing left to go back to: leave the app like Home does, keeping the tabs. A custom tab that
+                    // lives in its caller's task just closes, so the caller is not sent away with it.
+                    if (isTaskRoot) moveTaskToBack(true) else finish()
                 }
             },
         )
