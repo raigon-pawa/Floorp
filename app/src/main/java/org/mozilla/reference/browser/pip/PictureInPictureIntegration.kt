@@ -10,11 +10,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.mapNotNull
+import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.session.PictureInPictureFeature
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
+import mozilla.components.support.base.log.logger.Logger
 
 /**
  * Enters picture-in-picture when the user leaves the app while the page is fullscreen and its media is playing, or on
@@ -27,7 +29,8 @@ class PictureInPictureIntegration(
     private val whiteList: List<String> = listOf("youtube.com/tv"),
 ) : LifecycleAwareFeature {
     private var scope: CoroutineScope? = null
-    private val pictureFeature = PictureInPictureFeature(store, activity)
+    // The tab id makes it judge the custom tab of this window rather than the selected browser tab.
+    private val pictureFeature = PictureInPictureFeature(store, activity, tabId = customTabId)
     private var whiteListed = false
 
     override fun start() {
@@ -50,10 +53,27 @@ class PictureInPictureIntegration(
      */
     fun onHomePressed() =
         if (whiteListed) {
-            pictureFeature.enterPipModeCompat()
+            try {
+                pictureFeature.enterPipModeCompat()
+            } catch (e: IllegalStateException) {
+                // Thrown when the activity or device refuses, as PictureInPictureFeature.onHomePressed also expects.
+                Logger.warn("Entering picture-in-picture failed", e)
+                false
+            }
         } else {
             pictureFeature.onHomePressed()
         }
+
+    /**
+     * Tells the engine and the store when the window enters or leaves picture-in-picture. Done here rather than by
+     * [PictureInPictureFeature.onPictureInPictureModeChanged], which always tells the selected tab's engine session,
+     * also in a custom tab.
+     */
+    fun onPictureInPictureModeChanged(enabled: Boolean) {
+        val tab = store.state.findTabOrCustomTabOrSelectedTab(customTabId) ?: return
+        tab.engineState.engineSession?.onPipModeChanged(enabled)
+        store.dispatch(ContentAction.PictureInPictureChangedAction(tab.id, enabled))
+    }
 
     private fun isWhitelisted(url: String): Boolean {
         val exists = whiteList.firstOrNull { url.contains(it) }

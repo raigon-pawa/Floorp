@@ -21,7 +21,7 @@ import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.engine.EngineView
@@ -470,7 +470,8 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
     final override fun onHomePressed(): Boolean = pictureInPictureIntegration.get()?.onHomePressed() ?: false
 
     final override fun onPictureInPictureModeChanged(enabled: Boolean) {
-        val session = requireComponents.core.store.state.selectedTab
+        pictureInPictureIntegration.get()?.onPictureInPictureModeChanged(enabled)
+        val session = requireComponents.core.store.state.findTabOrCustomTabOrSelectedTab(sessionId)
         val fullScreenMode = session?.content?.fullScreen ?: false
         // If we're exiting PIP mode and we're in fullscreen mode, then we should exit fullscreen mode as well.
         if (!enabled && fullScreenMode) {
