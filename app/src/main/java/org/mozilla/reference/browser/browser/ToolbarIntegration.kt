@@ -105,6 +105,11 @@ class ToolbarIntegration(
     private var previousExtensionIcons = emptyMap<List<Any?>, AsyncDrawableMenuIcon>()
     private var menuUpdateJob: Job? = null
     private var toolbarUpdateJob: Job? = null
+    private var tabSwitchJob: Job? = null
+
+    // The tab shown when the toolbar last looked, kept while the screen is stopped: a link from another app switches
+    // tabs while it is.
+    private var shownTabId: String? = null
 
     private val editField: InlineAutocompleteEditText =
         toolbar.findViewById(toolbarR.id.mozac_browser_toolbar_edit_url_view)
@@ -539,6 +544,20 @@ class ToolbarIntegration(
                 }
         }
 
+        tabSwitchJob?.cancel()
+        tabSwitchJob = scope.launch {
+            store
+                .flow()
+                .map { it.findTabOrCustomTabOrSelectedTab(sessionId)?.id }
+                .distinctUntilChanged()
+                .collect { id ->
+                    // What is being typed was meant for the tab shown before (a link from another app or a new tab
+                    // from the menu took its place): Enter would load it into the new one.
+                    if (shownTabId != null && id != shownTabId && editRoot.isVisible) leaveEditMode()
+                    shownTabId = id
+                }
+        }
+
         menuUpdateJob?.cancel()
         menuUpdateJob = scope.launch {
             // Only what the menu shows, so progress and title updates do not rebuild it.
@@ -571,6 +590,9 @@ class ToolbarIntegration(
 
         toolbarUpdateJob?.cancel()
         toolbarUpdateJob = null
+
+        tabSwitchJob?.cancel()
+        tabSwitchJob = null
 
         menuUpdateJob?.cancel()
         menuUpdateJob = null

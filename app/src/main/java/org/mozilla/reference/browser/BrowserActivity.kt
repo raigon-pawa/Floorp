@@ -61,6 +61,7 @@ import org.mozilla.reference.browser.browser.withoutSystemBarMargins
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 import org.mozilla.reference.browser.settings.ClearDataDialogFragment
+import org.mozilla.reference.browser.tabs.TabsTrayFragment
 
 /** Activity that holds the [BrowserFragment]. */
 open class BrowserActivity : AppCompatActivity() {
@@ -171,6 +172,13 @@ open class BrowserActivity : AppCompatActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        // A link, share or notification from elsewhere selected a tab: show it, not the tabs tray left open.
+        if (
+            intent.action != Intent.ACTION_MAIN &&
+                supportFragmentManager.findFragmentById(R.id.container) is TabsTrayFragment
+        ) {
+            supportFragmentManager.beginTransaction().replace(R.id.container, BrowserFragment.create()).commit()
+        }
         // Everything else that arrives here was already handled by the intent processors before it was sent.
         NotificationManager.onWebNotificationTapped(components, intent)
     }
