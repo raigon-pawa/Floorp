@@ -22,6 +22,7 @@ import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.isVisible
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -33,6 +34,7 @@ import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.app.links.AppLinksFeature
+import mozilla.components.feature.downloads.DownloadDialogFragment
 import mozilla.components.feature.downloads.DownloadsFeature
 import mozilla.components.feature.downloads.R as DownloadsR
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
@@ -373,6 +375,11 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 },
             ),
         )
+        // After the process died the dialog comes back but the tab's download request does not, so Download would do
+        // nothing. While the request is there (a rotation), the feature reattaches the dialog to it.
+        if (requireComponents.core.store.state.findTabOrCustomTabOrSelectedTab(sessionId)?.content?.download == null) {
+            (childFragmentManager.findFragmentByTag(DownloadDialogFragment.FRAGMENT_TAG) as? DialogFragment)?.dismiss()
+        }
     }
 
     private fun showDownloadCompleted(view: View, download: DownloadState, fileUtils: DefaultDownloadFileUtils) {
