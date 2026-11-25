@@ -22,6 +22,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -181,6 +182,8 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                     it.id
                 }
             } catch (e: Exception) {
+                // The view went away: rethrow the cancellation instead of building a list for a detached fragment.
+                currentCoroutineContext().ensureActive()
                 logger.warn("Could not read the catalogue for installed add-ons", e)
                 return addons
             }
