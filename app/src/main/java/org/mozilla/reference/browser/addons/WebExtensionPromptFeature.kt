@@ -269,8 +269,21 @@ class WebExtensionPromptFeature(
     }
 
     private fun tryToReAttachButtonHandlersToPreviousDialog() {
-        findPostInstallationDialogFragment()?.let(::attachCallbacks)
+        // A prompt restored after the process died has no request behind it any more (the engine forgot the install),
+        // so its buttons could do nothing: close it.
+        val request = store.state.webExtensionPromptRequest
+        findPostInstallationDialogFragment()?.let { dialog ->
+            if (request is WebExtensionPromptRequest.AfterInstallation.PostInstallation) {
+                attachCallbacks(dialog)
+            } else {
+                dialog.dismiss()
+            }
+        }
         findPreviousDialogFragment()?.let { dialog ->
+            if (request !is WebExtensionPromptRequest.AfterInstallation.Permissions) {
+                dialog.dismiss()
+                return
+            }
             dialog.onPositiveButtonClicked = { addon, privateBrowsingAllowed, technicalDataAllowed ->
                 store.state.webExtensionPromptRequest?.let { promptRequest ->
                     if (
