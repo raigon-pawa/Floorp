@@ -57,6 +57,9 @@ constructor(
         this.updateTabsToolbar = updateTabsToolbar
     }
 
+    /** Shows the private tabs instead of the normal ones, as when the user picks that panel. */
+    fun selectPrivate() = selectTab(privateTab)
+
     override fun onTabSelected(tab: Tab?) {
         tabsFeature?.filterTabs { tabSessionState ->
             if (tab == normalTab) {

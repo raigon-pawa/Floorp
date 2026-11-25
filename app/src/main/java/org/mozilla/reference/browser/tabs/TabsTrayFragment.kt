@@ -6,15 +6,19 @@ package org.mozilla.reference.browser.tabs
 
 import android.content.Context
 import android.graphics.Color
+import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import mozilla.components.browser.state.selector.findTab
+import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.tabstray.DefaultTabViewHolder
 import mozilla.components.browser.tabstray.TabViewHolder
@@ -23,10 +27,13 @@ import mozilla.components.browser.tabstray.TabsTray
 import mozilla.components.browser.tabstray.TabsTrayStyling
 import mozilla.components.browser.tabstray.ViewHolderProvider
 import mozilla.components.browser.thumbnails.loader.ThumbnailLoader
+import mozilla.components.concept.base.images.ImageLoadRequest
+import mozilla.components.concept.base.images.ImageLoader
 import mozilla.components.feature.tabs.tabstray.TabsFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.browser.BrowserFragment
+import org.mozilla.reference.browser.browser.StartPage
 import org.mozilla.reference.browser.browser.UrlDisplay
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.requireComponents
@@ -63,6 +70,8 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
 
         tabsPanel.initialize(tabsFeature, updateTabsToolbar = ::updateTabsToolbar)
         tabsToolbar.initialize(tabsFeature) { closeTabsTray() }
+        // Open on the panel of the tab the user came from.
+        if (requireComponents.core.store.state.selectedTab?.content?.private == true) tabsPanel.selectPrivate()
     }
 
     override fun onStart() {
@@ -97,7 +106,33 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
     private fun createAndSetupTabsTray(context: Context): TabsTray {
         val layoutManager = LinearLayoutManager(context)
         val privatePageUrl = UrlDisplay.privatePageUrl(context)
+        val store = context.components.core.store
         val thumbnailLoader = ThumbnailLoader(context.components.core.thumbnailStorage)
+        val startPageCard = ContextCompat.getDrawable(context, R.drawable.archwave_start_thumbnail)
+        // A start-page tab shows the mark instead of the blank document, or of a site it showed before Back.
+        val cardLoader =
+            object : ImageLoader {
+                override fun loadIntoView(
+                    view: ImageView,
+                    request: ImageLoadRequest,
+                    placeholder: Drawable?,
+                    error: Drawable?,
+                ) {
+                    val startPage = store.state.findTab(request.id)?.let(StartPage::isStartTab) == true
+                    if (startPage) {
+                        // Through the loader with an id that has no thumbnail, so it cancels a load still running
+                        // for this recycled view and then shows the mark.
+                        thumbnailLoader.loadIntoView(
+                            view,
+                            request.copy(id = START_PAGE_CARD),
+                            startPageCard,
+                            startPageCard,
+                        )
+                    } else {
+                        thumbnailLoader.loadIntoView(view, request, placeholder, error)
+                    }
+                }
+            }
         val trayStyling =
             TabsTrayStyling(
                 itemBackgroundColor = Color.TRANSPARENT,
@@ -108,8 +143,9 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
         val viewHolderProvider: ViewHolderProvider = { viewGroup ->
             val view = LayoutInflater.from(context).inflate(R.layout.browser_tabstray_item, viewGroup, false)
 
-            val holder = DefaultTabViewHolder(view, thumbnailLoader)
-            // The library shows the private page's whole data: URL as the URL line.
+            val holder = DefaultTabViewHolder(view, cardLoader)
+            // The library shows the private page's whole data: URL as the URL line, and a start-page tab as its
+            // document's address.
             object : TabViewHolder(view) {
                 override var tab by holder::tab
 
@@ -120,8 +156,12 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
                     delegate: TabsTray.Delegate,
                 ) {
                     holder.bind(tab, isSelected, styling, delegate)
-                    if (tab.content.url == privatePageUrl) {
+                    if (tab.content.url == privatePageUrl || StartPage.isStartTab(tab)) {
                         view.findViewById<TextView>(R.id.mozac_browser_tabstray_url).text = ""
+                    }
+                    if (StartPage.isStartTab(tab)) {
+                        view.findViewById<TextView>(R.id.mozac_browser_tabstray_title).text =
+                            context.getString(R.string.start_page_tab_title)
                     }
                 }
 
@@ -162,6 +202,22 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
             }
             .attachToRecyclerView(tabsTray)
 
-        return tabsAdapter
+        var scrolledToSelected = false
+        return object : TabsTray by tabsAdapter {
+            override fun updateTabs(tabs: List<TabSessionState>, selectedTabId: String?) {
+                tabsAdapter.updateTabs(tabs, selectedTabId)
+                // Once, to the tab the user came from. The adapter applies its first list at once.
+                val selected = tabs.indexOfFirst { it.id == selectedTabId }
+                if (!scrolledToSelected && selected >= 0) {
+                    tabsTray.scrollToPosition(selected)
+                    scrolledToSelected = true
+                }
+            }
+        }
+    }
+
+    private companion object {
+        // No tab has this id, so the thumbnail loader never finds a picture for it.
+        const val START_PAGE_CARD = "archwave-start-page"
     }
 }

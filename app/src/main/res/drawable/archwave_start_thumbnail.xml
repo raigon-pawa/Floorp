@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!-- Tabs tray card of a start-page tab: the Archwave mark on black, at the card's 100x56 shape (the thumbnail view
+     scales whatever it shows to the card width). -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:width="100dp" android:height="56dp">
+        <shape>
+            <solid android:color="@color/aw_black" />
+        </shape>
+    </item>
+    <item
+        android:width="56dp"
+        android:height="56dp"
+        android:gravity="center"
+        android:drawable="@drawable/ic_icon_foreground" />
+</layer-list>
