@@ -41,6 +41,7 @@ import mozilla.components.support.ktx.android.content.isOSOnLowMemory
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.requireComponents
 import org.mozilla.reference.browser.search.AwesomeBarWrapper
+import org.mozilla.reference.browser.search.withoutHttpsUpgradeHops
 import org.mozilla.reference.browser.settings.Settings
 import org.mozilla.reference.browser.tabs.EnsureTabFeature
 import org.mozilla.reference.browser.tabs.TabsTrayFragment
@@ -179,7 +180,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                 },
             )
             .addHistoryProvider(
-                requireComponents.core.historyStorage,
+                requireComponents.core.historyStorage.withoutHttpsUpgradeHops(),
                 requireComponents.useCases.sessionUseCases.loadUrl,
             )
             .addClipboardProvider(requireContext(), requireComponents.useCases.sessionUseCases.loadUrl)
