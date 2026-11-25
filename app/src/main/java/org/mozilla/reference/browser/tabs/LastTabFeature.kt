@@ -4,6 +4,7 @@
 
 package org.mozilla.reference.browser.tabs
 
+import mozilla.components.browser.state.action.TabListAction
 import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
@@ -33,8 +34,12 @@ class LastTabFeature(
             tab.source is SessionState.Source.External || tab.source is SessionState.Source.Internal.CustomTab
 
         return if (isExternalOrCustomTab && !tab.restored) {
+            // The tab shown before the link arrived, a private one too; the library would pick a neighbour of the
+            // same kind instead.
+            val previous = store.state.tabs.filter { it.id != tab.id }.maxByOrNull { it.lastAccess }
             finishActivity()
             removeTabUseCase(tab.id)
+            if (tab is TabSessionState && previous != null) store.dispatch(TabListAction.SelectTabAction(previous.id))
             true
         } else {
             // A tab without a parent stays: Back then leaves the app (BrowserActivity) instead of closing it.

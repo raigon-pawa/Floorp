@@ -57,6 +57,20 @@ class LastTabFeatureTest {
     }
 
     @Test
+    fun `closing a tab from an outside link goes back to the tab shown before, private too`() {
+        val private = createTab("https://example.org/", id = "private", private = true, lastAccess = 2)
+        val external =
+            createTab(
+                "https://example.com/",
+                id = "external",
+                source = SessionState.Source.External.ActionView(null),
+                lastAccess = 3,
+            )
+        val (store, _) = backOn(parent.copy(lastAccess = 1), private, external, selected = "external")
+        assertEquals("private", store.state.selectedTabId)
+    }
+
+    @Test
     fun `a restored tab from an outside link is treated like any other`() {
         val external =
             createTab(
