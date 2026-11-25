@@ -7,7 +7,6 @@ package org.mozilla.reference.browser.settings
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -19,9 +18,8 @@ import androidx.core.text.HtmlCompat.FROM_HTML_SEPARATOR_LINE_BREAK_LIST_ITEM
 import androidx.fragment.app.Fragment
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_BUILDID
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
-import org.mozilla.reference.browser.BrowserActivity
 import org.mozilla.reference.browser.R
-import org.mozilla.reference.browser.ext.requireComponents
+import org.mozilla.reference.browser.addons.openInBrowserTab
 
 /** About page. Tapping the version lines copies them to the clipboard. */
 class AboutFragment : Fragment() {
@@ -79,9 +77,11 @@ internal fun Fragment.showPage(page: Fragment) {
     parentFragmentManager.beginTransaction().replace(R.id.container, page).addToBackStack(null).commit()
 }
 
-/** Opens [url] in a new tab of the browser and leaves the settings, so links never leave the app. */
+/**
+ * Opens [url] in a new tab of the browser and leaves the settings, so links never leave the app. The tab opened from
+ * the one shown before closes on Back and brings that one back, as links from the add-on screens do.
+ */
 internal fun Fragment.openInNewTab(url: String) {
-    requireComponents.useCases.tabsUseCases.addTab(url, selectTab = true)
-    startActivity(Intent(requireContext(), BrowserActivity::class.java))
+    requireContext().openInBrowserTab(url)
     requireActivity().finish()
 }
