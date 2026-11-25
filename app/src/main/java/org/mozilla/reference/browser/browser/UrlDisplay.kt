@@ -15,7 +15,7 @@ object UrlDisplay {
     private const val HTTP = "http://"
     private const val ELLIPSIS = "\u2026"
 
-    /** About what fits in the address bar in portrait; longer hosts lose their leading labels. */
+    /** About what fits in the address bar in portrait; longer hosts lose leading subdomain labels. */
     internal const val MAX_HOST_CHARS = 28
 
     // Bidirectional controls can make an address read differently from what it is; they never belong in one.
@@ -41,9 +41,11 @@ object UrlDisplay {
     /**
      * Returns what to show for [url]. `https://` is dropped but `http://` stays, so an insecure page is obvious; user
      * info (`user@`) is dropped so it cannot pose as the host; a bare origin loses its trailing slash; a very long host
-     * keeps its last labels, which name the site. Every other scheme is shown as the engine gives it.
+     * loses leading subdomain labels but always keeps its registrable domain, as given by [registrableDomain] (public
+     * suffix plus one label, or null when unknown, which keeps the whole host). Every other scheme is shown as the
+     * engine gives it.
      */
-    fun format(url: String, privatePageUrl: String?): String {
+    fun format(url: String, privatePageUrl: String?, registrableDomain: (String) -> String? = { null }): String {
         if (isHidden(url, privatePageUrl)) return ""
         val clean = bidiControls.replace(url) { match -> percentEncode(match.value) }
 
@@ -57,23 +59,27 @@ object UrlDisplay {
         val authorityEnd = rest.indexOfAny(charArrayOf('/', '?', '#')).let { if (it < 0) rest.length else it }
         val authority = rest.substring(0, authorityEnd).substringAfterLast('@')
         val tail = rest.substring(authorityEnd).let { if (it == "/") "" else it }
-        return scheme + shortenAuthority(authority) + tail
+        return scheme + shortenAuthority(authority, registrableDomain) + tail
     }
 
-    private fun shortenAuthority(authority: String): String {
+    private fun shortenAuthority(authority: String, registrableDomain: (String) -> String?): String {
         // An IPv6 literal has no labels to drop.
         if (authority.startsWith("[")) return authority
         val host = authority.substringBefore(':')
         val port = authority.substring(host.length)
         if (host.length <= MAX_HOST_CHARS) return authority
 
-        val labels = host.split('.')
-        var kept = labels.takeLast(2).joinToString(".")
-        for (label in labels.dropLast(2).asReversed()) {
+        // The site is named by the registrable domain, which can span several labels (example.co.uk, user.github.io).
+        val site = registrableDomain(host)?.takeIf { host.endsWith(".$it", ignoreCase = true) } ?: return authority
+        val subdomains = host.dropLast(site.length + 1).split('.')
+        var kept = host.takeLast(site.length)
+        var dropped = subdomains.size
+        for (label in subdomains.asReversed()) {
             if (label.length + 1 + kept.length > MAX_HOST_CHARS) break
             kept = "$label.$kept"
+            dropped--
         }
-        return "$ELLIPSIS.$kept$port"
+        return if (dropped == 0) authority else "$ELLIPSIS.$kept$port"
     }
 
     private fun percentEncode(text: String): String =

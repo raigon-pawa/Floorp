@@ -23,6 +23,7 @@ import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.menu2.BrowserMenuController
 import mozilla.components.browser.state.selector.findCustomTab
@@ -93,6 +94,7 @@ class ToolbarIntegration(
         }
 
     private val privatePageUrl = UrlDisplay.privatePageUrl(context)
+    private val publicSuffixList = context.components.utils.publicSuffixList.also { it.prefetch() }
 
     private val scope = MainScope()
     private var menuUpdateJob: Job? = null
@@ -316,7 +318,12 @@ class ToolbarIntegration(
 
             setUrlBackground(ResourcesCompat.getDrawable(context.resources, R.drawable.url_background, context.theme))
 
-            urlFormatter = { url -> UrlDisplay.format(url.toString(), privatePageUrl) }
+            // The formatter is synchronous; it only asks the (prefetched) suffix list for hosts too long to show whole.
+            urlFormatter = { url ->
+                UrlDisplay.format(url.toString(), privatePageUrl) { host ->
+                    runBlocking { publicSuffixList.getPublicSuffixPlusOne(host).await() }
+                }
+            }
             // A blank page or our private page has nothing worth editing: open an empty field, not its address.
             onUrlClicked = {
                 if (UrlDisplay.isHidden(toolbar.url.toString(), privatePageUrl)) {

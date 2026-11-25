@@ -45,16 +45,52 @@ class UrlDisplayTest {
         assertEquals("example.com/@someone", show("https://example.com/@someone"))
     }
 
+    // A stand-in for the public suffix list: the suffix plus one more label, or null for a suffix or unknown host.
+    private val suffixes = listOf("example", "com", "co.uk", "com.au", "github.io")
+
+    private fun registrableDomain(host: String): String? {
+        val suffix = suffixes.filter { host.endsWith(".$it") }.maxByOrNull { it.length } ?: return null
+        return host.dropLast(suffix.length + 1).substringAfterLast('.') + ".$suffix"
+    }
+
+    private fun showLong(url: String) = UrlDisplay.format(url, privatePage, ::registrableDomain)
+
     @Test
     fun `a long host keeps the labels that name the site`() {
-        val shown = show("https://accounts.google.com.secure-login.verify.evil.example/signin")
+        val shown = showLong("https://accounts.google.com.secure-login.verify.evil.example/signin")
         assertEquals("\u2026.verify.evil.example/signin", shown)
         assertTrue(shown.substringBefore('/').length <= UrlDisplay.MAX_HOST_CHARS + 2)
-        // The last two labels always stay, however long.
+        // The registrable domain always stays, however long.
         val longLabel = "a".repeat(40)
-        assertEquals("\u2026.$longLabel.example:444", show("https://x.$longLabel.example:444/"))
+        assertEquals("\u2026.$longLabel.example:444", showLong("https://x.$longLabel.example:444/"))
         // A host that fits is left alone.
-        assertEquals("developer.mozilla.org/en-US/", show("https://developer.mozilla.org/en-US/"))
+        assertEquals("developer.mozilla.org/en-US/", showLong("https://developer.mozilla.org/en-US/"))
+    }
+
+    @Test
+    fun `a long host never loses the label left of a multi-label suffix`() {
+        assertEquals(
+            "paypal-account-verification-centre.co.uk",
+            showLong("https://paypal-account-verification-centre.co.uk/"),
+        )
+        assertEquals("commonwealthbanksecurelogin.com.au", showLong("https://commonwealthbanksecurelogin.com.au/"))
+        assertEquals(
+            "\u2026.averyveryverylongusername-site.github.io",
+            showLong("https://www.averyveryverylongusername-site.github.io/"),
+        )
+        assertEquals("\u2026.account.login.example.co.uk/a", showLong("https://secure.account.login.example.co.uk/a"))
+    }
+
+    @Test
+    fun `a long host is shown whole when nothing can be dropped or the suffix is unknown`() {
+        // No subdomain to drop, so no ellipsis.
+        assertEquals(
+            "thisisaverylongdomainnamefortesting.com",
+            showLong("https://thisisaverylongdomainnamefortesting.com/"),
+        )
+        val unknown = "a-long-host-name.under.an-unknown-suffix"
+        assertEquals(unknown, showLong("https://$unknown/"))
+        assertEquals(unknown, show("https://$unknown/"))
     }
 
     @Test
