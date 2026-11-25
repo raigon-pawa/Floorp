@@ -7,6 +7,7 @@ package org.mozilla.reference.browser.browser
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
@@ -172,7 +173,8 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                 },
                 onEditComplete = {
                     awesomeBar.isVisible = false
-                    engineView.asView().isVisible = true
+                    // A crashed tab's engine view stays hidden (BrowserActivity): it would show the tab's last frame.
+                    engineView.asView().isInvisible = store.state.selectedTab?.engineState?.crashed == true
                     startPageIntegration.get()?.editing = false
                 },
             )
