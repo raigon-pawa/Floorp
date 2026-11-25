@@ -16,6 +16,8 @@ import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toDrawable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.domains.autocomplete.ShippedDomainsProvider
 import mozilla.components.browser.menu2.BrowserMenuController
@@ -67,7 +69,7 @@ private const val MENU_ICON_DP = 24
 @Suppress("LongParameterList")
 class ToolbarIntegration(
     private val context: Context,
-    toolbar: BrowserToolbar,
+    private val toolbar: BrowserToolbar,
     toolbarParentView: View,
     historyStorage: PlacesHistoryStorage,
     private val store: BrowserStore,
@@ -85,6 +87,10 @@ class ToolbarIntegration(
 
     private val scope = MainScope()
     private var menuUpdateJob: Job? = null
+    private var toolbarUpdateJob: Job? = null
+
+    private val pageIndicators =
+        listOf(DisplayToolbar.Indicators.SECURITY, DisplayToolbar.Indicators.TRACKING_PROTECTION)
 
     private fun rowButton(
         @StringRes description: Int,
@@ -274,11 +280,7 @@ class ToolbarIntegration(
 
     init {
         toolbar.display.apply {
-            indicators =
-                listOf(
-                    DisplayToolbar.Indicators.SECURITY,
-                    DisplayToolbar.Indicators.TRACKING_PROTECTION,
-                )
+            indicators = pageIndicators
             displayIndicatorSeparator = true
             menuController = browserMenuController
             hint = context.getString(R.string.toolbar_hint)
@@ -380,6 +382,23 @@ class ToolbarIntegration(
     override fun start() {
         toolbarFeature.start()
 
+        toolbarUpdateJob?.cancel()
+        toolbarUpdateJob = scope.launch {
+            store
+                .flow()
+                .map { state ->
+                    val content = state.findTabOrCustomTabOrSelectedTab(sessionId)?.content
+                    (content?.private == true) to (content != null && UrlDisplay.isHidden(content.url, privatePageUrl))
+                }
+                .distinctUntilChanged()
+                .collect { (private, hidden) ->
+                    // Asks the keyboard not to learn what is typed in a private tab.
+                    toolbar.private = private
+                    // The security shields of a blank page or our private page say nothing about a site.
+                    toolbar.display.indicators = if (hidden) emptyList() else pageIndicators
+                }
+        }
+
         menuUpdateJob?.cancel()
         menuUpdateJob = scope.launch {
             // Only what the menu shows, so progress and title updates do not rebuild it.
@@ -407,6 +426,9 @@ class ToolbarIntegration(
 
     override fun stop() {
         toolbarFeature.stop()
+
+        toolbarUpdateJob?.cancel()
+        toolbarUpdateJob = null
 
         menuUpdateJob?.cancel()
         menuUpdateJob = null
