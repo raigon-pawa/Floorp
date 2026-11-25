@@ -8,6 +8,7 @@ import androidx.core.net.toUri
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.RetryTestRule
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
@@ -53,6 +54,13 @@ class SettingsViewTest {
                 verifyTrackingProtectionHeading()
                 verifyTPEnableInNormalBrowsing()
                 verifyTPEnableinPrivateBrowsing()
+                // Fresh-install defaults
+                verifySwitch(R.string.preferences_tracking_protection_normal, checked = true)
+                verifySwitch(R.string.preferences_tracking_protection_private, checked = true)
+                verifySwitch(R.string.preferences_https_only, checked = true)
+                verifyDohDefault()
+                verifySwitch(R.string.preferences_global_privacy_control, checked = true)
+                verifySwitch(R.string.preferences_search_suggestions, checked = false)
             }
     }
 
