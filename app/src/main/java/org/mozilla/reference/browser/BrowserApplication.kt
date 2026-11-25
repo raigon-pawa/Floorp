@@ -194,9 +194,7 @@ open class BrowserApplication : Application() {
  * re-dispatch the flush on every looper turn.
  */
 internal fun BrowserState.tabToFlush(): String? =
-    selectedTab
-        ?.takeIf { !it.content.loading && it.engineState.engineSession != null && !it.engineState.crashed }
-        ?.id
+    selectedTab?.takeIf { !it.content.loading && it.engineState.engineSession != null && !it.engineState.crashed }?.id
 
 /**
  * Crashes are recorded in the crash database and never sent, so the memory images Gecko writes for them (private tabs

@@ -35,6 +35,7 @@ import mozilla.components.concept.base.images.ImageLoadRequest
 import mozilla.components.concept.base.images.ImageLoader
 import mozilla.components.feature.tabs.tabstray.TabsFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
+import org.mozilla.reference.browser.BrowserActivity
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.browser.BrowserFragment
 import org.mozilla.reference.browser.browser.StartPage
@@ -149,7 +150,13 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
         fragments.registerFragmentLifecycleCallbacks(anchorToBrowserToolbar, false)
     }
 
+    override fun onDestroyView() {
+        super.onDestroyView()
+        (activity as? BrowserActivity)?.privateTabsListed?.value = false
+    }
+
     private fun updateTabsToolbar(isPrivate: Boolean) {
+        (activity as? BrowserActivity)?.privateTabsListed?.value = isPrivate
         val tabsToolbar = requireView().findViewById<TabsToolbar>(R.id.tabsToolbar)
         tabsToolbar.updateToolbar(isPrivate)
     }

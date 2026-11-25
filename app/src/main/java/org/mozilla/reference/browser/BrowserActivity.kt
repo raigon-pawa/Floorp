@@ -29,6 +29,8 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -64,6 +66,9 @@ open class BrowserActivity : AppCompatActivity() {
 
     private val sessionId: String?
         get() = SafeIntent(intent).getStringExtra(EXTRA_SESSION_ID)
+
+    /** Whether the screen shown lists private tabs without one being selected (the tabs tray's Private panel). */
+    val privateTabsListed = MutableStateFlow(false)
 
     private val webExtensionPopupObserver by lazy {
         WebExtensionPopupObserver(components.core.store, ::openPopup)
@@ -251,13 +256,15 @@ open class BrowserActivity : AppCompatActivity() {
     }
 
     /**
-     * While a private tab (or private custom tab) is shown, the window may not be captured: no screenshots or
-     * recordings, and no Recents card picture, which the system keeps on disk after the private session ends.
+     * While a private tab (or private custom tab) or the list of private tabs is shown, the window may not be captured:
+     * no screenshots or recordings, and no Recents card picture, which the system keeps on disk after the private
+     * session ends.
      */
     private fun secureWhilePrivate() {
         components.core.store.flowScoped(this, Dispatchers.Main) { flow ->
             flow
                 .map { state -> (sessionId?.let(state::findCustomTab) ?: state.selectedTab)?.content?.private == true }
+                .combine(privateTabsListed) { selected, listed -> selected || listed }
                 .distinctUntilChanged()
                 .collect { private ->
                     if (private) {
