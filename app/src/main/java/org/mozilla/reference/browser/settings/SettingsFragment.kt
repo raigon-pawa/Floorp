@@ -123,8 +123,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 }
 
                 setPositiveButton(R.string.customize_addon_collection_ok) { _, _ ->
+                    // Only both fields together select a collection; restart only if the one in use changes.
+                    fun collectionInUse() =
+                        (RBSettings.getOverrideAmoUser(context) to RBSettings.getOverrideAmoCollection(context))
+                            .takeIf { RBSettings.isAmoCollectionOverrideConfigured(context) }
+                    val before = collectionInUse()
                     RBSettings.setOverrideAmoUser(context, userView.text.toString())
                     RBSettings.setOverrideAmoCollection(context, collectionView.text.toString())
+                    if (collectionInUse() == before) return@setPositiveButton
 
                     Toast.makeText(
                             context,
