@@ -87,6 +87,9 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
      *
      * While the popup is open its engine session belongs to a custom tab in the store, so the prompt feature can show
      * the page's select boxes, dialogs and file pickers. Removing that tab closes the session.
+     *
+     * shortcut: no DownloadsFeature, so a download started in a popup is dropped; add one bound to the popup tab if an
+     * extension needs it.
      */
     class WebExtensionActionPopupFragment : Fragment(), EngineSession.Observer {
         private var engineSession: EngineSession? = null
@@ -225,8 +228,9 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
 
         override fun onDestroy() {
             super.onDestroy()
-            // Each click on the action creates a new session: close this one unless the popup is only rotating.
-            if (activity?.isChangingConfigurations != true) {
+            // Each click on the action creates a new session: close this one when the popup goes away for good. Not when
+            // it rotates, nor when the system destroys it behind the file picker: the recreated popup finds its tab again.
+            if (activity?.isFinishing == true) {
                 popupTabId?.let {
                     requireContext().components.core.store.dispatch(CustomTabListAction.RemoveCustomTabAction(it))
                 }
