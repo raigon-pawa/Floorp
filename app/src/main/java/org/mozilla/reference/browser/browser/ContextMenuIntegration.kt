@@ -20,7 +20,7 @@ import mozilla.components.feature.contextmenu.ContextMenuFeature
 import mozilla.components.feature.contextmenu.ContextMenuUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.base.feature.LifecycleAwareFeature
-import mozilla.components.ui.widgets.DefaultSnackbarDelegate
+import org.mozilla.reference.browser.R
 
 /**
  * Long-press context menu for page content. Custom tabs and PWAs (a non-null [sessionId]) get a shorter menu: copy and
@@ -38,8 +38,8 @@ class ContextMenuIntegration(
     sessionId: String? = null,
 ) : LifecycleAwareFeature {
     private val candidates = run {
+        val snackbarDelegate = AnchoredSnackbarDelegate(parentView.findViewById(R.id.toolbar))
         if (sessionId != null) {
-            val snackbarDelegate = DefaultSnackbarDelegate()
             listOf(
                 createCopyLinkCandidate(context, parentView, snackbarDelegate),
                 createShareLinkCandidate(context),
@@ -59,6 +59,7 @@ class ContextMenuIntegration(
                 tabsUseCases,
                 contextMenuUseCases,
                 parentView,
+                snackbarDelegate,
                 downloadsLocation = {
                     Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
                 },
