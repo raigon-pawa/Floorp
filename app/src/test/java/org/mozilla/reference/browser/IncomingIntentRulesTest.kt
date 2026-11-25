@@ -68,8 +68,8 @@ class IncomingIntentRulesTest {
     }
 
     @Test
-    fun `spaces or control characters inside are refused`() {
-        assertNull(webUrlOrNull("https://exa mple.org"))
+    fun `spaces inside are kept and control characters refused`() {
+        assertEquals("https://example.org/a b", webUrlOrNull("https://example.org/a b"))
         assertNull(webUrlOrNull("https://example.org/\njavascript:alert(1)"))
         assertNull(webUrlOrNull("ht\ttps://example.org"))
         assertNull(webUrlOrNull("https://example.org/\u007f"))
@@ -123,6 +123,21 @@ class IncomingIntentRulesTest {
         listOf("about:config", "data:text/html,<h1>x</h1>", "moz-extension://1234/page.html").forEach { url ->
             assertNull(url, sharedTextOrNull("see $url") { url })
         }
+    }
+
+    @Test
+    fun `a shared host and port is loaded as http`() {
+        assertEquals("http://localhost:3000", sharedTextOrNull("localhost:3000") { "localhost:3000" })
+        assertEquals("http://example.com:8080/a", sharedTextOrNull("example.com:8080/a") { "example.com:8080/a" })
+    }
+
+    @Test
+    fun `a web address after an address of another scheme is kept`() {
+        // Like WebURLFinder, which returns the first address with a scheme.
+        val finder = { text: String -> listOf("note:see", "mailto:a@b.c", "https://x.org").firstOrNull { it in text } }
+        assertEquals("https://x.org", sharedTextOrNull("note:see https://x.org", finder))
+        assertEquals("https://x.org", sharedTextOrNull("mailto:a@b.c note:see https://x.org", finder))
+        assertNull(sharedTextOrNull("note:see mailto:a@b.c", finder))
     }
 
     @Test

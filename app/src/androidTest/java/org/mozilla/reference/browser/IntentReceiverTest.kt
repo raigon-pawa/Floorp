@@ -108,6 +108,10 @@ class IntentReceiverTest {
         val url = "https://example.org/receiver-shared"
         fire(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "Look: $url"))
         assertTrue(waitFor { url in tabUrls() })
+        // The finder returns "note:see" first, as it has a scheme.
+        val after = "https://example.org/receiver-shared-after"
+        fire(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "note:see $after"))
+        assertTrue(waitFor { after in tabUrls() })
     }
 
     @Test
