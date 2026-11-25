@@ -8,6 +8,11 @@ import android.content.Context
 import android.util.AttributeSet
 import android.view.View
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import mozilla.components.browser.state.selector.findCustomTabOrSelectedTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.toolbar.BrowserToolbar
@@ -15,6 +20,7 @@ import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.findinpage.FindInPageFeature
 import mozilla.components.feature.findinpage.view.FindInPageBar
 import mozilla.components.feature.findinpage.view.FindInPageView
+import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 
@@ -26,15 +32,29 @@ class FindInPageIntegration(
     engineView: EngineView,
 ) : LifecycleAwareFeature, UserInteractionHandler {
     private val feature = FindInPageFeature(store, view, engineView, ::onClose)
+    private var scope: CoroutineScope? = null
+
+    // The tab being searched, kept while the screen is stopped: a link from another app switches tabs while it is.
+    private var boundTabId: String? = null
 
     override fun start() {
         feature.start()
+        // The bar searches the tab it was opened on: it closes when another tab takes the screen (a new tab from the
+        // menu, a link from another app) instead of searching the hidden one.
+        scope =
+            store.flowScoped(dispatcher = Dispatchers.Main) { flow ->
+                flow
+                    .map { it.findCustomTabOrSelectedTab(sessionId)?.id }
+                    .distinctUntilChanged()
+                    .collect { id -> if (boundTabId != null && id != boundTabId) feature.unbind() }
+            }
 
         FindInPageIntegration.launch = this::launch
     }
 
     override fun stop() {
         feature.stop()
+        scope?.cancel()
 
         FindInPageIntegration.launch = null
     }
@@ -42,12 +62,14 @@ class FindInPageIntegration(
     override fun onBackPressed(): Boolean = feature.onBackPressed()
 
     private fun onClose() {
+        boundTabId = null
         view.asView().visibility = View.GONE
     }
 
     private fun launch() {
         store.state.findCustomTabOrSelectedTab(sessionId)?.let {
             view.asView().visibility = View.VISIBLE
+            boundTabId = it.id
             feature.bind(it)
         }
     }

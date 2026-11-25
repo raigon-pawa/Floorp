@@ -14,10 +14,13 @@ import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.reference.browser.browser.StartPage
+import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.RetryTestRule
 import org.mozilla.reference.browser.helpers.TestAssetHelper
+import org.mozilla.reference.browser.helpers.TestHelper
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
 
 /**
@@ -213,6 +216,29 @@ class ThreeDotMenuTest {
                 clickFindInPagePreviousButton()
                 verifyFindInPageResult("1/2")
                 clickFindInPageCloseButton()
+                verifyFindInPageBarIsDismissed()
+            }
+    }
+
+    // A new tab takes the screen: the bar must not keep searching the tab now hidden.
+    @Test
+    fun newTabClosesFindInPageTest() {
+        val defaultWebPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+
+        navigationToolbar {}
+            .enterUrlAndEnterToBrowser(defaultWebPage.url) {
+                verifyPageContent("Page content: 1")
+            }
+        navigationToolbar {}
+            .openThreeDotMenu {}
+            .openFindInPage {
+                verifyFindInPageBar()
+                enterFindInPageQuery("e")
+                verifyFindInPageResult("1/2")
+                // What the menu's New tab does.
+                InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                    TestHelper.appContext.components.useCases.tabsUseCases.addTab(StartPage.URL, selectTab = true)
+                }
                 verifyFindInPageBarIsDismissed()
             }
     }
