@@ -20,10 +20,14 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.TabData
 import mozilla.components.feature.sitepermissions.NotificationPermissionDialogFragment
 import mozilla.components.feature.webnotifications.WebNotificationIntentProcessor
+import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.ids.SharedIdsHelper
 import mozilla.components.support.base.log.logger.Logger
@@ -77,15 +81,22 @@ object NotificationManager {
         val notification = intent.getParcelableExtraCompat(EXTRA_WEB_NOTIFICATION, WebNotification::class.java)
         // Null for notifications of extensions.
         val source = notification?.source ?: return
-        val tab =
-            components.core.store.state.tabs.firstOrNull {
-                it.content.private == notification.privateBrowsing && it.content.url.isSameOriginAs(source)
+        // Right after a cold start the tabs are still being restored.
+        components.applicationScope.launch(Dispatchers.Main) {
+            val state = components.core.store.flow().first { it.restoreComplete }
+            val sameSite =
+                state.tabs.filter {
+                    it.content.private == notification.privateBrowsing && it.content.url.isSameOriginAs(source)
+                }
+            // The page that showed it, when it is still open.
+            val tab = sameSite.firstOrNull { it.content.url == source } ?: sameSite.firstOrNull()
+            val tabsUseCases = components.useCases.tabsUseCases
+            if (tab != null) {
+                tabsUseCases.selectTab(tab.id)
+            } else {
+                // The source of a service worker's notification is its script, so open the site's start instead.
+                tabsUseCases.addTab(source.stripDefaultPort(), private = notification.privateBrowsing)
             }
-        if (tab != null) {
-            components.useCases.tabsUseCases.selectTab(tab.id)
-        } else {
-            // The source of a service worker's notification is its script, so open the site's start instead.
-            components.useCases.tabsUseCases.addTab(source.stripDefaultPort(), private = notification.privateBrowsing)
         }
     }
 
