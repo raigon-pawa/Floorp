@@ -17,6 +17,7 @@ import mozilla.components.lib.crash.handler.CrashHandlerService
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoRuntimeSettings
+import org.mozilla.reference.browser.settings.Settings
 
 /**
  * Holds the process-wide [GeckoRuntime]. GeckoView allows only one runtime per process, so the engine, the fetch client
@@ -37,6 +38,11 @@ object EngineProvider {
             builder.aboutConfigEnabled(true)
             builder.extensionsWebAPIEnabled(true)
             copyConfigFile(context)?.let { builder.configFilePath(it.absolutePath) }
+            // GeckoEngine applies the DoH mode before the resolver URL, after Gecko has started; with no URL yet, Gecko
+            // would briefly use its built-in resolver (mozilla.cloudflare-dns.com). Start with the chosen one instead.
+            Settings.getDohProviderUrl(context)
+                .takeIf { it.isNotEmpty() }
+                ?.let { builder.trustedRecursiveResolverUri(it) }
             runtime = GeckoRuntime.create(context, builder.build())
         }
 
