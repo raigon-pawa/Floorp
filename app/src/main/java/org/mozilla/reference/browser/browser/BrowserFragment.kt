@@ -11,6 +11,7 @@ import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import java.util.UUID
 import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -20,6 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
 import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.awesomebar.AwesomeBar
@@ -126,17 +128,25 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
         val networkSuggestions = {
             Settings.isSearchSuggestions(context) && store.state.selectedTab?.content?.private != true
         }
+        // One provider per search engine: a provider keeps the engine it first asked, so after a change of engine in
+        // Settings what is typed would still go to (and be labelled as) the old one.
+        var suggestions: Pair<String?, AwesomeBar.SuggestionProvider>? = null
+        val suggestionsForEngine = {
+            val engine = store.state.search.selectedOrDefaultSearchEngine?.id
+            suggestions?.takeIf { it.first == engine }?.second
+                // No engine argument: it would open speculative connections to the search engine.
+                ?: SearchSuggestionProvider(
+                        store,
+                        defaultSearch,
+                        fetchClient = requireComponents.core.client,
+                        mode = SearchSuggestionProvider.Mode.MULTIPLE_SUGGESTIONS,
+                        limit = 5,
+                        filterExactMatch = true,
+                    )
+                    .also { suggestions = engine to it }
+        }
         awesomeBar.addProviders(
-            // No engine argument: it would open speculative connections to the search engine.
-            SearchSuggestionProvider(
-                    store,
-                    defaultSearch,
-                    fetchClient = requireComponents.core.client,
-                    mode = SearchSuggestionProvider.Mode.MULTIPLE_SUGGESTIONS,
-                    limit = 5,
-                    filterExactMatch = true,
-                )
-                .onlyWhen(networkSuggestions),
+            networkSuggestionProvider(networkSuggestions, suggestionsForEngine),
             // The typed text as a "search for ..." row, always: the suggestion provider leaves it out
             // (filterExactMatch)
             // and shows nothing when its request fails.
@@ -219,14 +229,16 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
         }
     }
 
-    private fun AwesomeBar.SuggestionProvider.onlyWhen(enabled: () -> Boolean): AwesomeBar.SuggestionProvider {
-        val provider = this
-        return object : AwesomeBar.SuggestionProvider by provider {
+    /** Asks the provider [current] returns, but only while [enabled]. */
+    private fun networkSuggestionProvider(enabled: () -> Boolean, current: () -> AwesomeBar.SuggestionProvider) =
+        object : AwesomeBar.SuggestionProvider {
+            override val id = UUID.randomUUID().toString()
+
             // The awesome bar replaces a provider's earlier results by comparing suggestion.provider with the provider
             // it called, so the suggestions must name this wrapper, not the wrapped provider.
             override suspend fun onInputChanged(text: String) =
                 if (enabled()) {
-                    val suggestions = provider.onInputChanged(text)
+                    val suggestions = current().onInputChanged(text)
                     // The request cannot be interrupted, and the awesome bar shows whatever a provider returns, even
                     // after the text changed: answers for "a" arriving after those for "arch" replaced them. Typing
                     // cancels this call, so drop the answer then.
@@ -236,7 +248,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                     emptyList()
                 }
         }
-    }
 
     override fun onBackPressed(): Boolean = readerViewFeature.onBackPressed() || super.onBackPressed()
 
