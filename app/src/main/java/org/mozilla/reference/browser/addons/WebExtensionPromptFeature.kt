@@ -141,11 +141,12 @@ class WebExtensionPromptFeature(
         addon: Addon,
         promptRequest: WebExtensionPromptRequest.AfterInstallation.Permissions.Optional,
     ) {
-        // Site access and data collection always need the user's consent, even when no API permission has a message.
         val shouldGrantWithoutPrompt =
-            Addon.localizePermissions(promptRequest.permissions, context).isEmpty() &&
-                promptRequest.origins.isEmpty() &&
-                promptRequest.dataCollectionPermissions.isEmpty()
+            canGrantOptionalPermissionsWithoutPrompt(
+                localizedPermissions = Addon.localizePermissions(promptRequest.permissions, context),
+                origins = promptRequest.origins,
+                dataCollectionPermissions = promptRequest.dataCollectionPermissions,
+            )
 
         // If we don't have any promptable permissions, just proceed.
         if (shouldGrantWithoutPrompt) {
@@ -417,3 +418,14 @@ class WebExtensionPromptFeature(
         private const val KEY_DATA_COLLECTION_DEFAULT_APPLIED = "archwave_data_collection_default_applied"
     }
 }
+
+/**
+ * Whether an extension's runtime request for optional permissions may be granted without asking the user. Site access
+ * ([origins]) and [dataCollectionPermissions] always need consent, even when no API permission has a message to show
+ * ([localizedPermissions] empty).
+ */
+internal fun canGrantOptionalPermissionsWithoutPrompt(
+    localizedPermissions: List<String>,
+    origins: List<String>,
+    dataCollectionPermissions: List<String>,
+): Boolean = localizedPermissions.isEmpty() && origins.isEmpty() && dataCollectionPermissions.isEmpty()
