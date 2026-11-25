@@ -57,8 +57,8 @@
         \n\n• Your search engine as you type in the address bar, if you turn on search suggestions (off by default, never in private tabs).
         \n\n• The DNS-over-HTTPS resolver you chose (Quad9 unless you changed it), to look up the addresses of sites.
         \n\n• Mozilla Remote Settings, for blocklists and security data such as revoked certificates.
-        \n\n• Google Safe Browsing, for lists of dangerous sites. Only shortened fingerprints of an address are ever sent, and only when an address needs checking.
-        \n\n• addons.mozilla.org, when you browse or install extensions, and once a day to look for updates to the extensions you installed.</string>
+        \n\n• Google Safe Browsing, to download the lists of dangerous sites at start-up and regularly after that, and to check an address that matches a list. Only shortened fingerprints of an address are ever sent.
+        \n\n• addons.mozilla.org, when you browse or install extensions, and once a day to look for updates to the extensions you installed. An extension installed from outside addons.mozilla.org is checked at its own update server.</string>
 
     <!-- Open-source licences: rows; the summary of each lists the components under that licence -->
     <string name="archwave_licenses_mpl">Mozilla Public License 2.0</string>
