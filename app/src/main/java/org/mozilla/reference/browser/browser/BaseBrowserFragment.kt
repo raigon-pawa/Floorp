@@ -320,6 +320,7 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 requireContext(),
                 store = requireComponents.core.store,
                 useCases = requireComponents.useCases.downloadsUseCases,
+                tabId = sessionId,
                 fragmentManager = childFragmentManager,
                 downloadFileUtils =
                     DefaultDownloadFileUtils(
