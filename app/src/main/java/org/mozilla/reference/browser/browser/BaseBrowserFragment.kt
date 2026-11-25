@@ -13,21 +13,28 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.MimeTypeMap
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
 import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
+import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.app.links.AppLinksFeature
 import mozilla.components.feature.downloads.DownloadsFeature
+import mozilla.components.feature.downloads.R as DownloadsR
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.downloads.temporary.ShareResourceFeature
 import mozilla.components.feature.findinpage.view.FindInPageBar
@@ -320,6 +327,13 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
             ),
         )
 
+        val downloadFileUtils =
+            DefaultDownloadFileUtils(
+                context = requireContext().applicationContext,
+                downloadLocation = {
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
+                },
+            )
         downloadsFeature.bind(
             view,
             DownloadsFeature(
@@ -328,13 +342,7 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 useCases = requireComponents.useCases.downloadsUseCases,
                 tabId = sessionId,
                 fragmentManager = childFragmentManager,
-                downloadFileUtils =
-                    DefaultDownloadFileUtils(
-                        context = requireContext().applicationContext,
-                        downloadLocation = {
-                            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
-                        },
-                    ),
+                downloadFileUtils = downloadFileUtils,
                 downloadManager =
                     AskFirstDownloadManager(
                         FetchDownloadManager(
@@ -353,8 +361,32 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 // A full-width panel at the bottom, like the add-on prompts, instead of a floating black box.
                 promptsStyling =
                     DownloadsFeature.PromptsStyling(gravity = Gravity.BOTTOM, shouldWidthMatchParent = true),
+                onDownloadStopped = { download, _, status ->
+                    // Without notifications nothing else says the file arrived or lets the user open it.
+                    if (status == DownloadState.Status.COMPLETED && view.isAttachedToWindow) {
+                        if (!NotificationManagerCompat.from(view.context).areNotificationsEnabled()) {
+                            showDownloadCompleted(view, download, downloadFileUtils)
+                        }
+                    }
+                },
             ),
         )
+    }
+
+    private fun showDownloadCompleted(view: View, download: DownloadState, fileUtils: DefaultDownloadFileUtils) {
+        val context = view.context
+        Snackbar.make(view, context.getString(R.string.archwave_download_completed, download.fileName), LENGTH_LONG)
+            .setAnchorView(toolbar.takeIf { it.isVisible })
+            .withoutSystemBarMargins()
+            .setAction(DownloadsR.string.mozac_feature_downloads_button_open) {
+                if (!fileUtils.openFile(download.fileName, download.directoryPath, download.contentType)) {
+                    val extension = MimeTypeMap.getFileExtensionFromUrl(download.filePath)
+                    val message =
+                        context.getString(DownloadsR.string.mozac_feature_downloads_open_not_supported1, extension)
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .show()
     }
 
     private fun setupLinksAndPrompts(view: View) {
