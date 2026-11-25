@@ -8,8 +8,11 @@ import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Bitmap
+import android.view.Gravity
 import android.widget.Button
 import android.widget.CompoundButton
+import android.widget.RelativeLayout
+import android.widget.TextView
 import androidx.annotation.VisibleForTesting
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -64,6 +67,16 @@ class WebExtensionPromptFeature(
                 dialog.findViewById<Button>(addonsR.id.deny_button)?.run {
                     backgroundTintList = ColorStateList.valueOf(context.getColor(R.color.aw_surface_3))
                     setTextColor(context.getColor(R.color.aw_text_1))
+                }
+                // The one-line link is 19dp high: give it the height of the 48dp buttons next to it as touch target.
+                dialog.findViewById<TextView>(addonsR.id.learn_more_link)?.run {
+                    (layoutParams as? RelativeLayout.LayoutParams)?.run {
+                        topMargin = 0
+                        addRule(RelativeLayout.ALIGN_TOP, addonsR.id.deny_button)
+                        addRule(RelativeLayout.ALIGN_BOTTOM, addonsR.id.deny_button)
+                    }
+                    gravity = Gravity.CENTER_VERTICAL
+                    requestLayout()
                 }
                 val arguments = f.arguments ?: return
                 if (!arguments.getBoolean(KEY_DATA_COLLECTION_DEFAULT_APPLIED)) {

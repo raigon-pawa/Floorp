@@ -38,6 +38,14 @@
         <item name="background">@color/aw_black</item>
     </style>
 
+    <!-- The smallest touch target the app allows. -->
+    <dimen name="archwave_min_touch_target">48dp</dimen>
+
+    <!-- AppCompat's overflow button is 40dp wide. -->
+    <style name="ArchwaveActionOverflow" parent="Widget.AppCompat.ActionButton.Overflow">
+        <item name="android:minWidth">@dimen/archwave_min_touch_target</item>
+    </style>
+
     <!-- The time picker tells the selected hour/minute field and AM/PM half apart only by these container roles,
          which the app theme maps to the same grey as the unselected ones. -->
     <style name="ArchwaveTimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
