@@ -13,6 +13,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withSubstring
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
+import androidx.test.uiautomator.Until
 import mozilla.components.browser.toolbar.R as toolbarR
 import org.hamcrest.CoreMatchers.allOf
 import org.junit.Assert.assertTrue
@@ -171,12 +172,16 @@ class BrowserRobot {
         contextCopyLink.click()
     }
 
-    fun waitUntilCopyLinkSnackbarIsGone() =
+    fun waitUntilCopyLinkSnackbarIsGone() {
         mDevice
             .findObject(
                 UiSelector().resourceId("$packageName:id/snackbar_text").textContains("Link copied to clipboard")
             )
             .waitUntilGone(waitingTime)
+        // Android 13+ also shows its own clipboard overlay for a few seconds, over the toolbar: a tap on the address
+        // then lands on the overlay's "Send to nearby device" button.
+        mDevice.wait(Until.gone(By.pkg("com.android.systemui").desc("Send to nearby device")), waitingTime)
+    }
 
     fun verifyMediaPlayerControlButtonState(state: String) {
         mDevice.findObject(UiSelector().textContains("Audio_Test_Page")).waitForExists(waitingTime)
