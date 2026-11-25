@@ -6,6 +6,7 @@ package org.mozilla.reference.browser.ui.robots
 
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
 import org.mozilla.reference.browser.helpers.TestHelper.packageName
@@ -25,7 +26,9 @@ class StartPageRobot {
             name: String,
             interact: BrowserRobot.() -> Unit,
         ): BrowserRobot.Transition {
-            mDevice.wait(Until.findObject(By.text(name)), waitingTime).click()
+            val tile = mDevice.wait(Until.findObject(By.text(name)), waitingTime)
+            assertNotNull("No start page tile '$name'", tile)
+            tile.click()
             BrowserRobot().interact()
             return BrowserRobot.Transition()
         }

@@ -10,6 +10,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import mockwebserver3.MockWebServer
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
@@ -176,6 +177,14 @@ class SettingsViewTest {
                     confirmClearData()
                 }
                 .goBack {}
+            // The source the suggestion comes from, checked once clearing has finished: the UI check below only
+            // waits a short while, so a suggestion that is just slower to appear would pass it.
+            val history = InstrumentationRegistry.getInstrumentation().targetContext.components.core.historyStorage
+            assertTrue(
+                "history still suggests the page",
+                history.getSuggestions("generic1.html", 10).none { it.url == visited.url.toString() },
+            )
+            navigationToolbar {}
                 .clickToolbar {
                     clickClearToolbarButton() // The edit field starts with the tab's address.
                     typeText("generic1.html")

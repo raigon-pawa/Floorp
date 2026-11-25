@@ -4,14 +4,11 @@
 
 package org.mozilla.reference.browser.addons
 
-import android.graphics.Color
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.view.View
 import android.widget.RatingBar
 import android.widget.TextView
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
 import androidx.core.view.isVisible
@@ -23,17 +20,17 @@ import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.addons.ui.translateDescription
 import mozilla.components.feature.addons.ui.translateName
-import mozilla.components.support.ktx.android.view.setupPersistentInsets
+import mozilla.components.feature.addons.ui.translateSummary
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 
 /** An activity to show the details of an add-on. */
 class AddonDetailsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_on_details)
-        window.setupPersistentInsets()
+        enableEdgeToEdgeFromAndroid13()
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val addon = requireNotNull(intent.getParcelableExtraCompat("add_on", Addon::class.java))
@@ -57,6 +54,11 @@ class AddonDetailsActivity : AppCompatActivity() {
     }
 
     private fun bindRating(addon: Addon) {
+        // An installed add-on read from the engine has no catalogue rating: it comes as 0 from 0 reviews.
+        if (addon.rating?.reviews?.let { it > 0 } != true) {
+            hide(R.id.rating_label, R.id.rating_view, R.id.users_count)
+            return
+        }
         addon.rating?.let {
             val ratingView = findViewById<RatingBar>(R.id.rating_view)
             val userCountView = findViewById<TextView>(R.id.users_count)
@@ -108,7 +110,8 @@ class AddonDetailsActivity : AppCompatActivity() {
 
     private fun bindDetails(addon: Addon) {
         val detailsView = findViewById<TextView>(R.id.details)
-        val detailsText = addon.translateDescription(this)
+        // Installed add-ons have only their manifest's short description, which the engine passes as the summary.
+        val detailsText = addon.translateDescription(this).ifBlank { addon.translateSummary(this) }
 
         val parsedText = detailsText.replace("\n", "<br/>")
         val text = HtmlCompat.fromHtml(parsedText, HtmlCompat.FROM_HTML_MODE_COMPACT).withLinksInBrowserTabs()

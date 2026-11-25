@@ -14,6 +14,7 @@ import android.content.Intent.FLAG_ACTIVITY_NEW_TASK
 import androidx.annotation.StringRes
 import mozilla.components.support.base.log.Log
 import mozilla.components.support.base.log.Log.Priority.WARN
+import mozilla.components.support.ktx.android.content.createChooserExcludingCurrentApp
 import org.mozilla.reference.browser.BrowserApplication
 import org.mozilla.reference.browser.Components
 import org.mozilla.reference.browser.R
@@ -52,10 +53,8 @@ fun Context.share(
                 flags = FLAG_ACTIVITY_NEW_TASK
             }
 
-        val shareIntent =
-            Intent.createChooser(intent, getString(R.string.menu_share_with)).apply {
-                flags = FLAG_ACTIVITY_NEW_TASK
-            }
+        // Without the exclusion the sheet offered this app itself, which only reopened the page.
+        val shareIntent = intent.createChooserExcludingCurrentApp(this, getString(R.string.menu_share_with))
 
         startActivity(shareIntent)
         true

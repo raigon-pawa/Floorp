@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- Shown in the browser when a download finishes and notifications are off. %1$s is the file name. -->
+    <string name="archwave_download_completed">%1$s downloaded</string>
+</resources>

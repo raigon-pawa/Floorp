@@ -8,7 +8,9 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.SystemClock
 import android.provider.Browser
+import androidx.core.content.edit
 import androidx.core.net.toUri
+import androidx.preference.PreferenceManager
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
@@ -118,6 +120,17 @@ class IntentReceiverTest {
         val after = "https://example.org/receiver-shared-after"
         fire(Intent(Intent.ACTION_SEND).setType("text/plain").putExtra(Intent.EXTRA_TEXT, "note:see $after"))
         assertTrue(waitFor { after in tabUrls() })
+    }
+
+    @Test
+    fun linksOpenInAPrivateTabWhenSetTo() {
+        PreferenceManager.getDefaultSharedPreferences(context).edit {
+            putBoolean(context.getString(R.string.pref_key_open_links_in_private), true)
+        }
+        val url = "https://example.org/receiver-private"
+        fire(view(url))
+        assertTrue(waitFor { url in tabUrls() })
+        assertTrue("opened in a normal tab", store.state.tabs.first { it.content.url == url }.content.private)
     }
 
     private fun resumedBrowserActivity(): BrowserActivity? {

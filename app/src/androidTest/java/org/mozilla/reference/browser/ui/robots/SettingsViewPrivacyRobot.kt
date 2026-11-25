@@ -15,6 +15,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
 import org.hamcrest.CoreMatchers.allOf
+import org.junit.Assert.assertNotNull
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.helpers.TestAssetHelper
 import org.mozilla.reference.browser.helpers.hasCousin
@@ -63,8 +64,9 @@ private fun tpEnableInNormalBrowsing() = Espresso.onView(ViewMatchers.withText("
 
 private fun tpEnableInPrivateBrowsing() = Espresso.onView(ViewMatchers.withText("Enable in Private Browsing Mode"))
 
+// "Navigate up" is the button's content description, not text.
 private fun assertPrivacyUpButton() {
-    mDevice.wait(Until.findObject(By.text("Navigate up")), TestAssetHelper.waitingTimeShort)
+    assertNotNull(mDevice.wait(Until.findObject(By.desc("Navigate up")), TestAssetHelper.waitingTimeShort))
 }
 
 private fun assertPrivacySettingsView() =

@@ -20,6 +20,7 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
@@ -59,13 +60,16 @@ object NotificationManager {
         object : FragmentManager.FragmentLifecycleCallbacks() {
             override fun onFragmentStarted(fm: FragmentManager, f: Fragment) {
                 if (f !is NotificationPermissionDialogFragment || SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+                // The app-wide delegate keeps these callbacks after the screen is gone, and the answer can arrive after
+                // the activity was recreated: hold the screen weakly and dismiss only a dialog that is still shown.
+                val dialog = WeakReference(f)
+                val host = WeakReference(activity)
+                val dismiss = { dialog.get()?.takeIf { it.isAdded }?.dismissAllowingStateLoss() }
                 delegate.requestNotificationPermission(
-                    onPermissionGranted = { f.dismissAllowingStateLoss() },
+                    onPermissionGranted = { dismiss() },
                     // True right after a "no" in the prompt; false when Android refused without asking.
                     onPermissionRejected = {
-                        if (activity.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS)) {
-                            f.dismissAllowingStateLoss()
-                        }
+                        if (host.get()?.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS) == true) dismiss()
                     },
                 )
             }

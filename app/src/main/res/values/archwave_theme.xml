@@ -32,4 +32,40 @@
     <color name="mozac_feat_prompt_cancel_save_dialog_text_color" tools:ignore="UnusedResources">@color/aw_text_2</color>
     <color name="mozac_destructive_button_text_color" tools:ignore="UnusedResources">@color/aw_error</color>
     <color name="mozac_feature_qr_scan_success_color" tools:ignore="UnusedResources">@color/aw_text_1</color>
+
+    <!-- Black like the rest of the window, so the status bar area above it matches. -->
+    <style name="ArchwaveActionBar" parent="Widget.Material3.ActionBar.Solid">
+        <item name="background">@color/aw_black</item>
+    </style>
+
+    <!-- The time picker tells the selected hour/minute field and AM/PM half apart only by these container roles,
+         which the app theme maps to the same grey as the unselected ones. -->
+    <style name="ArchwaveTimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
+        <item name="colorPrimaryContainer">@color/aw_text_1</item>
+        <item name="colorOnPrimaryContainer">@color/aw_black</item>
+        <item name="colorTertiaryContainer">@color/aw_text_1</item>
+        <item name="colorOnTertiaryContainer">@color/aw_black</item>
+    </style>
+
+    <!-- Android Components' prompts (add-on permissions, downloads, site permissions) are plain dialogs that paint
+         themselves with the activity's window background: black on a black page. The parent is the platform
+         default, so only the hairline along their top edge is new. -->
+    <style name="ArchwavePanelDialog" parent="android:Theme.Material.Dialog">
+        <item name="android:windowContentOverlay">@drawable/archwave_panel_edge</item>
+    </style>
+
+    <!-- Theme of the application context, where GeckoView reads the accent it uses in web content: text selection
+         and its handles, focus rings, checkboxes. A mid grey shows on white and on black pages. The parent is the
+         platform default the application context had before, so nothing else changes for pages. -->
+    <style name="ArchwaveEngineColors" parent="android:Theme.DeviceDefault.Light.DarkActionBar">
+        <item name="android:colorAccent">@color/aw_text_hint</item>
+    </style>
+
+    <!-- The style below replaces the library style of the same name, so the library's own items are copied by hand
+         from Android Components 160.0.1: compare them again when that version changes. -->
+    <!-- Android Components' bottom sheets (save login, credit card, address): the library style is a light theme. -->
+    <style name="MozDialogStyle" parent="ThemeOverlay.Material3.BottomSheetDialog" tools:ignore="UnusedResources">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
 </resources>

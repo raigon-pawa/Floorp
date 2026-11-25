@@ -7,14 +7,11 @@ package org.mozilla.reference.browser.addons
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Color
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -38,9 +35,9 @@ import mozilla.components.feature.prompts.PromptFeature
 import mozilla.components.lib.state.ext.consumeFrom
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
-import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
+import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 
 /** An activity to show the pop up action of a web extension. */
 class WebExtensionActionPopupActivity : AppCompatActivity() {
@@ -48,9 +45,8 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.activity_add_on_settings)
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
-        window.setupPersistentInsets()
+        enableEdgeToEdgeFromAndroid13()
 
         webExtensionId = requireNotNull(intent.getStringExtra("web_extension_id"))
         intent.getStringExtra("web_extension_name")?.let {
@@ -150,6 +146,10 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
             val session = engineSession
             if (session != null) {
                 showPopup(session)
+            } else if (popupTabId != null) {
+                // Restored after its popup was closed (the process died, or the activity was destroyed in the
+                // background): there is nothing left to show.
+                activity?.finish()
             } else {
                 consumeFrom(requireContext().components.core.store) { state ->
                     state.extensions[webExtensionId]?.let { extState ->
@@ -228,9 +228,10 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
 
         override fun onDestroy() {
             super.onDestroy()
-            // Each click on the action creates a new session: close this one when the popup goes away for good, not
-            // when it rotates or the system destroys it behind the file picker (the recreated popup finds its tab).
-            if (activity?.isFinishing == true) {
+            // Each click on the action creates a new session: close this one when the popup goes away, except for a
+            // rotation (the recreated popup finds its tab). Destroyed in the background, the popup does not come back
+            // with its page anyway, and the tab and its session would otherwise stay in the store for good.
+            if (activity?.isChangingConfigurations != true) {
                 popupTabId?.let {
                     requireContext().components.core.store.dispatch(CustomTabListAction.RemoveCustomTabAction(it))
                 }

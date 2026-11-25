@@ -8,7 +8,9 @@ import android.content.Context
 import android.content.Intent
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import mozilla.components.browser.state.store.BrowserStore
@@ -63,10 +65,14 @@ class Utilities(
     private fun customTabIntentProcessor(private: Boolean) =
         CustomTabIntentProcessor(customTabsUseCases.add, context.resources, isPrivate = private)
 
+    /** Searches from intents that wait for the search engines; their tab is still to come. */
+    val pendingIntentTabs = MutableStateFlow(0)
+
     private fun tabIntentProcessor(private: Boolean) =
         WaitForSearchEnginesProcessor(
             store,
             applicationScope,
+            pendingIntentTabs,
             TabIntentProcessor(
                 tabsUseCases,
                 if (private) searchUseCases.newPrivateTabSearch else searchUseCases.newTabSearch,
@@ -93,15 +99,22 @@ class Utilities(
 private class WaitForSearchEnginesProcessor(
     private val store: BrowserStore,
     private val scope: CoroutineScope,
+    private val pending: MutableStateFlow<Int>,
     private val delegate: IntentProcessor,
 ) : IntentProcessor {
     override fun process(intent: Intent): Boolean {
         if (store.state.search.complete || intent.action !in SEARCH_ACTIONS) return delegate.process(intent)
         val copy = Intent(intent) // The caller changes the original before forwarding it.
+        // Keeps EnsureTabFeature from opening a start-page tab in the meantime, which the search tab would then join.
+        pending.update { it + 1 }
         scope.launch(Dispatchers.Main) {
-            // Search loading has no failure state, so do not wait forever; the processor then logs and drops it.
-            withTimeoutOrNull(SEARCH_ENGINES_TIMEOUT_MS) { store.flow().first { it.search.complete } }
-            delegate.process(copy)
+            try {
+                // Search loading has no failure state, so do not wait forever; the processor then logs and drops it.
+                withTimeoutOrNull(SEARCH_ENGINES_TIMEOUT_MS) { store.flow().first { it.search.complete } }
+                delegate.process(copy)
+            } finally {
+                pending.update { it - 1 }
+            }
         }
         return true
     }

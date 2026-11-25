@@ -19,4 +19,10 @@
     <string name="menu_desktop_site">Desktop site</string>
     <string name="menu_add_to_home_screen">Add to Home screen</string>
     <string name="menu_settings">Settings</string>
+
+    <!-- Custom tab menu: moves the custom tab into a normal tab of this app. -->
+    <string name="archwave_menu_open_in_app">Open in Archwave</string>
+    <!-- Toolbar: description of the reader view button while reader view is off, and while it is on. -->
+    <string name="archwave_reader_view_enable">Turn on reader view</string>
+    <string name="archwave_reader_view_disable">Turn off reader view</string>
 </resources>

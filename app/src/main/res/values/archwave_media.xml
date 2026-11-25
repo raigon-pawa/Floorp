@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!-- Replacements for Android Components' "camera / microphone is on" notification texts. The notification only opens
+     the app (Android Components gives it no tab), so it must not promise to open the tab using the device. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="mozac_feature_media_sharing_camera_text" tools:ignore="UnusedResources">A tab is using your camera. Tap to open Archwave.</string>
+    <string name="mozac_feature_media_sharing_microphone_text" tools:ignore="UnusedResources">A tab is using your microphone. Tap to open Archwave.</string>
+    <string name="mozac_feature_media_sharing_camera_and_microphone_text" tools:ignore="UnusedResources">A tab is using your microphone and camera. Tap to open Archwave.</string>
+    <string name="mozac_feature_media_sharing_camera_reminder_text" tools:ignore="UnusedResources">Reminder: %1$s is still using your camera.</string>
+    <string name="mozac_feature_media_sharing_microphone_reminder_text_2" tools:ignore="UnusedResources">Reminder: %1$s is still using your microphone.</string>
+    <string name="mozac_feature_media_sharing_camera_and_microphone_reminder_text_2" tools:ignore="UnusedResources">Reminder: %1$s is still using your microphone and camera.</string>
+</resources>

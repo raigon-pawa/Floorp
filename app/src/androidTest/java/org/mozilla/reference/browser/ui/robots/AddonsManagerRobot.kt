@@ -113,8 +113,17 @@ class AddonsManagerRobot {
         mDevice.findObject(UiSelector().text(label)).click()
     }
 
+    /** Taps Remove and confirms it in the dialog that follows. */
     fun clickRemoveAddonButton() {
         removeAddonButton().click()
+        val confirm =
+            mDevice.findObject(
+                UiSelector()
+                    .text(getStringResource(addonsR.string.mozac_feature_addons_remove))
+                    .className("android.widget.Button")
+            )
+        assertTrue(confirm.waitForExists(waitingTime))
+        confirm.click()
         mDevice.waitForIdle()
     }
 

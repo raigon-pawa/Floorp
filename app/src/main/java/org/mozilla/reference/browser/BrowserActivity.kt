@@ -7,15 +7,12 @@ package org.mozilla.reference.browser
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.os.Build
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
@@ -47,7 +44,6 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.webextensions.ExtensionsProcessDisabledPromptObserver
 import mozilla.components.support.webextensions.WebExtensionOptionsPageObserver
@@ -59,6 +55,7 @@ import org.mozilla.reference.browser.browser.BrowserFragment
 import org.mozilla.reference.browser.browser.CrashIntegration
 import org.mozilla.reference.browser.browser.withoutSystemBarMargins
 import org.mozilla.reference.browser.ext.components
+import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 import org.mozilla.reference.browser.settings.ClearDataDialogFragment
 
 /** Activity that holds the [BrowserFragment]. */
@@ -72,19 +69,21 @@ open class BrowserActivity : AppCompatActivity() {
         WebExtensionPopupObserver(components.core.store, ::openPopup)
     }
 
+    /**
+     * Whether this screen shows the notices about the app itself (it crashed last time, a clear of browsing data did
+     * not finish). Not over a custom tab or web app, which runs inside another app's flow and would use them up.
+     */
+    protected open val showsAppNotices: Boolean = true
+
     /** Returns a new instance of [BrowserFragment] to display. */
     open fun createBrowserFragment(sessionId: String?): Fragment = BrowserFragment.create(sessionId)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.activity_main)
         super.onCreate(savedInstanceState)
-        // Below Android 13 nothing applies the system bar and keyboard insets (setupPersistentInsets and the toolbar's
-        // ImeInsetsSynchronizer start at 13), so the toolbar would sit under the navigation bar and the keyboard over
-        // the address field. Those versions keep the classic window, which adjustResize resizes for the keyboard.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
-            window.setupPersistentInsets()
-        }
+        // Below Android 13 the toolbar's ImeInsetsSynchronizer does nothing either; the classic window that those
+        // versions keep is resized for the keyboard by adjustResize.
+        enableEdgeToEdgeFromAndroid13()
 
         components.notificationsDelegate.bindToActivity(this)
         supportFragmentManager.registerFragmentLifecycleCallbacks(
@@ -121,9 +120,11 @@ open class BrowserActivity : AppCompatActivity() {
             },
             false,
         )
-        showNoticeIfCrashedSinceLastStart()
-        // A clear of browsing data that the process did not live to finish is offered again at once, not hidden.
-        ClearDataDialogFragment.showIfInterrupted(this, supportFragmentManager)
+        if (showsAppNotices) {
+            showNoticeIfCrashedSinceLastStart()
+            // A clear of browsing data that the process did not live to finish is offered again at once, not hidden.
+            ClearDataDialogFragment.showIfInterrupted(this, supportFragmentManager)
+        }
         lifecycle.addObserver(webExtensionPopupObserver)
         addExtensionObservers()
         secureWhilePrivate()

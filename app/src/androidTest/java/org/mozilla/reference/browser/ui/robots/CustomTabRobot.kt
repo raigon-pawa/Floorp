@@ -16,7 +16,9 @@ import androidx.test.uiautomator.UiSelector
 import mozilla.components.browser.toolbar.R as toolbarR
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
+import org.mozilla.reference.browser.helpers.TestHelper.getStringResource
 import org.mozilla.reference.browser.helpers.TestHelper.packageName
 import org.mozilla.reference.browser.helpers.click
 
@@ -66,7 +68,9 @@ class CustomTabRobot {
     fun switchRequestDesktopSiteToggle() {
         try {
             // Click the Request desktop site toggle
-            mDevice.findObject(UiSelector().textContains("Request desktop site")).waitForExists(waitingTime)
+            mDevice
+                .findObject(UiSelector().textContains(getStringResource(R.string.menu_desktop_site)))
+                .waitForExists(waitingTime)
             requestDesktopButton().click()
             mDevice.waitForIdle()
             assertTrue(
@@ -80,7 +84,9 @@ class CustomTabRobot {
             mDevice.pressBack()
             customTabScreen {}.openMainMenu {}
             // Click again the Request desktop site toggle
-            mDevice.findObject(UiSelector().textContains("Request desktop site")).waitForExists(waitingTime)
+            mDevice
+                .findObject(UiSelector().textContains(getStringResource(R.string.menu_desktop_site)))
+                .waitForExists(waitingTime)
             requestDesktopButton().click()
             mDevice.waitForIdle()
         }
@@ -137,19 +143,19 @@ private fun menuButton() = onView(withId(toolbarR.id.mozac_browser_toolbar_menu)
 
 private fun actionButton() = onView(withContentDescription("Share link"))
 
-private fun forwardButton() = onView(withContentDescription("Forward"))
+private fun forwardButton() = onView(withContentDescription(getStringResource(R.string.menu_forward)))
 
-private fun refreshButton() = onView(withContentDescription("Refresh"))
+private fun refreshButton() = onView(withContentDescription(getStringResource(R.string.menu_reload)))
 
-private fun stopButton() = onView(withContentDescription("Stop"))
+private fun stopButton() = onView(withContentDescription(getStringResource(R.string.menu_stop)))
 
 private fun shareButton() = mDevice.findObject(UiSelector().textContains("Share"))
 
-private fun requestDesktopButton() = onView(withSubstring("Request desktop site"))
+private fun requestDesktopButton() = onView(withSubstring(getStringResource(R.string.menu_desktop_site)))
 
-private fun findInPage() = onView(withText("Find in Page"))
+private fun findInPage() = onView(withText(getStringResource(R.string.menu_find_in_page)))
 
-private fun openInBrowserButton() = onView(withText("Open in Browser"))
+private fun openInBrowserButton() = onView(withText(getStringResource(R.string.archwave_menu_open_in_app)))
 
 private fun assertCloseButton() = closeButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
@@ -198,9 +204,9 @@ private fun assertOpenInBrowserButton() =
     openInBrowserButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
 private fun assertRequestDesktopSiteIsTurnedOff() {
-    assertFalse(mDevice.findObject(UiSelector().textContains("Request desktop site")).isChecked)
+    assertFalse(mDevice.findObject(UiSelector().textContains(getStringResource(R.string.menu_desktop_site))).isChecked)
 }
 
 private fun assertRequestDesktopSiteIsTurnedOn() {
-    assertTrue(mDevice.findObject(UiSelector().textContains("Request desktop site")).isChecked)
+    assertTrue(mDevice.findObject(UiSelector().textContains(getStringResource(R.string.menu_desktop_site))).isChecked)
 }

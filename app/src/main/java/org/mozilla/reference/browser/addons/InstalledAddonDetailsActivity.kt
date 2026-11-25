@@ -5,14 +5,12 @@
 package org.mozilla.reference.browser.addons
 
 import android.content.Intent
-import android.graphics.Color
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.isVisible
@@ -25,20 +23,20 @@ import mozilla.components.feature.addons.ui.toLocalizedString
 import mozilla.components.feature.addons.ui.translateName
 import mozilla.components.feature.addons.update.AddonUpdater
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
+import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
+import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 
 /** An activity to show the details of a installed add-on. */
 class InstalledAddonDetailsActivity : AppCompatActivity() {
     private val logger = Logger("InstalledAddonDetailsActivity")
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_installed_add_on_details)
-        window.setupPersistentInsets(true)
+        enableEdgeToEdgeFromAndroid13(true)
 
         val addon =
             requireNotNull(intent.getParcelableExtraCompat("add_on", Addon::class.java)).also {
@@ -106,17 +104,14 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
             if (isChecked) {
                 this.components.core.addonManager.enableAddon(
                     addon,
-                    onSuccess = {
-                        switch.setState(true)
-                    },
+                    // The whole screen follows: Settings appears with the options page of the enabled add-on.
+                    onSuccess = { bindUI(it) },
                     onError = onError,
                 )
             } else {
                 this.components.core.addonManager.disableAddon(
                     addon,
-                    onSuccess = {
-                        switch.setState(false)
-                    },
+                    onSuccess = { bindUI(it) },
                     onError = onError,
                 )
             }
@@ -196,23 +191,36 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
 
     private fun bindRemoveButton(addon: Addon) {
         findViewById<View>(R.id.remove_add_on).setOnClickListener {
-            this.components.core.addonManager.uninstallAddon(
-                addon,
-                onSuccess = {
-                    finish()
-                },
-                onError = { _, _ ->
-                    val message =
-                        getString(addonsR.string.mozac_feature_addons_failed_to_uninstall, addon.translateName(this))
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                },
-            )
+            // Removing deletes the extension's settings and data at once, so it is confirmed first.
+            AlertDialog.Builder(this)
+                .setTitle(getString(R.string.archwave_addons_remove_title, addon.translateName(this)))
+                .setMessage(R.string.archwave_addons_remove_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(addonsR.string.mozac_feature_addons_remove) { _, _ -> removeAddon(addon) }
+                .show()
+                .withCenterAlignedButtons()
         }
+    }
+
+    private fun removeAddon(addon: Addon) {
+        this.components.core.addonManager.uninstallAddon(
+            addon,
+            onSuccess = {
+                finish()
+            },
+            onError = { _, _ ->
+                val message =
+                    getString(addonsR.string.mozac_feature_addons_failed_to_uninstall, addon.translateName(this))
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            },
+        )
     }
 
     private fun SwitchCompat.setState(checked: Boolean) {
         isChecked = checked
     }
 
-    private fun shouldSettingsBeVisible(addon: Addon) = !addon.installedState?.optionsPageUrl.isNullOrEmpty()
+    // A disabled add-on's options page is not loaded: it opened as a blank tab that stayed dead.
+    private fun shouldSettingsBeVisible(addon: Addon) =
+        addon.isEnabled() && !addon.installedState?.optionsPageUrl.isNullOrEmpty()
 }

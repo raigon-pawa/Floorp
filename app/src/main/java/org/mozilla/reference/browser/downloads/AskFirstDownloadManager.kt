@@ -11,6 +11,7 @@ import android.os.Build.VERSION_CODES.TIRAMISU
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.ProcessLifecycleOwner
+import java.lang.ref.WeakReference
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.feature.downloads.manager.DownloadManager
 import mozilla.components.support.base.android.DefaultProcessInfoProvider
@@ -52,7 +53,13 @@ class AskFirstDownloadManager(
         waiting += { downloadManager.download(download, cookie) }
         if (askFirst) {
             // The delegate keeps only the last callbacks, so they start every download that waits, not just this one.
-            notificationsDelegate.requestNotificationPermission(::startWaiting, ::startWaiting)
+            // It keeps them for the life of the process, so they hold this manager (and its fragment) weakly; the
+            // waiting downloads are kept by waitUntilForeground below until they start.
+            val self = WeakReference(this)
+            notificationsDelegate.requestNotificationPermission(
+                { self.get()?.startWaiting() },
+                { self.get()?.startWaiting() },
+            )
         }
         // Nothing to wait for unless a prompt came up (none after two this session, or with no activity on screen).
         if (!askFirst || !notificationsDelegate.isRequestingPermission) {

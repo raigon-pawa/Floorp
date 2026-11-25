@@ -91,7 +91,11 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
         )
         ensureTabFeature.bind(
             view,
-            EnsureTabFeature(requireComponents.core.store, requireComponents.useCases.tabsUseCases),
+            EnsureTabFeature(
+                requireComponents.core.store,
+                requireComponents.useCases.tabsUseCases,
+                pendingIntentTabs = requireComponents.utils.pendingIntentTabs,
+            ),
         )
 
         toolbar.addBrowserAction(TabCounterButton(this, requireComponents.core.store, ::showTabs))

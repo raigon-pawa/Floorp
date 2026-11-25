@@ -13,7 +13,6 @@ import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.isChecked
 import androidx.test.espresso.matcher.ViewMatchers.isCompletelyDisplayed
-import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isEnabled
 import androidx.test.espresso.matcher.ViewMatchers.isNotChecked
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
@@ -26,6 +25,7 @@ import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.anyOf
 import org.hamcrest.CoreMatchers.not
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.helpers.TestAssetHelper
@@ -116,16 +116,16 @@ class SettingsViewRobot {
 
     // toggleRemoteDebugging does not yet verify that the debug service is started
     // server runs on port 6000
-    fun toggleRemoteDebuggingOn() = {
-        Espresso.onView(withText("OFF")).check(matches(isDisplayed()))
+    fun toggleRemoteDebuggingOn() {
+        remoteDebuggingToggle().check(matches(isNotChecked()))
         remoteDebuggingToggle().click()
-        Espresso.onView(withText("ON")).check(matches(isDisplayed()))
+        remoteDebuggingToggle().check(matches(isChecked()))
     }
 
-    fun toggleRemoteDebuggingOff() = {
-        Espresso.onView(withText("ON")).check(matches(isDisplayed()))
+    fun toggleRemoteDebuggingOff() {
+        remoteDebuggingToggle().check(matches(isChecked()))
         remoteDebuggingToggle().click()
-        Espresso.onView(withText("OFF")).check(matches(isDisplayed()))
+        remoteDebuggingToggle().check(matches(isNotChecked()))
     }
 
     class Transition {
@@ -224,8 +224,9 @@ private fun clearButton() = onView(withText(R.string.archwave_clear_data_clear))
 
 private const val POLL_MS = 100L
 
+// "Navigate up" is the button's content description, not text.
 private fun assertNavigateUpButton() {
-    mDevice.wait(Until.findObject(By.text("Navigate up")), TestAssetHelper.waitingTimeShort)
+    assertNotNull(mDevice.wait(Until.findObject(By.desc("Navigate up")), TestAssetHelper.waitingTimeShort))
 }
 
 private fun assertPrivacyButton() =

@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser.tabs
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
 import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.EngineAction
 import mozilla.components.browser.state.action.RestoreCompleteAction
@@ -47,6 +48,29 @@ class EnsureTabFeatureTest {
         // Unconfined: the feature reacts on the dispatching thread, so each dispatch has taken effect when it returns.
         val feature = EnsureTabFeature(store, TabsUseCases(store), Dispatchers.Unconfined).apply { start() }
         return store to feature
+    }
+
+    @Test
+    fun `no start-page tab while an intent is about to add its own`() {
+        val pending = MutableStateFlow(1)
+        val store = BrowserStore(BrowserState(restoreComplete = false), listOf(noEngine))
+        EnsureTabFeature(store, TabsUseCases(store), Dispatchers.Unconfined, pending).start()
+        store.dispatch(RestoreCompleteAction)
+        assertEquals(0, store.state.tabs.size)
+        // The intent's tab arrives: nothing else to open.
+        store.dispatch(TabListAction.AddTabAction(createTab("https://duckduckgo.com/?q=x"), select = true))
+        pending.value = 0
+        assertEquals(1, store.state.tabs.size)
+    }
+
+    @Test
+    fun `a dropped intent still leaves a start-page tab`() {
+        val pending = MutableStateFlow(1)
+        val store = BrowserStore(BrowserState(restoreComplete = true), listOf(noEngine))
+        EnsureTabFeature(store, TabsUseCases(store), Dispatchers.Unconfined, pending).start()
+        assertEquals(0, store.state.tabs.size)
+        pending.value = 0
+        assertEquals(StartPage.URL, store.state.tabs.single().content.url)
     }
 
     @Test

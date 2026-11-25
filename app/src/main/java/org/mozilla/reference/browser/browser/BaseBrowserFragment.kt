@@ -13,21 +13,28 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.webkit.MimeTypeMap
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
 import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
+import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.app.links.AppLinksFeature
 import mozilla.components.feature.downloads.DownloadsFeature
+import mozilla.components.feature.downloads.R as DownloadsR
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.downloads.temporary.ShareResourceFeature
 import mozilla.components.feature.findinpage.view.FindInPageBar
@@ -165,8 +172,12 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                             if (it) PackageManager.PERMISSION_GRANTED else PackageManager.PERMISSION_DENIED
                         }
                         .toIntArray()
+                val documentPickerAllowed = FilePickerPermissions.canOpenDocumentPicker(requireContext())
                 promptsFeature.withFeature {
-                    it.onPermissionsResult(permissions, grantResults)
+                    it.onPermissionsResult(
+                        permissions,
+                        FilePickerPermissions.grantResults(grantResults, documentPickerAllowed),
+                    )
                 }
             }
     }
@@ -316,6 +327,13 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
             ),
         )
 
+        val downloadFileUtils =
+            DefaultDownloadFileUtils(
+                context = requireContext().applicationContext,
+                downloadLocation = {
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
+                },
+            )
         downloadsFeature.bind(
             view,
             DownloadsFeature(
@@ -324,13 +342,7 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 useCases = requireComponents.useCases.downloadsUseCases,
                 tabId = sessionId,
                 fragmentManager = childFragmentManager,
-                downloadFileUtils =
-                    DefaultDownloadFileUtils(
-                        context = requireContext().applicationContext,
-                        downloadLocation = {
-                            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
-                        },
-                    ),
+                downloadFileUtils = downloadFileUtils,
                 downloadManager =
                     AskFirstDownloadManager(
                         FetchDownloadManager(
@@ -349,8 +361,34 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 // A full-width panel at the bottom, like the add-on prompts, instead of a floating black box.
                 promptsStyling =
                     DownloadsFeature.PromptsStyling(gravity = Gravity.BOTTOM, shouldWidthMatchParent = true),
+                onDownloadStopped = { download, _, status ->
+                    // Without notifications nothing else says the file arrived or lets the user open it.
+                    if (
+                        status == DownloadState.Status.COMPLETED &&
+                            view.isAttachedToWindow &&
+                            !NotificationManagerCompat.from(view.context).areNotificationsEnabled()
+                    ) {
+                        showDownloadCompleted(view, download, downloadFileUtils)
+                    }
+                },
             ),
         )
+    }
+
+    private fun showDownloadCompleted(view: View, download: DownloadState, fileUtils: DefaultDownloadFileUtils) {
+        val context = view.context
+        Snackbar.make(view, context.getString(R.string.archwave_download_completed, download.fileName), LENGTH_LONG)
+            .setAnchorView(toolbar.takeIf { it.isVisible })
+            .withoutSystemBarMargins()
+            .setAction(DownloadsR.string.mozac_feature_downloads_button_open) {
+                if (!fileUtils.openFile(download.fileName, download.directoryPath, download.contentType)) {
+                    val extension = MimeTypeMap.getFileExtensionFromUrl(download.filePath)
+                    val message =
+                        context.getString(DownloadsR.string.mozac_feature_downloads_open_not_supported1, extension)
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                }
+            }
+            .show()
     }
 
     private fun setupLinksAndPrompts(view: View) {
@@ -363,6 +401,7 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 store = requireComponents.core.store,
                 sessionId = sessionId,
                 fragmentManager = parentFragmentManager,
+                dialog = ::cancelableAppLinkDialog,
                 launchInApp = {
                     prefs.getBoolean(
                         requireContext().getPreferenceKey(R.string.pref_key_launch_external_app),
@@ -382,7 +421,21 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 fileUploadsDirCleaner = requireComponents.core.fileUploadsDirCleaner,
                 fragmentManager = parentFragmentManager,
                 onNeedToRequestPermissions = { permissions ->
-                    requestPromptsPermissionsLauncher.launch(permissions)
+                    val store = requireComponents.core.store
+                    if (
+                        FilePickerPermissions.isPlainFileInput(store.state, sessionId) &&
+                            FilePickerPermissions.canOpenDocumentPicker(requireContext())
+                    ) {
+                        // Open the document picker straight away rather than asking for camera, mic and media.
+                        promptsFeature.withFeature {
+                            it.onPermissionsResult(
+                                permissions,
+                                FilePickerPermissions.grantResults(IntArray(permissions.size), true),
+                            )
+                        }
+                    } else {
+                        requestPromptsPermissionsLauncher.launch(permissions)
+                    }
                 },
             ),
         )
@@ -537,5 +590,14 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
         )
 
         return activityResultHandler.any { it.onActivityResult(requestCode, data, resultCode) }
+    }
+
+    // PromptFeature starts the file picker from this fragment, so its result comes back here with the feature's own
+    // request code; the activity only sees the code AndroidX remapped it to.
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!onActivityResult(requestCode, data, resultCode)) {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
     }
 }

@@ -18,6 +18,7 @@ import androidx.test.uiautomator.UiDevice
 import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import org.junit.Assert
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.waitAndInteract
@@ -134,7 +135,7 @@ private fun assertNewTabButton() =
     newTabButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
 private fun assertPrivateTabs() {
-    mDevice.wait(Until.findObject(By.text("Private Browsing")), waitingTime)
+    assertNotNull(mDevice.wait(Until.findObject(By.text("Private Browsing")), waitingTime))
 }
 
 private fun assertThereAreNoPrivateTabsOpen() {
