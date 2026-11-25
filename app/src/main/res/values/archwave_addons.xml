@@ -5,6 +5,8 @@
 <resources>
     <!-- Add-ons manager: shown above the list when the recommended extensions could not be downloaded. -->
     <string name="archwave_addons_load_failed">Couldn’t load the recommended extensions.</string>
+    <!-- Add-ons manager: shown instead of archwave_addons_load_failed when a custom collection is set and could not be loaded, for example because it does not exist. %1$s is the collection's owner, %2$s its name. -->
+    <string name="archwave_addons_custom_collection_failed">Couldn’t load the collection %1$s/%2$s. Check “Custom add-on collection” in Settings, or clear it to see the recommended extensions.</string>
     <!-- Add-ons manager: button next to archwave_addons_load_failed that loads the list again. -->
     <string name="archwave_addons_retry">Retry</string>
     <!-- Add-ons manager: overflow menu item that installs an extension from a .xpi file on the device. -->

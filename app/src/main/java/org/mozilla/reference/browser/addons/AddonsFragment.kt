@@ -12,6 +12,7 @@ import android.view.MenuInflater
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.MenuProvider
 import androidx.core.view.isVisible
@@ -41,6 +42,7 @@ import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
+import org.mozilla.reference.browser.settings.Settings
 
 private const val FIND_MORE_URL = "https://addons.mozilla.org/android/"
 
@@ -151,6 +153,7 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                 // The manager hides catalogue errors and returns the installed add-ons alone.
                 // shortcut: also shown if every recommended add-on is installed; fine while the collection is large.
                 loadError.isVisible = addons == null || addons.none { !it.isInstalled() }
+                showLoadErrorText(rootView)
                 if (listed == null) return@launch
 
                 // Updating the existing adapter, instead of a new one, keeps the scroll position.
@@ -167,6 +170,21 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                             recyclerView.adapter = it
                             it.registerAdapterDataObserver(keepTopInViewOnInsert(recyclerView))
                         }
+            }
+    }
+
+    /** Retry cannot fix a custom collection that does not exist, so name it and point to its setting. */
+    private fun showLoadErrorText(rootView: View) {
+        val context = rootView.context
+        rootView.findViewById<TextView>(R.id.add_ons_load_error_text).text =
+            if (Settings.isAmoCollectionOverrideConfigured(context)) {
+                getString(
+                    R.string.archwave_addons_custom_collection_failed,
+                    Settings.getOverrideAmoUser(context),
+                    Settings.getOverrideAmoCollection(context),
+                )
+            } else {
+                getString(R.string.archwave_addons_load_failed)
             }
     }
 
