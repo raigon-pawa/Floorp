@@ -17,6 +17,8 @@
     <string name="archwave_addons_checking_for_updates">Checking for updates…</string>
     <!-- Installed add-on details: shown when the update check failed, for example without a connection. -->
     <string name="archwave_addons_update_check_failed">Couldn’t check for updates. Try again later.</string>
+    <!-- Installed add-on details: result of archwave_addons_check_for_updates when the engine could not install an update. -->
+    <string name="archwave_addons_update_failed">Couldn’t update. If the update needs new permissions, allow them in its notification, or try again later.</string>
     <!-- Dialog after the extensions process crashed repeatedly: button that leaves extensions off for now. -->
     <string name="archwave_addons_keep_extensions_disabled">Keep disabled</string>
     <!-- Developer setting "Custom Add-on collection": explanation above the two fields. -->
