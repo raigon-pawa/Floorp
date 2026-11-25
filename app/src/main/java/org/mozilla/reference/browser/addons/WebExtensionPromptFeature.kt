@@ -6,8 +6,11 @@ package org.mozilla.reference.browser.addons
 
 import android.content.Context
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.widget.Button
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -42,8 +45,22 @@ class WebExtensionPromptFeature(
     private var isInstallationInProgress = false
     private var scope: CoroutineScope? = null
 
+    /**
+     * The library fills both permission buttons with the primary colour; Cancel is the safe choice, so tone it down.
+     */
+    private val denyButtonStyler =
+        object : FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentStarted(fm: FragmentManager, f: Fragment) {
+                (f as? PermissionsDialogFragment)?.dialog?.findViewById<Button>(addonsR.id.deny_button)?.run {
+                    backgroundTintList = ColorStateList.valueOf(context.getColor(R.color.aw_surface_3))
+                    setTextColor(context.getColor(R.color.aw_text_1))
+                }
+            }
+        }
+
     /** Starts observing the selected session to listen for window requests and opens / closes tabs as needed. */
     override fun start() {
+        fragmentManager.registerFragmentLifecycleCallbacks(denyButtonStyler, false)
         scope =
             store.flowScoped(dispatcher = mainDispatcher) { flow ->
                 flow
@@ -164,6 +181,7 @@ class WebExtensionPromptFeature(
     /** Stops observing the selected session for incoming window requests. */
     override fun stop() {
         scope?.cancel()
+        fragmentManager.unregisterFragmentLifecycleCallbacks(denyButtonStyler)
     }
 
     @VisibleForTesting
