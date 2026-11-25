@@ -116,7 +116,8 @@ class IntentReceiverTest {
     fun aForgedWebAppManifestDoesNotHideTheToolbar() {
         val url = "https://example.org/receiver-manifest"
         val manifest =
-            """{"name":"Forged","start_url":"https://example.org/","scope":"https://example.org/","display":"standalone"}"""
+            """{"name":"Forged","start_url":"https://example.org/","scope":"https://example.org/",""" +
+                """"display":"standalone"}"""
         fire(createCustomTabIntent(url).putExtra("mozilla.components.feature.pwa.EXTRA_WEB_APP_MANIFEST", manifest))
 
         assertTrue(waitFor { store.state.customTabs.any { it.content.url == url } })
