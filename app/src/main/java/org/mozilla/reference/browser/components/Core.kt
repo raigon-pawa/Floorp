@@ -132,7 +132,7 @@ class Core(
     }
 
     /** The [BrowserStore] holds the global [BrowserState]. */
-    val store by lazy {
+    val store: BrowserStore by lazy {
         BrowserStore(
                 middleware =
                     listOf(

@@ -6,7 +6,6 @@
     <!-- The one look of the app: always dark, black and grey. Colours are defined in archwave_theme.xml. -->
     <style name="AppThemeNotActionBar" parent="Theme.Material3.Dark.NoActionBar">
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
-        <item name="actionOverflowButtonStyle">@style/ArchwaveOverflowButton</item>
 
         <!-- Material 3 colour roles. Filled controls are white, so everything "on" them is black. -->
         <item name="colorPrimary">@color/aw_text_1</item>
@@ -82,11 +81,6 @@
         <item name="mozac_widget_favicon_background_color">@color/aw_surface_2</item>
         <item name="mozac_widget_favicon_border_color">@color/aw_divider</item>
         <item name="mozacPromptLoginEditTextCursorColor">@color/aw_text_1</item>
-    </style>
-
-    <!-- The library's overflow ("More options") button is 36dp wide; touch targets are at least 48dp. -->
-    <style name="ArchwaveOverflowButton" parent="Widget.AppCompat.ActionButton.Overflow">
-        <item name="android:minWidth">48dp</item>
     </style>
 
     <style name="AppTheme" parent="AppThemeNotActionBar">

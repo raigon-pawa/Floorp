@@ -70,9 +70,6 @@
         <item name="track">@drawable/archwave_switch_track</item>
     </style>
 
-    <!-- The smallest touch target the app allows. -->
-    <dimen name="archwave_min_touch_target">48dp</dimen>
-
     <!-- AppCompat's overflow button is 40dp wide. -->
     <style name="ArchwaveActionOverflow" parent="Widget.AppCompat.ActionButton.Overflow">
         <item name="android:minWidth">@dimen/archwave_min_touch_target</item>
