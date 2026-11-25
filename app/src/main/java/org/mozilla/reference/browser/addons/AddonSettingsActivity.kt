@@ -28,8 +28,8 @@ import org.mozilla.reference.browser.ext.components
 /**
  * An activity to show the settings of an add-on.
  *
- * Unused: options pages open in a browser tab (see InstalledAddonDetailsActivity). Kept, with its manifest entry, to stay
- * close to upstream; its layouts also serve WebExtensionActionPopupActivity.
+ * Unused: options pages open in a browser tab (see InstalledAddonDetailsActivity). Kept, with its manifest entry, to
+ * stay close to upstream; its layouts also serve WebExtensionActionPopupActivity.
  */
 class AddonSettingsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

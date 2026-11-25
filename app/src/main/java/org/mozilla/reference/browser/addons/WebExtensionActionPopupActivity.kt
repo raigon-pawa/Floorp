@@ -228,8 +228,8 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
 
         override fun onDestroy() {
             super.onDestroy()
-            // Each click on the action creates a new session: close this one when the popup goes away for good. Not when
-            // it rotates, nor when the system destroys it behind the file picker: the recreated popup finds its tab again.
+            // Each click on the action creates a new session: close this one when the popup goes away for good, not
+            // when it rotates or the system destroys it behind the file picker (the recreated popup finds its tab).
             if (activity?.isFinishing == true) {
                 popupTabId?.let {
                     requireContext().components.core.store.dispatch(CustomTabListAction.RemoveCustomTabAction(it))

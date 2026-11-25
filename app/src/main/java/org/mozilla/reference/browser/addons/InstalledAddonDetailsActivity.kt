@@ -183,7 +183,7 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
                         when (status) {
                             // Also returned for unsupported add-ons; the library has no text for it.
                             AddonUpdater.Status.NotInstalled -> getString(R.string.archwave_addons_update_check_failed)
-                            // An update that needs new permissions is stopped until the user allows it in a notification.
+                            // An update needing new permissions waits for the user to allow it in a notification.
                             is AddonUpdater.Status.Error -> getString(R.string.archwave_addons_update_failed)
                             else -> status.toLocalizedString(this)
                         }
