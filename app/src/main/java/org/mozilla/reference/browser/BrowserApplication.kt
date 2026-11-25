@@ -48,8 +48,7 @@ open class BrowserApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // Always dark, whatever the device setting. The crash prompt (separate process) is not affected:
-        // lib-crash gives it a fixed light theme.
+        // Always dark, whatever the device setting.
         AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
         // GeckoView takes the accent colour for web content from the application context's theme.
         setTheme(R.style.ArchwaveEngineColors)
