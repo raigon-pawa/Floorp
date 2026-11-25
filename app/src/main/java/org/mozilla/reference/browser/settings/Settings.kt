@@ -79,6 +79,10 @@ object Settings {
     fun isSearchSuggestions(context: Context): Boolean =
         bool(context, R.string.pref_key_search_suggestions, R.bool.pref_default_search_suggestions)
 
+    /** Links that other apps send open in a private tab. Read for each incoming link, so a change applies at once. */
+    fun isOpenLinksInPrivate(context: Context): Boolean =
+        bool(context, R.string.pref_key_open_links_in_private, R.bool.pref_default_open_links_in_private)
+
     /** The DNS-over-HTTPS resolver URL; empty means the system resolver. */
     fun getDohProviderUrl(context: Context): String =
         PreferenceManager.getDefaultSharedPreferences(context)

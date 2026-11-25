@@ -5,12 +5,21 @@
 package org.mozilla.reference.browser.ui
 
 import androidx.core.net.toUri
+import mockwebserver3.MockWebServer
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
+import org.junit.Assert.assertEquals
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.components
+import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.RetryTestRule
+import org.mozilla.reference.browser.helpers.TestAssetHelper
+import org.mozilla.reference.browser.helpers.TestHelper
+import org.mozilla.reference.browser.settings.ClearableData
+import org.mozilla.reference.browser.ui.robots.mDevice
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
 
 /**
@@ -31,15 +40,20 @@ class SettingsViewTest {
             .openSettings {
                 verifySettingsRecyclerViewToExist()
                 verifyNavigateUp()
-                verifyPrivacyButton()
-                verifyPrivacySummary()
+                verifyGeneralHeading()
+                verifySearchEngineButton()
                 verifyOpenLinksInApps()
                 verifyMakeDefaultBrowserButton()
-                verifyDeveloperToolsHeading()
+                verifyOpenLinksInPrivate()
+                verifyPrivacyAndSecurityHeading()
+                verifyPrivacyButton()
+                verifyPrivacySummary()
+                verifyClearBrowsingDataButton()
+                verifyAdvancedHeading()
                 verifyRemoteDebugging()
                 verifyCustomAddonCollectionButton()
-                verifyMozillaHeading()
-                verifyAboutReferenceBrowserButton()
+                verifyAboutHeading()
+                verifyAboutArchwaveButton()
             }
     }
 
@@ -86,13 +100,83 @@ class SettingsViewTest {
     }
 
     @Test
-    fun aboutReferenceBrowserTest() {
+    fun aboutArchwaveTest() {
         navigationToolbar {}
             .openThreeDotMenu {}
             .openSettings {}
-            .openAboutReferenceBrowser {
+            .openAboutArchwave {
                 verifyAboutBrowser()
             }
+    }
+
+    @Test
+    fun searchEnginePickerTest() {
+        val store = TestHelper.appContext.components.core.store
+        navigationToolbar {}
+            .openThreeDotMenu {}
+            .openSettings {
+                // Fresh install
+                verifySearchEngine("DuckDuckGo")
+                selectSearchEngine("Wikipedia")
+                verifySearchEngine("Wikipedia")
+                assertEquals("Wikipedia", store.state.search.selectedOrDefaultSearchEngine?.name)
+                selectSearchEngine("DuckDuckGo")
+                verifySearchEngine("DuckDuckGo")
+                assertEquals("DuckDuckGo", store.state.search.selectedOrDefaultSearchEngine?.name)
+            }
+    }
+
+    @Test
+    fun clearBrowsingDataDialogTest() {
+        navigationToolbar {}
+            .openThreeDotMenu {}
+            .openSettings {
+                clickClearBrowsingData()
+                ClearableData.entries.forEach { verifyClearDataItem(it.label, checked = it.checkedByDefault) }
+                verifyClearButtonEnabled(true)
+                ClearableData.entries.filter { it.checkedByDefault }.forEach { toggleClearDataItem(it.label) }
+                verifyClearButtonEnabled(false)
+                toggleClearDataItem(R.string.archwave_clear_data_history)
+                verifyClearButtonEnabled(true)
+            }
+    }
+
+    @Test
+    fun clearHistoryRemovesSuggestionTest() {
+        val mockWebServer =
+            MockWebServer().apply {
+                dispatcher = AndroidAssetDispatcher()
+                start()
+            }
+        try {
+            val visited = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+            val current = TestAssetHelper.getGenericAsset(mockWebServer, 2)
+            navigationToolbar {}.enterUrlAndEnterToBrowser(visited.url) {}
+            // The tab moves on, so only the history still knows the first page.
+            navigationToolbar {}.enterUrlAndEnterToBrowser(current.url) {}
+            navigationToolbar {}
+                .clickToolbar {
+                    clickClearToolbarButton() // The edit field starts with the tab's address.
+                    typeText("generic1.html")
+                    // By address: the title may not be stored yet when the tab moves on.
+                    verifySearchSuggestion(visited.url.toString())
+                }
+            mDevice.pressBack()
+            navigationToolbar {}
+                .openThreeDotMenu {}
+                .openSettings {
+                    clickClearBrowsingData()
+                    confirmClearData()
+                }
+                .goBack {}
+                .clickToolbar {
+                    clickClearToolbarButton() // The edit field starts with the tab's address.
+                    typeText("generic1.html")
+                    verifyNoSearchSuggestion(visited.url.toString())
+                }
+        } finally {
+            runCatching { mockWebServer.close() }
+        }
     }
 
     /* Can't check further because after creating the custom add-on collection

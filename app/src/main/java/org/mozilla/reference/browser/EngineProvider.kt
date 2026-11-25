@@ -37,6 +37,10 @@ object EngineProvider {
             // About config it's no longer enabled by default
             builder.aboutConfigEnabled(true)
             builder.extensionsWebAPIEnabled(true)
+            // Off by default in GeckoView 160: extensions would run in the main process, where an extension's crash
+            // takes the whole app down. In their own process a crash only stops extensions, and the engine offers a
+            // restart after repeated crashes (the prompt in BrowserActivity).
+            builder.extensionsProcessEnabled(true)
             copyConfigFile(context)?.let { builder.configFilePath(it.absolutePath) }
             // GeckoEngine applies the DoH mode before the resolver URL, after Gecko has started; with no URL yet, Gecko
             // would briefly use its built-in resolver (mozilla.cloudflare-dns.com). Start with the chosen one instead.

@@ -19,6 +19,7 @@ import mozilla.components.feature.media.service.AbstractMediaSessionService
 import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.support.utils.WebURLFinder
 import org.mozilla.reference.browser.ext.components
+import org.mozilla.reference.browser.settings.Settings
 
 /**
  * Entry point for launcher, link, share, custom tab and PWA shortcut intents. It has no UI: the intent processors pick
@@ -40,10 +41,13 @@ class IntentReceiverActivity : Activity() {
 
         val utils = components.utils
 
-        val processor = utils.intentProcessors.firstOrNull { it.process(intent) }
+        val private = Settings.isOpenLinksInPrivate(this)
+        val processors = if (private) utils.privateIntentProcessors else utils.intentProcessors
+        val external = if (private) utils.privateExternalIntentProcessors else utils.externalIntentProcessors
+        val processor = processors.firstOrNull { it.process(intent) }
 
         val className =
-            if (processor in utils.externalIntentProcessors) {
+            if (processor in external) {
                 ExternalAppBrowserActivity::class
             } else {
                 BrowserActivity::class

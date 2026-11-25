@@ -14,12 +14,21 @@ import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.lifecycle.lifecycleScope
+import androidx.preference.ListPreference
 import androidx.preference.Preference
 import androidx.preference.Preference.OnPreferenceChangeListener
 import androidx.preference.Preference.OnPreferenceClickListener
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import kotlin.system.exitProcess
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
+import mozilla.components.browser.state.state.SearchState
+import mozilla.components.browser.state.state.searchEngines
+import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
+import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.ktx.android.view.showKeyboard
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.R.string.pref_key_about_page
@@ -45,6 +54,52 @@ class SettingsFragment : PreferenceFragmentCompat() {
         rootKey: String?,
     ) {
         setPreferencesFromResource(R.xml.preferences, rootKey)
+
+        findPreference<Preference>(requireContext().getPreferenceKey(R.string.pref_key_clear_browsing_data))
+            ?.onPreferenceClickListener =
+            OnPreferenceClickListener {
+                ClearDataDialogFragment.show(childFragmentManager)
+                true
+            }
+
+        searchEnginePreference()?.onPreferenceChangeListener = OnPreferenceChangeListener { _, id ->
+            val engine = requireComponents.core.store.state.search.searchEngines.find { it.id == id }
+            engine?.let { requireComponents.useCases.searchUseCases.selectSearchEngine(it) }
+            engine != null
+        }
+    }
+
+    override fun onViewCreated(
+        view: View,
+        savedInstanceState: Bundle?,
+    ) {
+        super.onViewCreated(view, savedInstanceState)
+        // Engines load asynchronously at start-up, and the choice can change elsewhere; follow the store.
+        viewLifecycleOwner.lifecycleScope.launch {
+            requireComponents.core.store
+                .flow(viewLifecycleOwner)
+                .map { it.search }
+                .distinctUntilChanged()
+                .collect(::showSearchEngines)
+        }
+    }
+
+    private fun searchEnginePreference() =
+        findPreference<ListPreference>(requireContext().getPreferenceKey(R.string.pref_key_search_engine))
+
+    private fun showSearchEngines(search: SearchState) {
+        val preference = searchEnginePreference() ?: return
+        val engines = search.searchEngines
+        val current = search.selectedOrDefaultSearchEngine
+        preference.isEnabled = search.complete && current != null
+        if (!search.complete || current == null) {
+            preference.setSummary(R.string.archwave_settings_search_engine_loading)
+            return
+        }
+        preference.entries = engines.map { it.name }.toTypedArray()
+        preference.entryValues = engines.map { it.id }.toTypedArray()
+        preference.value = current.id
+        preference.summary = current.name
     }
 
     override fun onResume() {
@@ -54,6 +109,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         getActionBarUpdater().apply {
             updateTitle(R.string.settings)
         }
+        ClearDataDialogFragment.showIfInterrupted(requireContext(), childFragmentManager)
     }
 
     private fun setupPreferences() {
@@ -88,9 +144,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             .replace(R.id.container, PrivacySettingsFragment())
             .addToBackStack(null)
             .commit()
-        getActionBarUpdater().apply {
-            updateTitle(R.string.privacy_settings)
-        }
         true
     }
 

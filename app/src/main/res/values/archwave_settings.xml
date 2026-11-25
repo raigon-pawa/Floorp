@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- Preference keys -->
+    <string name="pref_key_search_engine" translatable="false">pref_key_search_engine</string>
+    <string name="pref_key_open_links_in_private" translatable="false">pref_key_open_links_in_private</string>
+    <string name="pref_key_clear_browsing_data" translatable="false">pref_key_clear_browsing_data</string>
+
+    <!-- Defaults: the preference XML and Settings.kt both read these, so they cannot drift apart -->
+    <bool name="pref_default_open_links_in_private">false</bool>
+
+    <!-- Settings: group headings on the top-level page -->
+    <string name="archwave_settings_general_category">General</string>
+    <string name="archwave_settings_privacy_category">Privacy and security</string>
+
+    <!-- Settings: row that picks the default search engine; its summary is the engine in use -->
+    <string name="archwave_settings_search_engine">Search engine</string>
+    <!-- Settings: summary of the search engine row while the list of engines is still loading -->
+    <string name="archwave_settings_search_engine_loading">Loading search engines…</string>
+
+    <!-- Settings: switch that opens links sent by other apps in a private tab -->
+    <string name="archwave_settings_open_links_in_private">Open links from other apps in a private tab</string>
+
+    <!-- Settings: row and dialog title for clearing browsing data -->
+    <string name="archwave_settings_clear_data">Clear browsing data</string>
+    <!-- Clear browsing data dialog: title when an earlier clear stopped before it finished (the app was closed) -->
+    <string name="archwave_clear_data_interrupted">Clearing did not finish. Clear again?</string>
+    <!-- Clear browsing data dialog: the choices -->
+    <string name="archwave_clear_data_tabs">Open tabs</string>
+    <string name="archwave_clear_data_history">Browsing history</string>
+    <string name="archwave_clear_data_cookies">Cookies and site data</string>
+    <string name="archwave_clear_data_cache">Cached images and files</string>
+    <string name="archwave_clear_data_permissions">Site permissions</string>
+    <string name="archwave_clear_data_downloads">Downloads list</string>
+    <!-- Clear browsing data dialog: buttons -->
+    <string name="archwave_clear_data_clear">Clear</string>
+    <string name="archwave_clear_data_cancel">Cancel</string>
+    <!-- Clear browsing data: message when it is done, and when something could not be cleared -->
+    <string name="archwave_clear_data_done">Browsing data cleared</string>
+    <string name="archwave_clear_data_failed">Some browsing data could not be cleared. Try again.</string>
+
+    <!-- About: version line; %1$s is the version, for example 0.1.0 -->
+    <string name="archwave_about_version">Version %1$s</string>
+    <!-- About: engine line; %1$s is the GeckoView version, %2$s its build id -->
+    <string name="archwave_about_engine">GeckoView %1$s, build %2$s</string>
+    <!-- About: rows -->
+    <string name="archwave_about_source_code">Source code</string>
+    <string name="archwave_about_licenses">Open-source licences</string>
+    <string name="archwave_about_connections">What Archwave connects to</string>
+    <string name="archwave_source_url" translatable="false">https://github.com/raigon-pawa/Floorp/tree/archwave-android</string>
+
+    <!-- What Archwave connects to: the whole page -->
+    <string name="archwave_connections_text">Archwave sends no telemetry and no crash reports. It connects to:
+        \n\n• The sites you visit, and your search engine when you search.
+        \n\n• The DNS-over-HTTPS resolver you chose (Quad9 unless you changed it), to look up the addresses of sites.
+        \n\n• Mozilla Remote Settings, for blocklists and security data such as revoked certificates.
+        \n\n• Google Safe Browsing, for lists of dangerous sites. Only shortened fingerprints of an address are ever sent, and only when an address needs checking.
+        \n\n• addons.mozilla.org, when you browse or install extensions, and once a day to look for updates to the extensions you installed.</string>
+
+    <!-- Open-source licences: rows; the summary of each lists the components under that licence -->
+    <string name="archwave_licenses_mpl">Mozilla Public License 2.0</string>
+    <string name="archwave_licenses_apache">Apache License 2.0</string>
+    <string name="archwave_licenses_ofl">SIL Open Font License 1.1</string>
+    <string name="archwave_licenses_native_app_services">Native libraries in Application Services</string>
+    <string name="archwave_licenses_native_glean">Native libraries in Glean</string>
+    <string name="archwave_licenses_native_summary">The licence notices of the libraries compiled into it</string>
+    <string name="archwave_licenses_gecko">Libraries inside GeckoView</string>
+    <string name="archwave_licenses_gecko_summary">The engine\'s own licence page (about:license)</string>
+    <string name="archwave_licenses_play">Android Software Development Kit License</string>
+    <string name="archwave_licenses_play_summary">Google Play services (base, basement, FIDO, tasks), used by GeckoView for security keys</string>
+    <!-- Open-source licences: the components under each licence, from the release build's runtime dependencies and
+         the licences their Maven POM files declare -->
+    <string-array name="archwave_licenses_mpl_components">
+        <item>@string/app_name</item>
+        <item>Mozilla Android Components</item>
+        <item>GeckoView</item>
+        <item>Mozilla Application Services</item>
+        <item>Glean</item>
+    </string-array>
+    <string-array name="archwave_licenses_apache_components">
+        <item>AndroidX (Android Jetpack)</item>
+        <item>Kotlin standard library</item>
+        <item>kotlinx.coroutines</item>
+        <item>kotlinx.serialization</item>
+        <item>Material Components for Android</item>
+        <item>Guava</item>
+        <item>ZXing</item>
+        <item>AndroidSVG</item>
+        <item>DiskLruCache</item>
+        <item>SnakeYAML</item>
+        <item>JNA (used under the Apache License)</item>
+        <item>JetBrains Java Annotations</item>
+        <item>JSpecify</item>
+        <item>Error Prone annotations</item>
+    </string-array>
+    <string-array name="archwave_licenses_ofl_components">
+        <item>JetBrains Mono</item>
+    </string-array>
+
+    <!-- Text pages (licences, What Archwave connects to) -->
+    <dimen name="archwave_text_page_padding">16dp</dimen>
+    <item name="archwave_text_page" type="id" />
+
+    <!-- About: a tappable row under the text -->
+    <style name="ArchwaveAboutRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingHorizontal">24dp</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:textColor">@color/aw_text_1</item>
+        <item name="android:textSize">16sp</item>
+        <!-- Shows that the row opens something -->
+        <item name="android:drawableEnd">@drawable/mozac_ic_chevron_right_24</item>
+        <item name="android:drawableTint">@color/aw_text_2</item>
+        <item name="android:drawablePadding">16dp</item>
+    </style>
+</resources>

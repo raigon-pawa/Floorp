@@ -4,13 +4,18 @@
 
 package org.mozilla.reference.browser.ui.robots
 
+import android.os.SystemClock
+import androidx.annotation.StringRes
 import androidx.test.espresso.Espresso
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers
+import androidx.test.espresso.matcher.ViewMatchers.isChecked
 import androidx.test.espresso.matcher.ViewMatchers.isCompletelyDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
+import androidx.test.espresso.matcher.ViewMatchers.isEnabled
+import androidx.test.espresso.matcher.ViewMatchers.isNotChecked
 import androidx.test.espresso.matcher.ViewMatchers.withEffectiveVisibility
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
@@ -19,6 +24,8 @@ import androidx.test.uiautomator.UiSelector
 import androidx.test.uiautomator.Until
 import org.hamcrest.CoreMatchers.allOf
 import org.hamcrest.CoreMatchers.anyOf
+import org.hamcrest.CoreMatchers.not
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.helpers.TestAssetHelper
@@ -27,6 +34,7 @@ import org.mozilla.reference.browser.helpers.TestHelper.getStringResource
 import org.mozilla.reference.browser.helpers.TestHelper.packageName
 import org.mozilla.reference.browser.helpers.click
 import org.mozilla.reference.browser.helpers.hasCousin
+import org.mozilla.reference.browser.settings.BrowsingDataCleaner
 
 /** Implementation of Robot Pattern for the settings menu. */
 class SettingsViewRobot {
@@ -42,15 +50,61 @@ class SettingsViewRobot {
 
     fun verifyMakeDefaultBrowserButton() = assertMakeDefaultBrowserButton()
 
-    fun verifyDeveloperToolsHeading() = assertDeveloperToolsHeading()
+    fun verifyAdvancedHeading() = assertAdvancedHeading()
 
     fun verifyRemoteDebugging() = assertRemoteDebugging()
 
     fun verifyCustomAddonCollectionButton() = assertCustomAddonCollectionButton()
 
-    fun verifyMozillaHeading() = assertMozillaHeading()
+    fun verifyAboutHeading() = assertAboutHeading()
 
-    fun verifyAboutReferenceBrowserButton() = assertAboutReferenceBrowserButton()
+    fun verifyAboutArchwaveButton() = assertAboutArchwaveButton()
+
+    fun verifyGeneralHeading() = settingsRow(R.string.archwave_settings_general_category).check(matches(isVisible()))
+
+    fun verifySearchEngineButton() = settingsRow(R.string.archwave_settings_search_engine).check(matches(isVisible()))
+
+    fun verifyOpenLinksInPrivate() = openLinksInPrivateToggle().check(matches(isVisible()))
+
+    fun verifyPrivacyAndSecurityHeading() =
+        settingsRow(R.string.archwave_settings_privacy_category).check(matches(isVisible()))
+
+    fun verifyClearBrowsingDataButton() = clearBrowsingDataButton().check(matches(isVisible()))
+
+    /** Waits until the search engine row is enabled and shows [name], the engine in use. */
+    fun verifySearchEngine(name: String) {
+        assertTrue(
+            mDevice.findObject(UiSelector().resourceId("android:id/summary").text(name)).waitForExists(waitingTime)
+        )
+        settingsRow(R.string.archwave_settings_search_engine).check(matches(isEnabled()))
+    }
+
+    /** Opens the search engine list and picks [name]. */
+    fun selectSearchEngine(name: String) {
+        settingsRow(R.string.archwave_settings_search_engine).click()
+        onView(withText(name)).inRoot(isDialog()).click()
+    }
+
+    fun clickClearBrowsingData() = clearBrowsingDataButton().click()
+
+    /** Asserts the row titled [label] in the clear-browsing-data dialog is [checked]. */
+    fun verifyClearDataItem(
+        @StringRes label: Int,
+        checked: Boolean,
+    ) = onView(withText(label)).inRoot(isDialog()).check(matches(if (checked) isChecked() else isNotChecked()))
+
+    fun toggleClearDataItem(@StringRes label: Int) = onView(withText(label)).inRoot(isDialog()).click()
+
+    fun verifyClearButtonEnabled(enabled: Boolean) =
+        clearButton().check(matches(if (enabled) isEnabled() else not(isEnabled())))
+
+    /** Confirms the dialog and waits until the clearing has finished. */
+    fun confirmClearData() {
+        clearButton().click()
+        val deadline = SystemClock.uptimeMillis() + waitingTime
+        while (BrowsingDataCleaner.running && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(POLL_MS)
+        assertFalse("Clearing did not finish", BrowsingDataCleaner.running)
+    }
 
     fun verifySettingsRecyclerViewToExist() = waitForSettingsRecyclerViewToExist()
 
@@ -89,8 +143,8 @@ class SettingsViewRobot {
             return ExternalAppsRobot.Transition()
         }
 
-        fun openAboutReferenceBrowser(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
-            aboutReferenceBrowserButton().click()
+        fun openAboutArchwave(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
+            aboutArchwaveButton().click()
             BrowserRobot().interact()
             return BrowserRobot.Transition()
         }
@@ -136,7 +190,7 @@ private fun openLinksInAppsToggle() =
 
 private fun makeDefaultBrowserButton() = Espresso.onView(withText(R.string.preferences_make_default_browser))
 
-private fun developerToolsHeading() = Espresso.onView(withText(R.string.developer_tools_category))
+private fun advancedHeading() = Espresso.onView(withText(R.string.developer_tools_category))
 
 private fun remoteDebuggingToggle() =
     Espresso.onView(
@@ -146,11 +200,29 @@ private fun remoteDebuggingToggle() =
         )
     )
 
-private fun customAddonCollectionButton() = onView(withText("Custom Add-on collection"))
+private fun customAddonCollectionButton() = onView(withText("Custom add-on collection"))
 
-private fun mozillaHeading() = Espresso.onView(withText(R.string.mozilla_category))
+private fun aboutHeading() = Espresso.onView(withText(R.string.mozilla_category))
 
-private fun aboutReferenceBrowserButton() = Espresso.onView(withText(R.string.preferences_about_page))
+private fun aboutArchwaveButton() = Espresso.onView(withText(R.string.preferences_about_page))
+
+private fun settingsRow(@StringRes title: Int) = onView(withText(title))
+
+private fun isVisible() = withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)
+
+private fun openLinksInPrivateToggle() =
+    onView(
+        allOf(
+            withId(androidx.preference.R.id.switchWidget),
+            hasCousin(withText(R.string.archwave_settings_open_links_in_private)),
+        )
+    )
+
+private fun clearBrowsingDataButton() = settingsRow(R.string.archwave_settings_clear_data)
+
+private fun clearButton() = onView(withText(R.string.archwave_clear_data_clear)).inRoot(isDialog())
+
+private const val POLL_MS = 100L
 
 private fun assertNavigateUpButton() {
     mDevice.wait(Until.findObject(By.text("Navigate up")), TestAssetHelper.waitingTimeShort)
@@ -168,8 +240,8 @@ private fun assertOpenLinksInApps() =
 private fun assertMakeDefaultBrowserButton() =
     makeDefaultBrowserButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
-private fun assertDeveloperToolsHeading() =
-    developerToolsHeading().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+private fun assertAdvancedHeading() =
+    advancedHeading().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
 private fun assertRemoteDebugging() =
     remoteDebuggingToggle().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
@@ -177,11 +249,11 @@ private fun assertRemoteDebugging() =
 private fun assertCustomAddonCollectionButton() =
     customAddonCollectionButton().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
-private fun assertMozillaHeading() =
-    mozillaHeading().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+private fun assertAboutHeading() =
+    aboutHeading().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
-private fun assertAboutReferenceBrowserButton() =
-    aboutReferenceBrowserButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
+private fun assertAboutArchwaveButton() =
+    aboutArchwaveButton().check(matches(ViewMatchers.withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
 
 private fun assertCustomAddonCollectionPanel() {
     mDevice.waitForIdle()

@@ -3,21 +3,51 @@
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
-<androidx.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<androidx.preference.PreferenceScreen
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <androidx.preference.Preference
-        android:key="@string/pref_key_privacy"
-        android:title="@string/privacy"
-        android:summary="@string/preferences_privacy_summary"/>
+    <PreferenceCategory
+        android:title="@string/archwave_settings_general_category">
 
-    <androidx.preference.SwitchPreferenceCompat
-        android:key="@string/pref_key_launch_external_app"
-        android:defaultValue="false"
-        android:title="@string/open_links_in_apps" />
+        <!-- Filled from the browser store; the search middleware persists the choice, so this row stores nothing. -->
+        <androidx.preference.ListPreference
+            android:key="@string/pref_key_search_engine"
+            android:title="@string/archwave_settings_search_engine"
+            android:summary="@string/archwave_settings_search_engine_loading"
+            android:enabled="false"
+            android:persistent="false" />
 
-    <androidx.preference.Preference
+        <androidx.preference.SwitchPreferenceCompat
+            android:key="@string/pref_key_launch_external_app"
+            android:defaultValue="false"
+            android:title="@string/open_links_in_apps" />
+
+        <androidx.preference.Preference
             android:key="@string/pref_key_make_default_browser"
             android:title="@string/preferences_make_default_browser"/>
+
+        <androidx.preference.SwitchPreferenceCompat
+            android:key="@string/pref_key_open_links_in_private"
+            android:defaultValue="@bool/pref_default_open_links_in_private"
+            android:title="@string/archwave_settings_open_links_in_private"
+            app:singleLineTitle="false" />
+
+    </PreferenceCategory>
+
+    <PreferenceCategory
+        android:title="@string/archwave_settings_privacy_category">
+
+        <androidx.preference.Preference
+            android:key="@string/pref_key_privacy"
+            android:title="@string/privacy"
+            android:summary="@string/preferences_privacy_summary"/>
+
+        <androidx.preference.Preference
+            android:key="@string/pref_key_clear_browsing_data"
+            android:title="@string/archwave_settings_clear_data"/>
+
+    </PreferenceCategory>
 
     <PreferenceCategory
         android:title="@string/developer_tools_category">

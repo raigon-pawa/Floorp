@@ -37,42 +37,48 @@ class Utilities(
     private val applicationScope: CoroutineScope,
 ) {
     /** Provides intent processing functionality for Progressive Web App and Custom Tab intents. */
-    val externalIntentProcessors by lazy {
-        listOf(
-            CustomTabIntentProcessor(
-                customTabsUseCases.add,
-                context.resources,
-            ),
-            WebAppIntentProcessor(
-                store,
-                customTabsUseCases.addWebApp,
-                sessionUseCases.loadUrl,
-                ManifestStorage(context),
-            ),
-        )
+    val externalIntentProcessors by lazy { listOf(customTabIntentProcessor(private = false), webAppIntentProcessor) }
+
+    /** Like [externalIntentProcessors], but custom tabs open as private custom tabs. Web apps stay as they are. */
+    val privateExternalIntentProcessors by lazy {
+        listOf(customTabIntentProcessor(private = true), webAppIntentProcessor)
     }
 
     /**
      * Provides intent processing functionality for ACTION_VIEW and ACTION_SEND intents, along with external intent
      * processors.
      */
-    val intentProcessors by lazy {
-        externalIntentProcessors +
-            WaitForSearchEnginesProcessor(
-                store,
-                applicationScope,
-                TabIntentProcessor(
-                    tabsUseCases,
-                    searchUseCases.newTabSearch,
-                    // Without the engine, the processor warms up DNS for the link through the system resolver,
-                    // bypassing DNS over HTTPS; with it, it only resolves the DoH provider's host. The engine also
-                    // makes it open a speculative connection to each link, which the Gecko config file turns off
-                    // (network.http.speculative-parallel-limit = 0).
-                    engine = context.components.core.engine,
-                    applicationScope = applicationScope,
-                ),
-            )
+    val intentProcessors by lazy { externalIntentProcessors + tabIntentProcessor(private = false) }
+
+    /**
+     * Like [intentProcessors], but links and custom tabs open private. A processor's private flag is fixed when it is
+     * built, so the caller picks one of the two lists for each intent.
+     */
+    val privateIntentProcessors by lazy { privateExternalIntentProcessors + tabIntentProcessor(private = true) }
+
+    private val webAppIntentProcessor by lazy {
+        WebAppIntentProcessor(store, customTabsUseCases.addWebApp, sessionUseCases.loadUrl, ManifestStorage(context))
     }
+
+    private fun customTabIntentProcessor(private: Boolean) =
+        CustomTabIntentProcessor(customTabsUseCases.add, context.resources, isPrivate = private)
+
+    private fun tabIntentProcessor(private: Boolean) =
+        WaitForSearchEnginesProcessor(
+            store,
+            applicationScope,
+            TabIntentProcessor(
+                tabsUseCases,
+                if (private) searchUseCases.newPrivateTabSearch else searchUseCases.newTabSearch,
+                isPrivate = private,
+                // Without the engine, the processor warms up DNS for the link through the system resolver,
+                // bypassing DNS over HTTPS; with it, it only resolves the DoH provider's host. The engine also
+                // makes it open a speculative connection to each link, which the Gecko config file turns off
+                // (network.http.speculative-parallel-limit = 0).
+                engine = context.components.core.engine,
+                applicationScope = applicationScope,
+            ),
+        )
 
     val publicSuffixList by lazy {
         PublicSuffixList(context)
