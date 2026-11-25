@@ -94,7 +94,7 @@
     <string name="settings">Settings</string>
 
     <!-- Menu option on the toolbar that takes you to privacy settings page-->
-    <string name="privacy_settings">Privacy Settings</string>
+    <string name="privacy_settings">Privacy</string>
 
     <string name="pair_instructions">Open firefox.com/pair in Firefox Desktop for your pairing code</string>
 

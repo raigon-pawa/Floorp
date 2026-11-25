@@ -56,7 +56,7 @@ class SettingsViewPrivacyRobot {
 private fun privacySwitch(@StringRes title: Int) =
     Espresso.onView(allOf(withId(androidx.preference.R.id.switchWidget), hasCousin(withText(title))))
 
-private fun privacySettingsView() = Espresso.onView(ViewMatchers.withText("Privacy Settings"))
+private fun privacySettingsView() = Espresso.onView(ViewMatchers.withText("Privacy"))
 
 private fun trackingProtectionHeading() = Espresso.onView(ViewMatchers.withText("Tracking Protection"))
 
