@@ -131,8 +131,10 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                     filterExactMatch = true,
                 )
                 .onlyWhen(networkSuggestions),
-            // Offline "search for ..." row when network suggestions are off.
-            SearchActionProvider(store, defaultSearch, showDescription = false).onlyWhen { !networkSuggestions() },
+            // The typed text as a "search for ..." row, always: the suggestion provider leaves it out
+            // (filterExactMatch)
+            // and shows nothing when its request fails.
+            SearchActionProvider(store, defaultSearch, showDescription = false),
         )
 
         AwesomeBarFeature(awesomeBar, toolbar, engineView)
