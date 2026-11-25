@@ -17,7 +17,10 @@ class CrashListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdgeFromAndroid13()
 
-        supportFragmentManager.beginTransaction().add(android.R.id.content, CrashListFragment()).commit()
+        // After a rotation the fragment manager restores the fragment itself.
+        if (savedInstanceState == null) {
+            supportFragmentManager.beginTransaction().add(android.R.id.content, CrashListFragment()).commit()
+        }
     }
 }
 
