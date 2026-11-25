@@ -105,8 +105,11 @@ private fun threeDotMenuButton() = onView(withId(toolbarR.id.mozac_browser_toolb
 
 private fun readerViewButton() = onView(withId(toolbarR.id.mozac_browser_toolbar_page_actions))
 
+// The address bar's own hint: the start page's search box shows the same text.
 private fun assertNoTabAddressText() {
-    mDevice.waitAndInteract(Until.findObject(By.text("Search or enter address"))) {}
+    mDevice.waitAndInteract(
+        Until.findObject(By.res("$packageName:id/mozac_browser_toolbar_url_view").text("Search or enter address"))
+    ) {}
 }
 
 private fun assertNewTabAddressText(url: String) {

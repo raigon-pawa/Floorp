@@ -4,26 +4,22 @@
 
 package org.mozilla.reference.browser.ui
 
-import androidx.test.espresso.Espresso.onView
-import androidx.test.espresso.matcher.ViewMatchers
-import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.platform.app.InstrumentationRegistry
-import androidx.test.uiautomator.UiDevice
-import androidx.test.uiautomator.UiSelector
 import mockwebserver3.MockWebServer
-import mozilla.components.ui.tabcounter.R as tabcounterR
 import org.junit.After
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.RetryTestRule
 import org.mozilla.reference.browser.helpers.TestAssetHelper
-import org.mozilla.reference.browser.helpers.click
+import org.mozilla.reference.browser.helpers.TestHelper
 import org.mozilla.reference.browser.ui.robots.mDevice
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
+import org.mozilla.reference.browser.ui.robots.startPage
 
 /**
  * Tests for verifying tab tray menu:
@@ -38,35 +34,19 @@ class TabTrayMenuTest {
 
     @Rule @JvmField val retryTestRule = RetryTestRule(3)
 
-    // SetUp to close all tabs before starting each test
+    // A retry runs in the same process: start each attempt from a single start-page tab.
     @Before
     fun setUp() {
-        val mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
-
         mockWebServer =
             MockWebServer().apply {
                 dispatcher = AndroidAssetDispatcher()
                 start()
             }
 
-        fun optionsButton() = onView(ViewMatchers.withContentDescription("More options"))
-
-        fun closeAllTabsButton() = onView(ViewMatchers.withText("Close All Tabs"))
-
-        fun goBackButton() = onView(ViewMatchers.withContentDescription("back"))
-        val tabCounterButton = onView(withId(tabcounterR.id.counter_text))
-
-        mDevice.waitForIdle()
-        tabCounterButton.click()
-
-        val thereAreTabsOpenInTabTray = mDevice.findObject(UiSelector().text("about:blank")).exists()
-
-        if (thereAreTabsOpenInTabTray) {
-            optionsButton().click()
-            closeAllTabsButton().click()
-        } else {
-            goBackButton().click()
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            TestHelper.appContext.components.useCases.tabsUseCases.removeAllTabs()
         }
+        mDevice.waitForIdle()
     }
 
     @After
@@ -89,14 +69,20 @@ class TabTrayMenuTest {
             }
     }
 
-    // This test verifies that close all tabs option works as expected
+    // Close all tabs leaves one start-page tab
     @Test
     fun closeAllTabsTest() {
+        val genericURL = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+
+        navigationToolbar {}.enterUrlAndEnterToBrowser(genericURL.url) { verifyPageContent(genericURL.content) }
         navigationToolbar {}
             .openTabTrayMenu {}
-            .openNewTab {}
+            .openNewTab {
+                checkNumberOfTabsTabCounter("2")
+            }
             .openTabTrayMenu {
-                verifyThereIsOneTabOpen()
+                verifyExistingOpenTabs(genericURL.title)
+                verifyThereIsOneStartPageTab()
             }
             .openMoreOptionsMenu(activityTestRule.activity) {
                 mDevice.waitForIdle()
@@ -104,8 +90,9 @@ class TabTrayMenuTest {
             }
             .closeAllTabs {
                 verifyNoTabAddressView()
-                checkNumberOfTabsTabCounter("0")
+                checkNumberOfTabsTabCounter("1")
             }
+        startPage { verifyStartPage() }
     }
 
     // This test verifies that close all tabs option works as expected
@@ -132,17 +119,23 @@ class TabTrayMenuTest {
             }
     }
 
+    // Closing the last tab leaves one start-page tab
     @Test
     fun closeOneTabXButtonTest() {
-        navigationToolbar {}
-            .openTabTrayMenu {}
-            .openNewTab {
+        val genericURL = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+
+        navigationToolbar {}.enterUrlAndEnterToBrowser(genericURL.url) { verifyPageContent(genericURL.content) }
+        navigationToolbar {
+            checkNumberOfTabsTabCounter("1")
+        }
+            .openTabTrayMenu {
+                verifyExistingOpenTabs(genericURL.title)
+            }
+            .closeTabXButton {
+                verifyNoTabAddressView()
                 checkNumberOfTabsTabCounter("1")
             }
-            .openTabTrayMenu {}
-            .closeTabXButton {
-                checkNumberOfTabsTabCounter("0")
-            }
+        startPage { verifyStartPage() }
     }
 
     // This test verifies the change between regular-private browsing works
@@ -182,10 +175,10 @@ class TabTrayMenuTest {
                 checkNumberOfTabsTabCounter("2")
             }
             .openTabTrayMenu {
-                verifyExistingOpenTabs("about:blank")
+                verifyExistingOpenTabs("New tab")
                 verifyExistingOpenTabs(genericURL.title)
             }
-            .clickOpenTab("about:blank") {}
+            .clickOpenTab("New tab") {}
         navigationToolbar { verifyNoTabAddressView() }
     }
 

@@ -50,7 +50,7 @@ class TabTrayMenuRobot {
 
     fun verifyThereIsOnePrivateTabOpen() = assertPrivateTabs()
 
-    fun verifyThereIsOneTabOpen() = tab().check(matches(isDisplayed()))
+    fun verifyThereIsOneStartPageTab() = tab().check(matches(isDisplayed()))
 
     fun verifyExistingOpenTabs(title: String) = assertExistingOpenTabs(title)
 
@@ -113,13 +113,13 @@ private fun regularTabs() = onView(ViewMatchers.withContentDescription("Tabs"))
 
 private fun privateTabs() = onView(ViewMatchers.withContentDescription("Private tabs"))
 
-private fun goBackButton() = onView(ViewMatchers.withContentDescription("back"))
+private fun goBackButton() = onView(ViewMatchers.withContentDescription("Back"))
 
 private fun newTabButton() = onView(ViewMatchers.withContentDescription("Add New Tab"))
 
 private fun closeTabButtonTabTray() = onView(withId(R.id.mozac_browser_tabstray_close))
 
-private fun tab() = onView(TabMatcher.withText("about:blank"))
+private fun tab() = onView(TabMatcher.withText("New tab"))
 
 private fun assertRegularBrowsingTabs() =
     regularTabs().check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))
