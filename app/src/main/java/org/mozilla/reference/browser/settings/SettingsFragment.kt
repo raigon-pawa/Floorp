@@ -14,6 +14,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
+import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.ListPreference
 import androidx.preference.Preference
@@ -211,6 +212,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 create()
             }
             .show()
+            .also { dialog ->
+                // One field alone selects nothing: OK takes both, or neither for the default collection.
+                val ok = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+                val update = { ok.isEnabled = userView.text.isBlank() == collectionView.text.isBlank() }
+                update()
+                userView.doAfterTextChanged { update() }
+                collectionView.doAfterTextChanged { update() }
+            }
         true
     }
 
