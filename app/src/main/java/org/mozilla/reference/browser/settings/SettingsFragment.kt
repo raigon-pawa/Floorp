@@ -4,17 +4,10 @@
 
 package org.mozilla.reference.browser.settings
 
-import android.content.DialogInterface
 import android.content.Intent
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
 import android.provider.Settings
 import android.view.View
-import android.widget.EditText
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
-import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.ListPreference
 import androidx.preference.Preference
@@ -22,7 +15,6 @@ import androidx.preference.Preference.OnPreferenceChangeListener
 import androidx.preference.Preference.OnPreferenceClickListener
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
-import kotlin.system.exitProcess
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
@@ -30,7 +22,6 @@ import mozilla.components.browser.state.state.SearchState
 import mozilla.components.browser.state.state.searchEngines
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.lib.state.ext.flow
-import mozilla.components.support.ktx.android.view.showKeyboard
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.R.string.pref_key_about_page
 import org.mozilla.reference.browser.R.string.pref_key_make_default_browser
@@ -39,8 +30,6 @@ import org.mozilla.reference.browser.R.string.pref_key_privacy
 import org.mozilla.reference.browser.R.string.pref_key_remote_debugging
 import org.mozilla.reference.browser.ext.getPreferenceKey
 import org.mozilla.reference.browser.ext.requireComponents
-
-private typealias RBSettings = org.mozilla.reference.browser.settings.Settings
 
 /** Top-level settings page. */
 class SettingsFragment : PreferenceFragmentCompat() {
@@ -162,68 +151,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun getActionBarUpdater() = activity as ActionBarUpdater
 
     private fun getClickListenerForCustomAddons(): OnPreferenceClickListener = OnPreferenceClickListener {
-        val context = requireContext()
-        val dialogView = View.inflate(context, R.layout.amo_collection_override_dialog, null)
-        val userView = dialogView.findViewById<EditText>(R.id.custom_amo_user)
-        val collectionView = dialogView.findViewById<EditText>(R.id.custom_amo_collection)
-
-        AlertDialog.Builder(context)
-            .apply {
-                setTitle(context.getString(R.string.preferences_customize_amo_collection))
-                setMessage(R.string.archwave_addons_custom_collection_message)
-                setView(dialogView)
-                setNegativeButton(R.string.customize_addon_collection_cancel) { dialog: DialogInterface, _ ->
-                    dialog.cancel()
-                }
-
-                setPositiveButton(R.string.customize_addon_collection_ok) { _, _ ->
-                    // Only both fields together select a collection; restart only if the one in use changes.
-                    fun collectionInUse() =
-                        (RBSettings.getOverrideAmoUser(context) to RBSettings.getOverrideAmoCollection(context))
-                            .takeIf { RBSettings.isAmoCollectionOverrideConfigured(context) }
-                    val before = collectionInUse()
-                    RBSettings.setOverrideAmoUser(context, userView.text.toString())
-                    RBSettings.setOverrideAmoCollection(context, collectionView.text.toString())
-                    if (collectionInUse() == before) return@setPositiveButton
-
-                    Toast.makeText(
-                            context,
-                            getString(R.string.toast_customize_addon_collection_done),
-                            Toast.LENGTH_LONG,
-                        )
-                        .show()
-
-                    // The add-on provider reads the collection once per process, so start the app again in a new one.
-                    Handler(Looper.getMainLooper())
-                        .postDelayed(
-                            {
-                                val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
-                                launch?.component?.let { context.startActivity(Intent.makeRestartActivityTask(it)) }
-                                exitProcess(0)
-                            },
-                            AMO_COLLECTION_OVERRIDE_EXIT_DELAY,
-                        )
-                }
-
-                collectionView.setText(RBSettings.getOverrideAmoCollection(context))
-                userView.setText(RBSettings.getOverrideAmoUser(context))
-                userView.requestFocus()
-                userView.showKeyboard()
-                create()
-            }
-            .show()
-            .also { dialog ->
-                // One field alone selects nothing: OK takes both, or neither for the default collection.
-                val ok = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                val update = { ok.isEnabled = userView.text.isBlank() == collectionView.text.isBlank() }
-                update()
-                userView.doAfterTextChanged { update() }
-                collectionView.doAfterTextChanged { update() }
-            }
+        CustomCollectionDialogFragment.show(childFragmentManager)
         true
-    }
-
-    companion object {
-        private const val AMO_COLLECTION_OVERRIDE_EXIT_DELAY = 3000L
     }
 }
