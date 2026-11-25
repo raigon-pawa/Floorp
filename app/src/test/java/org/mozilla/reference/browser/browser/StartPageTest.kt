@@ -51,4 +51,8 @@ class StartPageTest {
     @Test
     fun `no selected tab with only private tabs shows it`() =
         assertTrue(shown(null, true, createTab("https://example.com/", private = true)))
+
+    @Test
+    fun `no selected tab with a normal tab left does not, as that tab is about to be selected`() =
+        assertFalse(shown(null, true, createTab("https://example.com/")))
 }

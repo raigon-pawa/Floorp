@@ -41,6 +41,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import mozilla.components.browser.state.selector.normalTabs
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
@@ -70,9 +71,11 @@ object StartPage {
 
     /**
      * True when the start page covers the engine view: the selected tab is a start-page tab, or no tab is selected once
-     * restore has finished (before that, a restored page would flash it).
+     * restore has finished (before that, a restored page would flash it) and no normal tab is left (otherwise one is
+     * about to be selected, as when the last private tab closes).
      */
-    fun isShown(state: BrowserState): Boolean = state.selectedTab?.let(::isStartTab) ?: state.restoreComplete
+    fun isShown(state: BrowserState): Boolean =
+        state.selectedTab?.let(::isStartTab) ?: (state.restoreComplete && state.normalTabs.isEmpty())
 
     internal class Tile(@param:StringRes val label: Int, @param:DrawableRes val icon: Int, val url: String)
 
