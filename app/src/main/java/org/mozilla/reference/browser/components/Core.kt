@@ -59,6 +59,7 @@ import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.R.string.pref_key_remote_debugging
 import org.mozilla.reference.browser.browser.CrashedTabMiddleware
 import org.mozilla.reference.browser.browser.KeepTitleMiddleware
+import org.mozilla.reference.browser.browser.ReaderSecurityMiddleware
 import org.mozilla.reference.browser.browser.TrackingProtectionStateMiddleware
 import org.mozilla.reference.browser.downloads.DownloadService
 import org.mozilla.reference.browser.ext.components
@@ -146,6 +147,7 @@ class Core(
                         },
                         ThumbnailsMiddleware(thumbnailStorage),
                         ReaderViewMiddleware(),
+                        ReaderSecurityMiddleware(),
                         RegionMiddleware(
                             context,
                             LocationService.default(),
