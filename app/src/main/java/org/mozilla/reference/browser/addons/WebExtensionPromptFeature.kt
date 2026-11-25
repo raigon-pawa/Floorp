@@ -191,26 +191,24 @@ class WebExtensionPromptFeature(
 
     private fun showPostInstallationDialog(addon: Addon) {
         if (!isInstallationInProgress && !hasExistingAddonPostInstallationDialogFragment()) {
-            val dialog =
-                AddonInstallationDialogFragment.newInstance(
-                    addon = addon,
-                    onDismissed = {
-                        consumePromptRequest()
-                    },
-                    onConfirmButtonClicked = { _ ->
-                        consumePromptRequest()
-                    },
-                    onExtensionSettingsLinkClicked = { installed ->
-                        consumePromptRequest()
-                        context.startActivity(
-                            Intent(context, InstalledAddonDetailsActivity::class.java)
-                                .putExtra("add_on", installed)
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-                        )
-                    },
-                )
+            val dialog = attachCallbacks(AddonInstallationDialogFragment.newInstance(addon = addon))
             dialog.show(fragmentManager, POST_INSTALLATION_DIALOG_FRAGMENT_TAG)
         }
+    }
+
+    // The fragment does not save its callbacks: set them on a new sheet and again on one restored after a rotation.
+    private fun attachCallbacks(dialog: AddonInstallationDialogFragment): AddonInstallationDialogFragment {
+        dialog.onDismissed = { consumePromptRequest() }
+        dialog.onConfirmButtonClicked = { _ -> consumePromptRequest() }
+        dialog.onExtensionSettingsLinkClicked = { installed ->
+            consumePromptRequest()
+            context.startActivity(
+                Intent(context, InstalledAddonDetailsActivity::class.java)
+                    .putExtra("add_on", installed)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            )
+        }
+        return dialog
     }
 
     /** Stops observing the selected session for incoming window requests. */
@@ -271,6 +269,7 @@ class WebExtensionPromptFeature(
     }
 
     private fun tryToReAttachButtonHandlersToPreviousDialog() {
+        findPostInstallationDialogFragment()?.let(::attachCallbacks)
         findPreviousDialogFragment()?.let { dialog ->
             dialog.onPositiveButtonClicked = { addon, privateBrowsingAllowed, technicalDataAllowed ->
                 store.state.webExtensionPromptRequest?.let { promptRequest ->
@@ -349,9 +348,10 @@ class WebExtensionPromptFeature(
     private fun findPreviousDialogFragment(): PermissionsDialogFragment? =
         fragmentManager.findFragmentByTag(PERMISSIONS_DIALOG_FRAGMENT_TAG) as? PermissionsDialogFragment
 
-    private fun hasExistingAddonPostInstallationDialogFragment(): Boolean =
-        fragmentManager.findFragmentByTag(POST_INSTALLATION_DIALOG_FRAGMENT_TAG) as? AddonInstallationDialogFragment !=
-            null
+    private fun hasExistingAddonPostInstallationDialogFragment(): Boolean = findPostInstallationDialogFragment() != null
+
+    private fun findPostInstallationDialogFragment(): AddonInstallationDialogFragment? =
+        fragmentManager.findFragmentByTag(POST_INSTALLATION_DIALOG_FRAGMENT_TAG) as? AddonInstallationDialogFragment
 
     private fun handleBeforeInstallationRequest(promptRequest: WebExtensionPromptRequest.BeforeInstallation) {
         when (promptRequest) {
