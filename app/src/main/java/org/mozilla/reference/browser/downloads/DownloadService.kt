@@ -50,11 +50,14 @@ class DownloadService : AbstractFetchDownloadService() {
 
     // The base class stops the service when the app is swiped away from recents, which cancelled running downloads
     // and deleted their partial files without a word. A download in progress keeps going in this foreground service.
+    // That keeps the process alive, so end private browsing here as the process death would have: the private tabs
+    // (and with them their downloads) go. A paused download does not hold the process.
     override fun onTaskRemoved(rootIntent: Intent?) {
-        if (store.state.downloads.values.none { it.status in UNFINISHED }) super.onTaskRemoved(rootIntent)
+        components.useCases.tabsUseCases.removePrivateTabs()
+        if (store.state.downloads.values.none { !it.private && it.status in RUNNING }) super.onTaskRemoved(rootIntent)
     }
 
     private companion object {
-        val UNFINISHED = setOf(Status.INITIATED, Status.DOWNLOADING, Status.PAUSED)
+        val RUNNING = setOf(Status.INITIATED, Status.DOWNLOADING)
     }
 }
