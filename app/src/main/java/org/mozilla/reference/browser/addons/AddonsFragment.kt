@@ -149,9 +149,21 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                         .also {
                             adapter = it
                             recyclerView.adapter = it
+                            it.registerAdapterDataObserver(keepTopInViewOnInsert(recyclerView))
                         }
             }
     }
+
+    /** A just installed add-on is added at the top; keep it in view if the list was scrolled to the top. */
+    private fun keepTopInViewOnInsert(recyclerView: RecyclerView) =
+        object : RecyclerView.AdapterDataObserver() {
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                val layoutManager = recyclerView.layoutManager as LinearLayoutManager
+                if (positionStart == 0 && layoutManager.findFirstCompletelyVisibleItemPosition() == 0) {
+                    recyclerView.scrollToPosition(0)
+                }
+            }
+        }
 
     override fun onAddonItemClicked(addon: Addon) {
         if (addon.isInstalled()) {
