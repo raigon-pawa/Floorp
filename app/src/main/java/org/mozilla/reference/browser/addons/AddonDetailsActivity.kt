@@ -4,14 +4,11 @@
 
 package org.mozilla.reference.browser.addons
 
-import android.graphics.Color
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
 import android.view.View
 import android.widget.RatingBar
 import android.widget.TextView
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.text.HtmlCompat
 import androidx.core.view.isVisible
@@ -23,17 +20,16 @@ import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.addons.ui.translateDescription
 import mozilla.components.feature.addons.ui.translateName
-import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 
 /** An activity to show the details of an add-on. */
 class AddonDetailsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_on_details)
-        window.setupPersistentInsets()
+        enableEdgeToEdgeFromAndroid13()
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val addon = requireNotNull(intent.getParcelableExtraCompat("add_on", Addon::class.java))

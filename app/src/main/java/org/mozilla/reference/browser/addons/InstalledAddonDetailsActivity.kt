@@ -5,14 +5,11 @@
 package org.mozilla.reference.browser.addons
 
 import android.content.Intent
-import android.graphics.Color
 import android.net.ConnectivityManager
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.isVisible
@@ -25,20 +22,19 @@ import mozilla.components.feature.addons.ui.toLocalizedString
 import mozilla.components.feature.addons.ui.translateName
 import mozilla.components.feature.addons.update.AddonUpdater
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
+import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 
 /** An activity to show the details of a installed add-on. */
 class InstalledAddonDetailsActivity : AppCompatActivity() {
     private val logger = Logger("InstalledAddonDetailsActivity")
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_installed_add_on_details)
-        window.setupPersistentInsets(true)
+        enableEdgeToEdgeFromAndroid13(true)
 
         val addon =
             requireNotNull(intent.getParcelableExtraCompat("add_on", Addon::class.java)).also {

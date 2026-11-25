@@ -4,20 +4,16 @@
 
 package org.mozilla.reference.browser.tabs.synced
 
-import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 
 /** Activity whose only purpose is to host the [SyncedTabsFragment], opened from the browser menu. */
 class SyncedTabsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
-        window.setupPersistentInsets(true)
+        enableEdgeToEdgeFromAndroid13(true)
 
         setContentView(R.layout.activity_main)
 

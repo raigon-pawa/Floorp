@@ -4,24 +4,20 @@
 
 package org.mozilla.reference.browser.settings
 
-import android.graphics.Color
 import android.os.Bundle
 import android.view.MenuItem
 import androidx.activity.OnBackPressedCallback
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import mozilla.components.support.base.feature.UserInteractionHandler
-import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 
 /** Hosts [SettingsFragment] and the sub-pages it opens, and keeps the action bar title in step with them. */
 class SettingsActivity : AppCompatActivity(), SettingsFragment.ActionBarUpdater {
     override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.activity_main)
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
-        window.setupPersistentInsets(true)
+        enableEdgeToEdgeFromAndroid13(true)
 
         onBackPressedDispatcher.addCallback(
             this,

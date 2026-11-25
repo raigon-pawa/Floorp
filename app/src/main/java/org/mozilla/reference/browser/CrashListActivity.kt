@@ -4,22 +4,18 @@
 
 package org.mozilla.reference.browser
 
-import android.graphics.Color
 import android.os.Bundle
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.crash.ui.AbstractCrashListFragment
-import mozilla.components.support.ktx.android.view.setupPersistentInsets
+import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
 import org.mozilla.reference.browser.ext.requireComponents
 
 /** A simple activity whose only purpose is to load the [CrashListFragment]. */
 class CrashListActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
-        window.setupPersistentInsets()
+        enableEdgeToEdgeFromAndroid13()
 
         supportFragmentManager.beginTransaction().add(android.R.id.content, CrashListFragment()).commit()
     }
