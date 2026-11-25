@@ -10,13 +10,18 @@ import android.view.ViewGroup
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeoutOrNull
 import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.thumbnails.BrowserThumbnails
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.awesomebar.AwesomeBar
 import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
+import mozilla.components.concept.base.images.ImageSaveRequest
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.awesomebar.AwesomeBarFeature
 import mozilla.components.feature.awesomebar.provider.SearchActionProvider
@@ -25,6 +30,7 @@ import mozilla.components.feature.readerview.view.ReaderViewControlsBar
 import mozilla.components.feature.tabs.toolbar.TabsToolbarFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
+import mozilla.components.support.ktx.android.content.isOSOnLowMemory
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.requireComponents
 import org.mozilla.reference.browser.search.AwesomeBarWrapper
@@ -38,6 +44,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val readerViewFeature = ViewBoundFeatureWrapper<ReaderViewIntegration>()
     private val startPageIntegration = ViewBoundFeatureWrapper<StartPageIntegration>()
     private val ensureTabFeature = ViewBoundFeatureWrapper<EnsureTabFeature>()
+    private var showTabsJob: Job? = null
 
     private val awesomeBar: AwesomeBarWrapper
         get() = requireView().findViewById(R.id.awesomeBar)
@@ -156,12 +163,36 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     }
 
     private fun showTabs() {
-        // For now we are performing manual fragment transactions here. Once we can use the new
-        // navigation support library we may want to pass navigation graphs around.
-        activity?.supportFragmentManager?.beginTransaction()?.apply {
-            replace(R.id.container, TabsTrayFragment())
-            commit()
-        }
+        if (showTabsJob?.isActive == true) return
+        val tab = requireComponents.core.store.state.selectedTab
+        val thumbnailStorage = requireComponents.core.thumbnailStorage
+        val lowOnMemory = requireContext().isOSOnLowMemory()
+        showTabsJob =
+            viewLifecycleOwner.lifecycleScope.launch {
+                // A fresh picture of the tab being left: the one taken when its page loaded can be far out of date. It
+                // is saved before the tray opens, or the tray would read the old one from disk. The tray shows its own
+                // card for a start-page tab.
+                if (tab != null && !StartPage.isStartTab(tab) && !lowOnMemory) {
+                    withTimeoutOrNull(THUMBNAIL_TIMEOUT_MS) {
+                        val bitmap = suspendCancellableCoroutine { continuation ->
+                            engineView.captureThumbnail { if (continuation.isActive) continuation.resume(it) }
+                        }
+                        bitmap
+                            ?.let { thumbnailStorage.saveThumbnail(ImageSaveRequest(tab.id, tab.content.private), it) }
+                            ?.join()
+                    }
+                }
+                // For now we are performing manual fragment transactions here. Once we can use the new
+                // navigation support library we may want to pass navigation graphs around.
+                activity
+                    ?.supportFragmentManager
+                    ?.takeUnless { it.isStateSaved }
+                    ?.beginTransaction()
+                    ?.apply {
+                        replace(R.id.container, TabsTrayFragment())
+                        commit()
+                    }
+            }
     }
 
     private fun deleteHistorySuggestion(suggestion: Suggestion) {
@@ -189,6 +220,9 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     override fun onBackPressed(): Boolean = readerViewFeature.onBackPressed() || super.onBackPressed()
 
     companion object {
+        // A capture normally takes a few frames; never keep the user from the tray for long.
+        private const val THUMBNAIL_TIMEOUT_MS = 500L
+
         /**
          * Fragments must keep a no-argument constructor so the system can recreate them, which is why the session id
          * travels in the arguments bundle instead of a constructor parameter.
