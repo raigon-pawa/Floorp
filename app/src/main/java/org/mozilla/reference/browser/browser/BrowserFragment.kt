@@ -22,11 +22,9 @@ import mozilla.components.feature.awesomebar.provider.SearchSuggestionProvider
 import mozilla.components.feature.readerview.view.ReaderViewControlsBar
 import mozilla.components.feature.tabs.WindowFeature
 import mozilla.components.feature.tabs.toolbar.TabsToolbarFeature
-import mozilla.components.feature.toolbar.WebExtensionToolbarFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import org.mozilla.reference.browser.R
-import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.requireComponents
 import org.mozilla.reference.browser.search.AwesomeBarWrapper
 import org.mozilla.reference.browser.settings.Settings
@@ -36,7 +34,6 @@ import org.mozilla.reference.browser.tabs.TabsTrayFragment
 class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val thumbnailsFeature = ViewBoundFeatureWrapper<BrowserThumbnails>()
     private val readerViewFeature = ViewBoundFeatureWrapper<ReaderViewIntegration>()
-    private val webExtToolbarFeature = ViewBoundFeatureWrapper<WebExtensionToolbarFeature>()
     private val windowFeature = ViewBoundFeatureWrapper<WindowFeature>()
 
     private val awesomeBar: AwesomeBarWrapper
@@ -90,14 +87,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                 toolbar,
                 readerViewBar,
                 readerViewAppearanceButton,
-            ),
-        )
-
-        webExtToolbarFeature.bind(
-            view,
-            WebExtensionToolbarFeature(
-                toolbar,
-                requireContext().components.core.store,
             ),
         )
 
