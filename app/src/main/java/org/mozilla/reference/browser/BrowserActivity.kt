@@ -11,6 +11,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
+import android.view.ViewGroup
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -44,6 +45,7 @@ import mozilla.components.support.utils.SafeIntent
 import mozilla.components.support.webextensions.ExtensionsProcessDisabledPromptObserver
 import mozilla.components.support.webextensions.WebExtensionOptionsPageObserver
 import mozilla.components.support.webextensions.WebExtensionPopupObserver
+import org.mozilla.geckoview.GeckoView
 import org.mozilla.reference.browser.addons.WebExtensionActionPopupActivity
 import org.mozilla.reference.browser.addons.openInBrowserTab
 import org.mozilla.reference.browser.browser.BrowserFragment
@@ -177,7 +179,10 @@ open class BrowserActivity : AppCompatActivity() {
     ): View? =
         when (name) {
             EngineView::class.java.name -> {
-                components.core.engine.createView(context, attrs).asView()
+                components.core.engine.createView(context, attrs).asView().also {
+                    // Until a page paints, GeckoView shows a dark grey (#2A2A2E) cover; the browser is black.
+                    ((it as? ViewGroup)?.getChildAt(0) as? GeckoView)?.coverUntilFirstPaint(Color.BLACK)
+                }
             }
 
             else -> {
