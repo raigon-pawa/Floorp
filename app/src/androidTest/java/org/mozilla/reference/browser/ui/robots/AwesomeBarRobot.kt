@@ -30,6 +30,8 @@ class AwesomeBarRobot {
 
     fun verifyPastedToolbarText(expectedText: String) = assertPastedToolbarText(expectedText)
 
+    fun verifyEditText(expectedText: String) = awesomeBar().check(matches(withSubstring(expectedText)))
+
     fun typeText(searchTerm: String) {
         mDevice.waitForIdle()
         awesomeBar().perform(ViewActions.typeText(searchTerm))

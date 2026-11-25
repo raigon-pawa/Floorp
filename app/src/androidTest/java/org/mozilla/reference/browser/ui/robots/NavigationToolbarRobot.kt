@@ -72,7 +72,8 @@ class NavigationToolbarRobot {
         fun clickToolbar(interact: AwesomeBarRobot.() -> Unit): AwesomeBarRobot.Transition {
             urlBar().click()
             mDevice.waitForIdle()
-            mDevice.findObject(UiSelector().textContains("Search or enter address")).waitForExists(waitingTime)
+            // The edit field, empty with the hint on a blank page or holding the address on any other.
+            awesomeBar().waitForExists(waitingTime)
             AwesomeBarRobot().interact()
             return AwesomeBarRobot.Transition()
         }

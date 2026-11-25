@@ -18,6 +18,7 @@ import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.drawable.toDrawable
+import androidx.core.view.isVisible
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -48,6 +49,7 @@ import mozilla.components.concept.menu.candidate.RowMenuCandidate
 import mozilla.components.concept.menu.candidate.SmallMenuCandidate
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
 import mozilla.components.concept.menu.candidate.TextStyle
+import mozilla.components.concept.toolbar.Toolbar
 import mozilla.components.feature.pwa.WebAppUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
@@ -103,6 +105,23 @@ class ToolbarIntegration(
     private val editField: InlineAutocompleteEditText =
         toolbar.findViewById(toolbarR.id.mozac_browser_toolbar_edit_url_view)
     private var removeEditBackCallback: () -> Unit = {}
+
+    // The toolbar's edit half, visible exactly while the address is being edited.
+    private val editRoot: View =
+        generateSequence<View>(editField) { it.parent as? View }.first { it.parent === toolbar }
+    private var pendingSearchTerms: String? = null
+
+    /**
+     * The toolbar as the toolbar feature sees it. The feature hands the tab's search terms to the toolbar on every
+     * update of the tab (a history save arrives seconds after a load), and in edit mode the toolbar writes them into
+     * the field, wiping what the user is typing. They are held back until editing ends.
+     */
+    private val featureToolbar: Toolbar =
+        object : Toolbar by toolbar {
+            override fun setSearchTerms(searchTerms: String) {
+                if (editRoot.isVisible) pendingSearchTerms = searchTerms else toolbar.setSearchTerms(searchTerms)
+            }
+        }
 
     private val pageIndicators =
         listOf(DisplayToolbar.Indicators.SECURITY, DisplayToolbar.Indicators.TRACKING_PROTECTION)
@@ -382,6 +401,10 @@ class ToolbarIntegration(
             } else {
                 // Leaving edit mode (Enter, a suggestion, Back) hides the field but would leave the keyboard up.
                 editField.hideKeyboard()
+                if (!editRoot.isVisible) {
+                    pendingSearchTerms?.let(toolbar::setSearchTerms)
+                    pendingSearchTerms = null
+                }
             }
         }
 
@@ -426,7 +449,7 @@ class ToolbarIntegration(
 
     private val toolbarFeature: ToolbarFeature =
         ToolbarFeature(
-            toolbar,
+            featureToolbar,
             context.components.core.store,
             context.components.useCases.sessionUseCases.loadUrl,
             { searchTerms ->
