@@ -49,6 +49,16 @@ class TabTrayMenuRobot {
 
     fun verifyThereAreNotPrivateTabsOpen() = assertThereAreNoPrivateTabsOpen()
 
+    fun verifyNoPrivateTabsMessage(shown: Boolean) =
+        onView(withId(R.id.tabsTrayEmpty))
+            .check(
+                matches(
+                    withEffectiveVisibility(
+                        if (shown) ViewMatchers.Visibility.VISIBLE else ViewMatchers.Visibility.GONE
+                    )
+                )
+            )
+
     fun verifyThereIsOnePrivateTabOpen() = assertPrivateTabs()
 
     fun verifyThereIsOneStartPageTab() = tab().check(matches(isDisplayed()))

@@ -51,6 +51,7 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
 
     // Whether the panel shown has any tab. Switching to an empty panel is not closing its last tab.
     private var showingTabs = false
+    private var showingPrivate = false
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -158,8 +159,15 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
 
     private fun updateTabsToolbar(isPrivate: Boolean) {
         (activity as? BrowserActivity)?.privateTabsListed?.value = isPrivate
+        showingPrivate = isPrivate
+        updateEmptyMessage()
         val tabsToolbar = requireView().findViewById<TabsToolbar>(R.id.tabsToolbar)
         tabsToolbar.updateToolbar(isPrivate)
+    }
+
+    // Only the Private panel can be empty for more than a moment: there is always a normal tab.
+    private fun updateEmptyMessage() {
+        view?.findViewById<View>(R.id.tabsTrayEmpty)?.isVisible = showingPrivate && !showingTabs
     }
 
     private fun createAndSetupTabsTray(context: Context): TabsTray {
@@ -270,6 +278,7 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
             override fun updateTabs(tabs: List<TabSessionState>, selectedTabId: String?) {
                 tabsAdapter.updateTabs(tabs, selectedTabId)
                 showingTabs = tabs.isNotEmpty()
+                updateEmptyMessage()
                 // Once, to the tab the user came from. The adapter applies its first list at once.
                 val selected = tabs.indexOfFirst { it.id == selectedTabId }
                 if (!scrolledToSelected && selected >= 0) {

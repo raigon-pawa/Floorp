@@ -146,9 +146,11 @@ class TabTrayMenuTest {
                 openPrivateBrowsing()
                 verifyPrivateBrowsingTab(true)
                 verifyRegularBrowsingTab(false)
+                verifyNoPrivateTabsMessage(true)
                 openRegularBrowsing()
                 verifyPrivateBrowsingTab(false)
                 verifyRegularBrowsingTab(true)
+                verifyNoPrivateTabsMessage(false)
                 goBackFromTabTrayTest()
             }
     }

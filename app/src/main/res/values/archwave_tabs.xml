@@ -7,4 +7,6 @@
     <string name="tabs_tray_tab_closed">Tab closed</string>
     <string name="tabs_tray_tabs_closed">Tabs closed</string>
     <string name="tabs_tray_undo">Undo</string>
+    <!-- Tabs tray: shown in the Private panel while there is no private tab. -->
+    <string name="tabs_tray_no_private_tabs">No private tabs\nTap + to open one</string>
 </resources>

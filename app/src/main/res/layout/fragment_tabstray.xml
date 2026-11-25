@@ -24,6 +24,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tabsPanel"/>
 
+    <TextView
+        android:id="@+id/tabsTrayEmpty"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:padding="16dp"
+        android:gravity="center"
+        android:text="@string/tabs_tray_no_private_tabs"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textColor="@color/aw_text_2"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/tabsToolbar"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/tabsPanel" />
+
     <org.mozilla.reference.browser.tabs.TabsToolbar
         android:id="@+id/tabsToolbar"
         android:layout_width="match_parent"
