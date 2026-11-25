@@ -43,10 +43,7 @@ class ThemeOverridesTest {
             "mozilla.components.ui.tabcounter" to listOf("mozac_ui_tabcounter_default_tint"),
             "mozilla.components.ui.widgets" to listOf("mozac_destructive_button_text_color"),
         )
-    private val styles =
-        mapOf(
-            "mozilla.components.feature.prompts" to "MozDialogStyle",
-        )
+    private val styles = mapOf("mozilla.components.feature.prompts" to "MozDialogStyle")
 
     private fun libraryId(
         library: String,
