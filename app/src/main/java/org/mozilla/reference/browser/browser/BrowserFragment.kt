@@ -27,8 +27,10 @@ import mozilla.components.concept.awesomebar.AwesomeBar.Suggestion
 import mozilla.components.concept.base.images.ImageSaveRequest
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.awesomebar.AwesomeBarFeature
+import mozilla.components.feature.awesomebar.R as awesomebarR
 import mozilla.components.feature.awesomebar.provider.SearchActionProvider
 import mozilla.components.feature.awesomebar.provider.SearchSuggestionProvider
+import mozilla.components.feature.awesomebar.provider.SessionSuggestionProvider
 import mozilla.components.feature.readerview.view.ReaderViewControlsBar
 import mozilla.components.feature.tabs.toolbar.TabsToolbarFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
@@ -145,6 +147,13 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             // (filterExactMatch)
             // and shows nothing when its request fails.
             SearchActionProvider(store, defaultSearch, showDescription = false),
+            // Open tabs, but not start-page tabs: their blank address matches most single letters.
+            SessionSuggestionProvider(
+                store,
+                requireComponents.useCases.tabsUseCases.selectTab,
+                switchToTabDescription = getString(awesomebarR.string.switch_to_tab_description),
+                resultsUriFilter = { it.toString() != StartPage.URL && it.toString() != "about:blank" },
+            ),
         )
 
         AwesomeBarFeature(
@@ -162,11 +171,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                     engineView.asView().isVisible = true
                     startPageIntegration.get()?.editing = false
                 },
-            )
-            .addSessionProvider(
-                resources,
-                requireComponents.core.store,
-                requireComponents.useCases.tabsUseCases.selectTab,
             )
             .addHistoryProvider(
                 requireComponents.core.historyStorage,
