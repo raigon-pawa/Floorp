@@ -5,7 +5,9 @@
 package org.mozilla.reference.browser
 
 import android.content.Intent
+import android.os.Bundle
 import android.os.SystemClock
+import android.provider.Browser
 import androidx.core.net.toUri
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -128,6 +130,13 @@ class IntentReceiverTest {
         assertTrue(waitFor { url in tabUrls() })
         val tab = store.state.tabs.first { it.content.url == url }
         assertEquals(LoadUrlFlags.external().value, tab.engineState.initialLoadFlags.value)
+    }
+
+    @Test
+    fun aCustomTabWithHeadersThatAreNotStringsOpens() {
+        val url = "https://example.org/receiver-headers"
+        fire(createCustomTabIntent(url).putExtra(Browser.EXTRA_HEADERS, Bundle().apply { putInt("a", 1) }))
+        assertTrue(waitFor { store.state.customTabs.any { it.content.url == url } })
     }
 
     @Test

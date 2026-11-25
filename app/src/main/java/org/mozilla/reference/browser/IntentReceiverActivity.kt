@@ -10,6 +10,7 @@ import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
+import android.provider.Browser
 import androidx.core.net.toUri
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
 import mozilla.components.feature.intent.ext.sanitize
@@ -74,6 +75,10 @@ class IntentReceiverActivity : Activity() {
         intent.selector = null
         intent.clipData = null
         intent.flags = intent.flags and GRANT_FLAGS.inv()
+        // The custom tab processor throws on a header that is not a string, which would crash the app.
+        intent.getBundleExtra(Browser.EXTRA_HEADERS)?.let { headers ->
+            if (headers.keySet().any { headers.getString(it) == null }) intent.removeExtra(Browser.EXTRA_HEADERS)
+        }
 
         val url = IncomingIntentRules.webUrlOrNull(intent.dataString)
         if (url != intent.dataString) intent.setDataAndType(url?.toUri(), intent.type)
