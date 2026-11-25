@@ -16,12 +16,7 @@ import android.view.ViewGroup
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.ComposeView
-import androidx.compose.ui.res.colorResource
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
@@ -66,30 +61,6 @@ import org.mozilla.reference.browser.pip.PictureInPictureIntegration
 import org.mozilla.reference.browser.tabs.LastTabFeature
 
 private const val BOTTOM_TOOLBAR_HEIGHT = 0
-
-/**
- * The palette as a Compose colour scheme. The experimental toolbar brings no theme of its own, and without one Material
- * draws black text on the black bar and a light, purple-accented edit field.
- */
-@Composable
-private fun ArchwaveComposeTheme(content: @Composable () -> Unit) {
-    val black = colorResource(R.color.aw_black)
-    val white = colorResource(R.color.aw_text_1)
-    val grey = colorResource(R.color.aw_text_2)
-    val colors =
-        darkColorScheme(
-            primary = white,
-            onPrimary = black,
-            background = black,
-            onBackground = white,
-            surface = black,
-            onSurface = white,
-            surfaceVariant = colorResource(R.color.aw_surface_3),
-            surfaceContainerHighest = colorResource(R.color.aw_surface_3),
-            onSurfaceVariant = grey,
-        )
-    MaterialTheme(colorScheme = colors) { Surface(content = content) }
-}
 
 /**
  * Base fragment extended by [BrowserFragment] and [ExternalAppBrowserFragment]. This class only contains shared code
@@ -267,7 +238,7 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
         val composeView = view.findViewById<ComposeView>(R.id.compose_view)
         if (shouldUseComposeUI) {
             composeView.visibility = View.VISIBLE
-            composeView.setContent { ArchwaveComposeTheme { BrowserToolbar() } }
+            composeView.setContent { BrowserToolbar() }
 
             val params = swipeRefresh.layoutParams as CoordinatorLayout.LayoutParams
             params.topMargin = resources.getDimensionPixelSize(R.dimen.browser_toolbar_height)

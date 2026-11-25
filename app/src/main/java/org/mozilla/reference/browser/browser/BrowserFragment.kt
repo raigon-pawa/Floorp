@@ -7,7 +7,6 @@ package org.mozilla.reference.browser.browser
 import android.os.Bundle
 import android.view.View
 import androidx.lifecycle.lifecycleScope
-import androidx.preference.PreferenceManager
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -51,13 +50,8 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val readerViewAppearanceButton: FloatingActionButton
         get() = requireView().findViewById(R.id.readerViewAppearanceButton)
 
-    override val shouldUseComposeUI: Boolean
-        get() =
-            PreferenceManager.getDefaultSharedPreferences(requireContext())
-                .getBoolean(
-                    getString(R.string.pref_key_compose_ui),
-                    false,
-                )
+    // The Settings switch is gone; ignore a value a profile may still have stored from before.
+    override val shouldUseComposeUI: Boolean = false
 
     override fun onViewCreated(
         view: View,
