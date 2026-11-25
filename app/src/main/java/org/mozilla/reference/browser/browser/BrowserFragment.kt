@@ -193,15 +193,18 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
 
     private fun showTabs() {
         if (showTabsJob?.isActive == true) return
-        val tab = requireComponents.core.store.state.selectedTab
-        val thumbnailStorage = requireComponents.core.thumbnailStorage
         val lowOnMemory = requireContext().isOSOnLowMemory()
+        // The tray shows its own card for a start-page tab, and no picture is kept of a private one.
+        val tab =
+            requireComponents.core.store.state.selectedTab?.takeUnless {
+                it.content.private || StartPage.isStartTab(it) || lowOnMemory
+            }
+        val thumbnailStorage = requireComponents.core.thumbnailStorage
         showTabsJob =
             viewLifecycleOwner.lifecycleScope.launch {
                 // A fresh picture of the tab being left: the one taken when its page loaded can be far out of date. It
-                // is saved before the tray opens, or the tray would read the old one from disk. The tray shows its own
-                // card for a start-page tab, and none is kept of a private one.
-                if (tab != null && !tab.content.private && !StartPage.isStartTab(tab) && !lowOnMemory) {
+                // is saved before the tray opens, or the tray would read the old one from disk.
+                if (tab != null) {
                     withTimeoutOrNull(THUMBNAIL_TIMEOUT_MS) {
                         val bitmap = suspendCancellableCoroutine { continuation ->
                             engineView.captureThumbnail { if (continuation.isActive) continuation.resume(it) }
