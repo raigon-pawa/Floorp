@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
+import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
@@ -157,6 +158,12 @@ open class BrowserActivity : AppCompatActivity() {
                     }
                     // Up for as long as the tab is crashed, so it must not sit on top of the address bar.
                     .setAnchorView(toolbar.takeIf { it.isVisible })
+                    // A swipe would leave a blank tab with no explanation and no way to bring the offer back.
+                    .setBehavior(
+                        object : BaseTransientBottomBar.Behavior() {
+                            override fun canSwipeDismissView(child: View) = false
+                        }
+                    )
                     .also { it.show() }
             } else {
                 null
