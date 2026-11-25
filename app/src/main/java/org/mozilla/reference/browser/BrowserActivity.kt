@@ -12,6 +12,7 @@ import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -30,13 +31,19 @@ import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.ExtensionsProcessAction
 import mozilla.components.browser.state.action.WebExtensionAction
+import mozilla.components.browser.state.selector.findCustomTab
+import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
+import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.log.logger.Logger
@@ -119,6 +126,7 @@ open class BrowserActivity : AppCompatActivity() {
         ClearDataDialogFragment.showIfInterrupted(this, supportFragmentManager)
         lifecycle.addObserver(webExtensionPopupObserver)
         addExtensionObservers()
+        secureWhilePrivate()
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -238,6 +246,25 @@ open class BrowserActivity : AppCompatActivity() {
                 .setAnchorView(toolbar?.takeIf { it.isVisible })
                 .withoutSystemBarMargins()
                 .show()
+        }
+    }
+
+    /**
+     * While a private tab (or private custom tab) is shown, the window may not be captured: no screenshots or
+     * recordings, and no Recents card picture, which the system keeps on disk after the private session ends.
+     */
+    private fun secureWhilePrivate() {
+        components.core.store.flowScoped(this, Dispatchers.Main) { flow ->
+            flow
+                .map { state -> (sessionId?.let(state::findCustomTab) ?: state.selectedTab)?.content?.private == true }
+                .distinctUntilChanged()
+                .collect { private ->
+                    if (private) {
+                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    } else {
+                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+                    }
+                }
         }
     }
 
