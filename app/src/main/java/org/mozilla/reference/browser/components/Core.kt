@@ -17,6 +17,7 @@ import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.engine.EngineMiddleware
 import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.browser.storage.sync.RemoteTabsStorage
@@ -25,8 +26,10 @@ import mozilla.components.browser.thumbnails.storage.ThumbnailStorage
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.DownloadDelegate
 import mozilla.components.concept.engine.Engine
+import mozilla.components.concept.engine.EngineSession
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
 import mozilla.components.concept.engine.mediaquery.PreferredColorScheme
+import mozilla.components.concept.engine.serviceworker.ServiceWorkerDelegate
 import mozilla.components.concept.fetch.Client
 import mozilla.components.feature.addons.AddonManager
 import mozilla.components.feature.addons.amo.AMOAddonsProvider
@@ -176,6 +179,22 @@ class Core(
                 )
 
                 MediaSessionFeature(context, MediaSessionService::class.java, this).start()
+
+                // Without a delegate the engine rejects a service worker's clients.openWindow(), which sites call when
+                // their notification is tapped. The worker loads its page into the new tab's session.
+                engine.registerServiceWorkerDelegate(
+                    object : ServiceWorkerDelegate {
+                        override fun addNewTab(engineSession: EngineSession): Boolean {
+                            context.components.useCases.tabsUseCases.addTab(
+                                startLoading = false,
+                                flags = EngineSession.LoadUrlFlags.external(),
+                                engineSession = engineSession,
+                                source = SessionState.Source.Internal.None,
+                            )
+                            return true
+                        }
+                    }
+                )
             }
     }
 
