@@ -8,14 +8,22 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ScrollView
 import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.mozilla.reference.browser.R
 
-/** A scrolling page of plain text from a string resource or a bundled asset, such as a licence. */
+/**
+ * A scrolling page of plain text from a string resource or a bundled asset, such as a licence. Some licence files are
+ * hundreds of kilobytes, so the text is read off the main thread and shown one paragraph per recycled row.
+ */
 class TextPageFragment : Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -24,22 +32,50 @@ class TextPageFragment : Fragment() {
     ): View {
         val context = requireContext()
         val args = requireArguments()
-        val text =
-            args.getString(ARG_ASSET)?.let { asset ->
-                context.assets.open(asset).bufferedReader().use { it.readText() }
-            } ?: getString(args.getInt(ARG_TEXT))
         val padding = resources.getDimensionPixelSize(R.dimen.archwave_text_page_padding)
-        return ScrollView(context).apply {
-            id = R.id.archwave_text_page
-            addView(
-                TextView(context).apply {
-                    this.text = text
-                    setPadding(padding, padding, padding, padding)
+        val list =
+            RecyclerView(context).apply {
+                id = R.id.archwave_text_page
+                layoutManager = LinearLayoutManager(context)
+                setPadding(0, padding / 2, 0, padding / 2)
+                clipToPadding = false
+            }
+        val asset = args.getString(ARG_ASSET)
+        val text = if (asset == null) getString(args.getInt(ARG_TEXT)) else null
+        viewLifecycleOwner.lifecycleScope.launch {
+            val content =
+                text
+                    ?: withContext(Dispatchers.IO) {
+                        context.assets.open(asset!!).bufferedReader().use { it.readText() }
+                    }
+            list.adapter = ParagraphAdapter(content.split(PARAGRAPH_BREAK), padding)
+        }
+        return list
+    }
+
+    /** One selectable text row per paragraph. */
+    private class ParagraphAdapter(private val paragraphs: List<String>, private val padding: Int) :
+        RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            val view =
+                TextView(parent.context).apply {
+                    layoutParams =
+                        RecyclerView.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                        )
+                    setPadding(padding, padding / 2, padding, padding / 2)
                     setTextColor(ContextCompat.getColor(context, R.color.aw_text_2))
                     setTextIsSelectable(true)
                 }
-            )
+            return object : RecyclerView.ViewHolder(view) {}
         }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            (holder.itemView as TextView).text = paragraphs[position]
+        }
+
+        override fun getItemCount() = paragraphs.size
     }
 
     override fun onResume() {
@@ -52,6 +88,7 @@ class TextPageFragment : Fragment() {
         private const val ARG_TITLE = "title"
         private const val ARG_TEXT = "text"
         private const val ARG_ASSET = "asset"
+        private val PARAGRAPH_BREAK = Regex("""\n\s*\n""")
 
         /** A page showing a string resource. */
         fun fromText(
