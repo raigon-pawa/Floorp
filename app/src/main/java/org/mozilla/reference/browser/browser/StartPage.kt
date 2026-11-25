@@ -29,16 +29,20 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import mozilla.components.browser.state.selector.normalTabs
@@ -94,6 +98,7 @@ private val ContentWidth = 480.dp
 @Composable
 internal fun StartPageContent(onSearch: () -> Unit, onOpen: (String) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize().background(colorResource(R.color.aw_black))) {
+        val columns = tileColumns(maxWidth)
         // Centred when it fits; scrolls in landscape or with a large font.
         Column(
             Modifier.verticalScroll(rememberScrollState())
@@ -109,11 +114,26 @@ internal fun StartPageContent(onSearch: () -> Unit, onOpen: (String) -> Unit) {
             Spacer(Modifier.height(8.dp))
             SearchBox(onSearch)
             Spacer(Modifier.height(24.dp))
-            Row(Modifier.widthIn(max = ContentWidth).fillMaxWidth()) {
-                StartPage.tiles.forEach { tile -> Tile(tile, onOpen, Modifier.weight(1f)) }
+            StartPage.tiles.chunked(columns).forEach { row ->
+                Row(Modifier.widthIn(max = ContentWidth).fillMaxWidth()) {
+                    row.forEach { tile -> Tile(tile, onOpen, Modifier.weight(1f)) }
+                }
             }
         }
     }
+}
+
+private val LabelSize = 12.sp
+
+/** Four tiles in a row, or two rows of two when the widest label would not fit a quarter (large font sizes). */
+@Composable
+private fun tileColumns(maxWidth: Dp): Int {
+    val measurer = rememberTextMeasurer()
+    val style = LocalTextStyle.current.copy(fontSize = LabelSize)
+    val labels = StartPage.tiles.map { stringResource(it.label) }
+    val widest = with(LocalDensity.current) { labels.maxOf { measurer.measure(it, style).size.width }.toDp() }
+    // The column's side padding is 8dp each.
+    return if (widest <= minOf(maxWidth - 16.dp, ContentWidth) / 4) 4 else 2
 }
 
 /** Looks like the address bar's box; a tap puts the address bar itself into edit mode. */
@@ -165,7 +185,7 @@ private fun Tile(tile: StartPage.Tile, onOpen: (String) -> Unit, modifier: Modif
         Text(
             stringResource(tile.label),
             color = colorResource(R.color.aw_text_2),
-            fontSize = 12.sp,
+            fontSize = LabelSize,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
         )
