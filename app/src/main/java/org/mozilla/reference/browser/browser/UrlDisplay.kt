@@ -72,14 +72,15 @@ object UrlDisplay {
     }
 
     private fun shortenAuthority(authority: String, registrableDomain: (String) -> String?): String {
-        // An IPv6 literal has no labels to drop.
-        if (authority.startsWith("[")) return authority
         val host = authority.substringBefore(':')
         val port = authority.substring(host.length)
-        if (host.length <= MAX_HOST_CHARS) return authority
-
-        // The site is named by the registrable domain, which can span several labels (example.co.uk, user.github.io).
-        val site = registrableDomain(host)?.takeIf { host.endsWith(".$it", ignoreCase = true) } ?: return authority
+        // A host that fits, or an IPv6 literal, is left alone. The site is named by the registrable domain, which can
+        // span several labels (example.co.uk, user.github.io); only the subdomains left of it are dropped.
+        val site =
+            host
+                .takeIf { !authority.startsWith("[") && it.length > MAX_HOST_CHARS }
+                ?.let(registrableDomain)
+                ?.takeIf { host.endsWith(".$it", ignoreCase = true) } ?: return authority
         val subdomains = host.dropLast(site.length + 1).split('.')
         var kept = host.takeLast(site.length)
         var dropped = subdomains.size
