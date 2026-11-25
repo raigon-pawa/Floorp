@@ -74,7 +74,9 @@ open class BrowserActivity : AppCompatActivity() {
                 override fun onFragmentViewCreated(fm: FragmentManager, f: Fragment, v: View, state: Bundle?) {
                     val toolbar = v.findViewById<View>(R.id.toolbar) ?: return
                     f.viewLifecycleOwner.lifecycle.addObserver(
-                        CrashIntegration(components.core.store) { crashed -> onTabCrashedChanged(toolbar, crashed) }
+                        CrashIntegration(components.core.store, sessionId) { crashed ->
+                            onTabCrashedChanged(toolbar, crashed)
+                        }
                     )
                 }
             },
