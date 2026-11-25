@@ -60,6 +60,9 @@ open class BrowserApplication : Application() {
         AppServicesInitializer.init(AppServicesConfig(components.analytics.crashReporter))
         RustHttpConfig.setClient(lazy { components.core.client })
 
+        // Android Components log visited URLs at debug and info level (icons, incoming links, picked files), private
+        // tabs included; a release build must not leave them in logcat.
+        if (!BuildConfig.DEBUG) Log.logLevel = Log.Priority.WARN
         Log.addSink(AndroidLogSink())
 
         if (!isMainProcess()) {
