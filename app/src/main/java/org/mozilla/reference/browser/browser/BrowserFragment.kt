@@ -29,6 +29,7 @@ import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.requireComponents
 import org.mozilla.reference.browser.search.AwesomeBarWrapper
 import org.mozilla.reference.browser.settings.Settings
+import org.mozilla.reference.browser.tabs.EnsureTabFeature
 import org.mozilla.reference.browser.tabs.TabsTrayFragment
 
 /** Fragment used for browsing the web within the main app. */
@@ -36,6 +37,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val thumbnailsFeature = ViewBoundFeatureWrapper<BrowserThumbnails>()
     private val readerViewFeature = ViewBoundFeatureWrapper<ReaderViewIntegration>()
     private val startPageIntegration = ViewBoundFeatureWrapper<StartPageIntegration>()
+    private val ensureTabFeature = ViewBoundFeatureWrapper<EnsureTabFeature>()
 
     private val awesomeBar: AwesomeBarWrapper
         get() = requireView().findViewById(R.id.awesomeBar)
@@ -70,6 +72,10 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
                 toolbar,
                 requireComponents.useCases.sessionUseCases.loadUrl,
             ),
+        )
+        ensureTabFeature.bind(
+            view,
+            EnsureTabFeature(requireComponents.core.store, requireComponents.useCases.tabsUseCases),
         )
 
         TabsToolbarFeature(
