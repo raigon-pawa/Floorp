@@ -6,6 +6,8 @@ package org.mozilla.reference.browser.browser
 
 import android.view.View
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import com.google.android.material.snackbar.Snackbar
 import mozilla.components.ui.widgets.SnackbarDelegate
@@ -26,7 +28,10 @@ class AnchoredSnackbarDelegate(private val anchor: View) : SnackbarDelegate {
         withDismissAction: Boolean,
         listener: ((v: View) -> Unit)?,
     ) {
-        val snackbar = Snackbar.make(snackBarParentView, text, duration).setAnchorView(anchor.takeIf { it.isVisible })
+        val snackbar =
+            Snackbar.make(snackBarParentView, text, duration)
+                .setAnchorView(anchor.takeIf { it.isVisible })
+                .withoutSystemBarMargins()
         if (action != null && listener != null) {
             snackbar.setAction(action) { view -> listener.invoke(view) }
         }
@@ -55,4 +60,13 @@ class AnchoredSnackbarDelegate(private val anchor: View) : SnackbarDelegate {
             withDismissAction = withDismissAction,
             listener = listener,
         )
+}
+
+/**
+ * Stops the snackbar from adding the system bar insets to its margins. The browser screen is already padded for them
+ * (setupPersistentInsets), so in landscape, next to a display cutout, the snackbar was pushed off centre by the inset a
+ * second time.
+ */
+fun Snackbar.withoutSystemBarMargins(): Snackbar = apply {
+    ViewCompat.setOnApplyWindowInsetsListener(view) { _, _ -> WindowInsetsCompat.CONSUMED }
 }

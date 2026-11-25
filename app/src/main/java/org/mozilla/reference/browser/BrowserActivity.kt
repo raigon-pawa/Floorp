@@ -16,6 +16,7 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
+import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
@@ -38,6 +39,7 @@ import mozilla.components.support.webextensions.WebExtensionPopupObserver
 import org.mozilla.reference.browser.addons.WebExtensionActionPopupActivity
 import org.mozilla.reference.browser.browser.BrowserFragment
 import org.mozilla.reference.browser.browser.CrashIntegration
+import org.mozilla.reference.browser.browser.withoutSystemBarMargins
 import org.mozilla.reference.browser.ext.components
 
 /** Activity that holds the [BrowserFragment]. */
@@ -83,6 +85,9 @@ open class BrowserActivity : AppCompatActivity() {
                     f.viewLifecycleOwner.lifecycle.addObserver(
                         CrashIntegration(components.core.store, sessionId) { crashed ->
                             onTabCrashedChanged(toolbar, crashed)
+                            // A crashed tab has nothing to draw: its last frame kept the old size after a rotation
+                            // and covered half the screen. Show the plain background until it is restored.
+                            v.findViewById<View>(R.id.engineView)?.isInvisible = crashed
                         }
                     )
                 }
@@ -167,6 +172,7 @@ open class BrowserActivity : AppCompatActivity() {
                     }
                     // Up for as long as the tab is crashed, so it must not sit on top of the address bar.
                     .setAnchorView(toolbar.takeIf { it.isVisible })
+                    .withoutSystemBarMargins()
                     // A swipe would leave a blank tab with no explanation and no way to bring the offer back.
                     .setBehavior(
                         object : BaseTransientBottomBar.Behavior() {
@@ -194,6 +200,7 @@ open class BrowserActivity : AppCompatActivity() {
                     LENGTH_LONG,
                 )
                 .setAnchorView(toolbar?.takeIf { it.isVisible })
+                .withoutSystemBarMargins()
                 .show()
         }
     }
