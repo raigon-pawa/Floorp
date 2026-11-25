@@ -7,6 +7,7 @@ package org.mozilla.reference.browser.browser
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -146,7 +147,22 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             SearchActionProvider(store, defaultSearch, showDescription = false),
         )
 
-        AwesomeBarFeature(awesomeBar, toolbar, engineView)
+        AwesomeBarFeature(
+                awesomeBar,
+                toolbar,
+                engineView,
+                // What the feature does by itself, plus taking the start page away while the address is edited.
+                onEditStart = {
+                    engineView.asView().isVisible = false
+                    awesomeBar.isVisible = true
+                    startPageIntegration.get()?.editing = true
+                },
+                onEditComplete = {
+                    awesomeBar.isVisible = false
+                    engineView.asView().isVisible = true
+                    startPageIntegration.get()?.editing = false
+                },
+            )
             .addSessionProvider(
                 resources,
                 requireComponents.core.store,

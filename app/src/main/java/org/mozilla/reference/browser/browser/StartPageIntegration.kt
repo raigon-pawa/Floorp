@@ -19,9 +19,9 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 
 /**
- * Shows the start page in [view] whenever [StartPage.isShown] says so. It sits above the engine view and below the
- * awesome bar, which covers it while the address is edited. A tile loads its site in the current tab (or a new one when
- * there is none), so Back returns to the start page.
+ * Shows the start page in [view] whenever [StartPage.isShown] says so, except while the address is edited. It sits
+ * above the engine view and below the awesome bar. A tile loads its site in the current tab (or a new one when there is
+ * none), so Back returns to the start page.
  */
 class StartPageIntegration(
     private val view: ComposeView,
@@ -30,19 +30,33 @@ class StartPageIntegration(
     private val loadUrl: SessionUseCases.LoadUrlUseCase,
 ) : LifecycleAwareFeature {
     private var scope: CoroutineScope? = null
+    private var shown = StartPage.isShown(store.state)
+
+    /**
+     * True while the address is edited. The awesome bar then takes the screen; the page is hidden rather than only
+     * covered, so TalkBack does not find it behind the suggestions.
+     */
+    var editing = false
+        set(value) {
+            field = value
+            render()
+        }
 
     init {
         // The fragment's view is rebuilt on every tabs tray visit; the composition goes with it.
         view.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
         view.setContent { StartPageContent(onSearch = ::editAddress, onOpen = { loadUrl(it) }) }
         // Right away, so coming back from the tabs tray does not show a frame of the blank page first.
-        view.isVisible = StartPage.isShown(store.state)
+        render()
     }
 
     override fun start() {
         scope =
             store.flowScoped(dispatcher = Dispatchers.Main) { flow ->
-                flow.map(StartPage::isShown).distinctUntilChanged().collect { view.isVisible = it }
+                flow.map(StartPage::isShown).distinctUntilChanged().collect {
+                    shown = it
+                    render()
+                }
             }
     }
 
@@ -50,7 +64,11 @@ class StartPageIntegration(
         scope?.cancel()
     }
 
-    // The address bar would open with "about:blank" in it.
+    private fun render() {
+        view.isVisible = shown && !editing
+    }
+
+    // The address bar would open with the start page's address in it.
     private fun editAddress() {
         toolbar.editMode()
         toolbar.edit.updateUrl("")
