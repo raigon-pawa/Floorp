@@ -143,6 +143,17 @@ class IntentReceiverTest {
         assertTrue("opened in a normal tab", store.state.tabs.first { it.content.url == url }.content.private)
     }
 
+    @Test
+    fun customTabsOpenPrivatelyWhenLinksDo() {
+        PreferenceManager.getDefaultSharedPreferences(context).edit {
+            putBoolean(context.getString(R.string.pref_key_open_links_in_private), true)
+        }
+        val url = "https://example.org/receiver-private-custom-tab"
+        fire(createCustomTabIntent(url))
+        assertTrue(waitFor { store.state.customTabs.any { it.content.url == url } })
+        assertTrue("opened a normal custom tab", store.state.customTabs.first { it.content.url == url }.content.private)
+    }
+
     private fun resumedBrowserActivity(): BrowserActivity? {
         var resumed: BrowserActivity? = null
         instrumentation.runOnMainSync {
