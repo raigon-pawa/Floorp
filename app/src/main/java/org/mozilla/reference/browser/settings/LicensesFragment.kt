@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser.settings
 
 import android.os.Bundle
+import androidx.annotation.ArrayRes
 import androidx.annotation.StringRes
 import androidx.preference.Preference
 import androidx.preference.PreferenceFragmentCompat
@@ -42,7 +43,9 @@ class LicensesFragment : PreferenceFragmentCompat() {
                     )
 
                 LICENSES.forEach { (title, asset, components) ->
-                    row(title, components.joinToString(", ")) { showPage(TextPageFragment.fromAsset(title, asset)) }
+                    row(title, resources.getStringArray(components).joinToString(", ")) {
+                        showPage(TextPageFragment.fromAsset(title, asset))
+                    }
                 }
                 NATIVE_LIBRARIES.forEach { (title, asset) ->
                     row(title, getString(R.string.archwave_licenses_native_summary)) {
@@ -53,7 +56,9 @@ class LicensesFragment : PreferenceFragmentCompat() {
                     openInNewTab(GECKO_LICENSES)
                 }
                 // Not open source; the terms are only linked.
-                row(R.string.archwave_licenses_play, PLAY_SERVICES) { openInNewTab(PLAY_SERVICES_TERMS) }
+                row(R.string.archwave_licenses_play, getString(R.string.archwave_licenses_play_summary)) {
+                    openInNewTab(PLAY_SERVICES_TERMS)
+                }
             }
     }
 
@@ -65,7 +70,7 @@ class LicensesFragment : PreferenceFragmentCompat() {
     private data class License(
         @StringRes val title: Int,
         val asset: String,
-        val components: List<String>,
+        @ArrayRes val components: Int,
     )
 
     private companion object {
@@ -74,35 +79,18 @@ class LicensesFragment : PreferenceFragmentCompat() {
                 License(
                     R.string.archwave_licenses_mpl,
                     "licenses/MPL-2.0.txt",
-                    listOf(
-                        "Archwave",
-                        "Mozilla Android Components",
-                        "GeckoView",
-                        "Mozilla Application Services",
-                        "Glean",
-                    ),
+                    R.array.archwave_licenses_mpl_components,
                 ),
                 License(
                     R.string.archwave_licenses_apache,
                     "licenses/Apache-2.0.txt",
-                    listOf(
-                        "AndroidX (Android Jetpack)",
-                        "Kotlin standard library",
-                        "kotlinx.coroutines",
-                        "kotlinx.serialization",
-                        "Material Components for Android",
-                        "Guava",
-                        "ZXing",
-                        "AndroidSVG",
-                        "DiskLruCache",
-                        "SnakeYAML",
-                        "JNA (used under the Apache License)",
-                        "JetBrains Java Annotations",
-                        "JSpecify",
-                        "Error Prone annotations",
-                    ),
+                    R.array.archwave_licenses_apache_components,
                 ),
-                License(R.string.archwave_licenses_ofl, "licenses/JetBrainsMono-OFL.txt", listOf("JetBrains Mono")),
+                License(
+                    R.string.archwave_licenses_ofl,
+                    "licenses/JetBrainsMono-OFL.txt",
+                    R.array.archwave_licenses_ofl_components,
+                ),
             )
         // The notices both projects publish for their binaries, at the versions the app ships (megazords/full/
         // DEPENDENCIES.md of application-services v160.0, DEPENDENCIES.md of glean v70.3.0); replace them on an update.
@@ -112,8 +100,6 @@ class LicensesFragment : PreferenceFragmentCompat() {
                 R.string.archwave_licenses_native_glean to "licenses/glean-dependencies.md",
             )
         const val GECKO_LICENSES = "about:license"
-        const val PLAY_SERVICES =
-            "Google Play services (base, basement, FIDO, tasks), used by GeckoView for security keys"
         const val PLAY_SERVICES_TERMS = "https://developer.android.com/studio/terms"
     }
 }

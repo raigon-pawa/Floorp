@@ -69,6 +69,35 @@
     <string name="archwave_licenses_gecko">Libraries inside GeckoView</string>
     <string name="archwave_licenses_gecko_summary">The engine\'s own licence page (about:license)</string>
     <string name="archwave_licenses_play">Android Software Development Kit License</string>
+    <string name="archwave_licenses_play_summary">Google Play services (base, basement, FIDO, tasks), used by GeckoView for security keys</string>
+    <!-- Open-source licences: the components under each licence, from the release build's runtime dependencies and
+         the licences their Maven POM files declare -->
+    <string-array name="archwave_licenses_mpl_components">
+        <item>@string/app_name</item>
+        <item>Mozilla Android Components</item>
+        <item>GeckoView</item>
+        <item>Mozilla Application Services</item>
+        <item>Glean</item>
+    </string-array>
+    <string-array name="archwave_licenses_apache_components">
+        <item>AndroidX (Android Jetpack)</item>
+        <item>Kotlin standard library</item>
+        <item>kotlinx.coroutines</item>
+        <item>kotlinx.serialization</item>
+        <item>Material Components for Android</item>
+        <item>Guava</item>
+        <item>ZXing</item>
+        <item>AndroidSVG</item>
+        <item>DiskLruCache</item>
+        <item>SnakeYAML</item>
+        <item>JNA (used under the Apache License)</item>
+        <item>JetBrains Java Annotations</item>
+        <item>JSpecify</item>
+        <item>Error Prone annotations</item>
+    </string-array>
+    <string-array name="archwave_licenses_ofl_components">
+        <item>JetBrains Mono</item>
+    </string-array>
 
     <!-- Text pages (licences, What Archwave connects to) -->
     <dimen name="archwave_text_page_padding">16dp</dimen>
