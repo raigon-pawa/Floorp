@@ -5,8 +5,10 @@
 package org.mozilla.reference.browser
 
 import androidx.fragment.app.Fragment
-import mozilla.components.feature.pwa.ext.getWebAppManifest
+import mozilla.components.browser.state.selector.findCustomTab
+import mozilla.components.browser.state.state.ExternalAppType
 import org.mozilla.reference.browser.browser.ExternalAppBrowserFragment
+import org.mozilla.reference.browser.ext.components
 
 /**
  * Activity that holds the BrowserFragment that is launched within an external app, such as custom tabs and progressive
@@ -15,7 +17,14 @@ import org.mozilla.reference.browser.browser.ExternalAppBrowserFragment
 class ExternalAppBrowserActivity : BrowserActivity() {
     override fun createBrowserFragment(sessionId: String?): Fragment =
         if (sessionId != null) {
-            ExternalAppBrowserFragment.create(sessionId, intent.getWebAppManifest())
+            // From the tab the web app intent processor made, never from the intent: another app could hide the toolbar
+            // with a manifest of its own. A plain custom tab can learn its page's manifest too, but is no web app.
+            val tab = components.core.store.state.findCustomTab(sessionId)
+            val manifest =
+                tab?.content?.webAppManifest?.takeIf {
+                    tab.config.externalAppType == ExternalAppType.PROGRESSIVE_WEB_APP
+                }
+            ExternalAppBrowserFragment.create(sessionId, manifest)
         } else {
             // Fall back to browser fragment
             super.createBrowserFragment(sessionId)
