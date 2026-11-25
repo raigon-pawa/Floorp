@@ -71,6 +71,8 @@ class ToolbarIntegration(
             it.initialize(context)
         }
 
+    private val privatePageUrl = UrlDisplay.privatePageUrl(context)
+
     private val scope = MainScope()
     private var menuUpdateJob: Job? = null
 
@@ -188,6 +190,18 @@ class ToolbarIntegration(
             hint = context.getString(R.string.toolbar_hint)
 
             setUrlBackground(ResourcesCompat.getDrawable(context.resources, R.drawable.url_background, context.theme))
+
+            urlFormatter = { url -> UrlDisplay.format(url.toString(), privatePageUrl) }
+            // A blank page or our private page has nothing worth editing: open an empty field, not its address.
+            onUrlClicked = {
+                if (UrlDisplay.isHidden(toolbar.url.toString(), privatePageUrl)) {
+                    toolbar.editMode()
+                    toolbar.edit.updateUrl("")
+                    false
+                } else {
+                    true
+                }
+            }
 
             val white = ContextCompat.getColor(context, R.color.aw_text_1)
             colors =

@@ -10,12 +10,14 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.tabstray.DefaultTabViewHolder
+import mozilla.components.browser.tabstray.TabViewHolder
 import mozilla.components.browser.tabstray.TabsAdapter
 import mozilla.components.browser.tabstray.TabsTray
 import mozilla.components.browser.tabstray.TabsTrayStyling
@@ -25,6 +27,7 @@ import mozilla.components.feature.tabs.tabstray.TabsFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.browser.BrowserFragment
+import org.mozilla.reference.browser.browser.UrlDisplay
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.requireComponents
 
@@ -93,6 +96,7 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
 
     private fun createAndSetupTabsTray(context: Context): TabsTray {
         val layoutManager = LinearLayoutManager(context)
+        val privatePageUrl = UrlDisplay.privatePageUrl(context)
         val thumbnailLoader = ThumbnailLoader(context.components.core.thumbnailStorage)
         val trayStyling =
             TabsTrayStyling(
@@ -104,7 +108,26 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
         val viewHolderProvider: ViewHolderProvider = { viewGroup ->
             val view = LayoutInflater.from(context).inflate(R.layout.browser_tabstray_item, viewGroup, false)
 
-            DefaultTabViewHolder(view, thumbnailLoader)
+            val holder = DefaultTabViewHolder(view, thumbnailLoader)
+            // The library shows the private page's whole data: URL as the URL line.
+            object : TabViewHolder(view) {
+                override var tab by holder::tab
+
+                override fun bind(
+                    tab: TabSessionState,
+                    isSelected: Boolean,
+                    styling: TabsTrayStyling,
+                    delegate: TabsTray.Delegate,
+                ) {
+                    holder.bind(tab, isSelected, styling, delegate)
+                    if (tab.content.url == privatePageUrl) {
+                        view.findViewById<TextView>(R.id.mozac_browser_tabstray_url).text = ""
+                    }
+                }
+
+                override fun updateSelectedTabIndicator(showAsSelected: Boolean) =
+                    holder.updateSelectedTabIndicator(showAsSelected)
+            }
         }
         val tabsAdapter =
             TabsAdapter(
