@@ -4,10 +4,15 @@
 
 package org.mozilla.reference.browser.ui
 
+import android.os.SystemClock
+import android.util.JsonWriter
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
+import java.io.StringWriter
 import mockwebserver3.MockWebServer
+import mozilla.components.browser.state.selector.selectedTab
 import org.junit.After
+import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -81,6 +86,7 @@ class CrashRecoveryTest {
         browser { verifyPageContent(page.content) }
         loadUrl(nextPage.url.toString())
         browser { verifyPageContent(nextPage.content) }
+        waitForSavedState(nextPage.url.lastPathSegment.orEmpty())
         loadUrl("about:crashcontent")
         browser { verifyTabCrashedSnackbar() }
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressBack()
@@ -90,6 +96,20 @@ class CrashRecoveryTest {
         }
     }
 
+    // A crashed tab is restored from the history GeckoView last saved, which it reports some seconds after a load. A
+    // crash before that restores the page without its history, so wait until the saved state holds [page].
+    private fun waitForSavedState(page: String) {
+        val store = TestHelper.appContext.components.core.store
+        val deadline = SystemClock.uptimeMillis() + TestAssetHelper.waitingTime
+        while (SystemClock.uptimeMillis() < deadline) {
+            val saved = StringWriter()
+            store.state.selectedTab?.engineState?.engineSessionState?.writeTo(JsonWriter(saved))
+            if (saved.toString().contains(page)) return
+            SystemClock.sleep(STATE_POLL_MS)
+        }
+        fail("The saved tab state never included $page")
+    }
+
     // Typing a second address into the toolbar right after a load often does not register under UI Automator, so the
     // later loads go through the same use case the toolbar calls.
     private fun loadUrl(url: String) =
@@ -97,3 +117,5 @@ class CrashRecoveryTest {
             TestHelper.appContext.components.useCases.sessionUseCases.loadUrl(url)
         }
 }
+
+private const val STATE_POLL_MS = 100L
