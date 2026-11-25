@@ -67,7 +67,7 @@
         <item name="android:navigationBarColor">@color/aw_black</item>
         <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
         <!-- The Material 3 switch has a white thumb both on and off; the AppCompat one dims it when off. -->
-        <item name="switchStyle">@style/Widget.AppCompat.CompoundButton.Switch</item>
+        <item name="switchStyle">@style/ArchwaveSwitch</item>
         <item name="actionBarStyle">@style/ArchwaveActionBar</item>
         <item name="actionOverflowButtonStyle">@style/ArchwaveActionOverflow</item>
         <item name="materialTimePickerTheme">@style/ArchwaveTimePicker</item>
