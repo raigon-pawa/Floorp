@@ -135,7 +135,10 @@ class IntentReceiverTest {
     @Test
     fun aForgedSessionIdIsNotForwarded() {
         val url = "https://example.org/receiver-session"
-        val otherTab = checkNotNull(store.state.selectedTabId)
+        val other = "https://example.org/receiver-session-other"
+        fire(view(other))
+        assertTrue(waitFor { other in tabUrls() })
+        val otherTab = store.state.tabs.first { it.content.url == other }.id
         // A running BrowserActivity takes the intent in onNewIntent, which never reads the id; a new one builds its
         // browser for the tab of that id.
         val old = activityTestRule.activity
