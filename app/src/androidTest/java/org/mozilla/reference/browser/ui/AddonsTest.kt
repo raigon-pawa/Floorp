@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser.ui
 
 import mockwebserver3.MockWebServer
+import mozilla.components.feature.addons.R as addonsR
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -106,5 +107,38 @@ class AddonsTest {
                 clickRemoveAddonButton()
                 verifyAddonsRecommendedView()
             }
+    }
+
+    @Test
+    fun disableAndEnableAddonTest() {
+        val addonName = "uBlock Origin"
+
+        navigationToolbar {}
+            .openThreeDotMenu {}
+            .openAddonsManager {
+                clickInstallAddonButton(addonName)
+                clickAllowInstallAddonButton()
+                waitForAddonDownloadComplete()
+                dismissAddonDownloadCompletedPrompt(addonName)
+                openAddon(addonName)
+                clickEnableSwitch()
+                goBack()
+                verifyAddonInSection(addonName, addonsR.string.mozac_feature_addons_disabled_section)
+                openAddon(addonName)
+                clickEnableSwitch()
+                goBack()
+                verifyAddonInSection(addonName, addonsR.string.mozac_feature_addons_enabled)
+            }
+    }
+
+    @Test
+    fun findMoreExtensionsOpensAmoTest() {
+        navigationToolbar {}
+            .openThreeDotMenu {}
+            .openAddonsManager {
+                verifyAddonsRecommendedView()
+                clickFindMoreExtensions()
+            }
+        navigationToolbar { verifyNewTabAddressView("addons.mozilla.org") }
     }
 }
