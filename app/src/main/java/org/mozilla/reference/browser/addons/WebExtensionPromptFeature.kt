@@ -7,6 +7,7 @@ package org.mozilla.reference.browser.addons
 import android.content.Context
 import android.content.Intent
 import android.content.res.ColorStateList
+import android.graphics.Bitmap
 import android.widget.Button
 import android.widget.CompoundButton
 import androidx.annotation.VisibleForTesting
@@ -19,17 +20,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.withTimeoutOrNull
 import mozilla.components.browser.state.action.WebExtensionAction
 import mozilla.components.browser.state.state.extension.WebExtensionPromptRequest
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.concept.engine.webextension.PermissionPromptResponse
+import mozilla.components.concept.engine.webextension.WebExtension
 import mozilla.components.concept.engine.webextension.WebExtensionInstallException
 import mozilla.components.feature.addons.Addon
+import mozilla.components.feature.addons.AddonManager
 import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.addons.ui.AddonInstallationDialogFragment
 import mozilla.components.feature.addons.ui.PermissionsDialogFragment
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.appVersionName
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.reference.browser.R
@@ -91,11 +96,11 @@ class WebExtensionPromptFeature(
         tryToReAttachButtonHandlersToPreviousDialog()
     }
 
-    private fun handleAfterInstallationRequest(promptRequest: WebExtensionPromptRequest.AfterInstallation) {
+    private suspend fun handleAfterInstallationRequest(promptRequest: WebExtensionPromptRequest.AfterInstallation) {
         // The install flow in Fenix relies on an [Addon] object so let's convert the (GeckoView)
         // extension into a minimal add-on. The missing metadata will be fetched when the user
-        // opens the add-ons manager.
-        val addon = Addon.newFromWebExtension(promptRequest.extension)
+        // opens the add-ons manager. The icon is read from the package (quick), else the sheets show a generic one.
+        val addon = Addon.newFromWebExtension(promptRequest.extension).copy(icon = loadIcon(promptRequest.extension))
         when (promptRequest) {
             is WebExtensionPromptRequest.AfterInstallation.Permissions.Required ->
                 handlePermissionRequest(
@@ -112,6 +117,15 @@ class WebExtensionPromptFeature(
                 )
         }
     }
+
+    @Suppress("TooGenericExceptionCaught") // A missing icon must not stop the prompt; the generic one is the fallback.
+    private suspend fun loadIcon(extension: WebExtension): Bitmap? =
+        try {
+            withTimeoutOrNull(ICON_TIMEOUT_MS) { extension.loadIcon(AddonManager.ADDON_ICON_SIZE) }
+        } catch (e: Exception) {
+            Logger.warn("Could not load the icon of ${extension.id}", e)
+            null
+        }
 
     private fun handlePostInstallationRequest(addon: Addon) {
         // Installs from the add-ons manager register themselves; web and file installs would wait for the next start.
@@ -421,6 +435,7 @@ class WebExtensionPromptFeature(
         private const val PERMISSIONS_DIALOG_FRAGMENT_TAG = "ADDONS_PERMISSIONS_DIALOG_FRAGMENT"
         private const val POST_INSTALLATION_DIALOG_FRAGMENT_TAG = "ADDONS_INSTALLATION_DIALOG_FRAGMENT"
         private const val KEY_DATA_COLLECTION_DEFAULT_APPLIED = "archwave_data_collection_default_applied"
+        private const val ICON_TIMEOUT_MS = 1000L
     }
 }
 
