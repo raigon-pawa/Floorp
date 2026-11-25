@@ -209,11 +209,11 @@ open class BrowserActivity : AppCompatActivity() {
             WebExtensionOptionsPageObserver(
                 store,
                 onOpenOptionsPage = { page ->
-                    // The store accepts no new request while one is pending, so clear it first.
-                    store.state.extensions.values
-                        .filter { it.activeOptionsPage == page }
-                        .forEach { store.dispatch(WebExtensionAction.ClearOptionsPageSession(it.id)) }
-                    openInBrowserTab(page.url)
+                    // The store accepts no new request while one is pending, so clear it first. Every live instance
+                    // (custom tabs and PWAs too) observes it: only the one that clears the request opens the tab.
+                    val pending = store.state.extensions.values.filter { it.activeOptionsPage == page }
+                    pending.forEach { store.dispatch(WebExtensionAction.ClearOptionsPageSession(it.id)) }
+                    if (pending.isNotEmpty()) openInBrowserTab(page.url)
                 },
             )
         optionsPageObserver.start()
