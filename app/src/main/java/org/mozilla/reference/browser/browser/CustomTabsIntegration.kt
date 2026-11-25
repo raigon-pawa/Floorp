@@ -20,11 +20,13 @@ import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.concept.menu.MenuController
 import mozilla.components.concept.menu.candidate.CompoundMenuCandidate
+import mozilla.components.concept.menu.candidate.ContainerStyle
 import mozilla.components.concept.menu.candidate.DrawableMenuIcon
 import mozilla.components.concept.menu.candidate.MenuCandidate
 import mozilla.components.concept.menu.candidate.RowMenuCandidate
 import mozilla.components.concept.menu.candidate.SmallMenuCandidate
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
+import mozilla.components.feature.customtabs.CustomTabsColorsConfig
 import mozilla.components.feature.customtabs.CustomTabsToolbarFeature
 import mozilla.components.feature.customtabs.menu.createCustomTabMenuCandidates
 import mozilla.components.feature.session.SessionUseCases
@@ -63,9 +65,10 @@ class CustomTabsIntegration(
         toolbar.display.setUrlBackground(null)
     }
 
-    private fun menuToolbar(session: CustomTabSessionState?): RowMenuCandidate {
+    private fun menuToolbar(session: SessionState?): RowMenuCandidate {
         val tint = ContextCompat.getColor(context, R.color.icons)
         val tabId = session?.id
+        val canGoForward = session?.content?.canGoForward == true
 
         val forward =
             SmallMenuCandidate(
@@ -74,8 +77,10 @@ class CustomTabsIntegration(
                     DrawableMenuIcon(
                         context,
                         mozilla.components.ui.icons.R.drawable.mozac_ic_forward_24,
-                        tint = tint,
+                        // The menu does not dim a disabled button by itself.
+                        tint = if (canGoForward) tint else ContextCompat.getColor(context, R.color.aw_text_disabled),
                     ),
+                containerStyle = ContainerStyle(isEnabled = canGoForward),
             ) {
                 sessionUseCases.goForward.invoke(tabId)
             }
@@ -111,7 +116,7 @@ class CustomTabsIntegration(
 
     private fun menuItems(sessionState: SessionState?): List<MenuCandidate> =
         listOf(
-            menuToolbar(session),
+            menuToolbar(sessionState),
             TextMenuCandidate("Share") {
                 val url = sessionState?.content?.url.orEmpty()
                 context.share(url)
@@ -153,6 +158,15 @@ class CustomTabsIntegration(
             sessionId,
             customTabsUseCases,
             window = activity?.window,
+            // Keep the app's own colours: ignore the toolbar and system bar colours the calling app asks for.
+            // The caller's action button keeps its own colours, like a site icon: forceActionButtonTinting would
+            // flatten a full-colour bitmap into a white silhouette, often a plain square.
+            customTabsColorsConfig =
+                CustomTabsColorsConfig(
+                    updateStatusBarColor = false,
+                    updateSystemNavigationBarColor = false,
+                    updateToolbarsColor = false,
+                ),
             closeListener = { activity?.finish() },
         )
 

@@ -7,6 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:elevation="1dp"
+    app:cardBackgroundColor="@color/aw_surface_2"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <TextView
@@ -17,6 +18,7 @@
         android:layout_marginStart="8dp"
         android:layout_marginEnd="8dp"
         app:drawableStartCompat="@drawable/mozac_ic_extensions_black"
+        app:drawableTint="@color/icons"
         android:drawablePadding="8dp"
         android:text="@string/mozac_extension_install_progress_caption"/>
 

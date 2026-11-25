@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -93,7 +94,13 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
     private fun createAndSetupTabsTray(context: Context): TabsTray {
         val layoutManager = LinearLayoutManager(context)
         val thumbnailLoader = ThumbnailLoader(context.components.core.thumbnailStorage)
-        val trayStyling = TabsTrayStyling(itemBackgroundColor = Color.TRANSPARENT, itemTextColor = Color.WHITE)
+        val trayStyling =
+            TabsTrayStyling(
+                itemBackgroundColor = Color.TRANSPARENT,
+                selectedItemBackgroundColor = ContextCompat.getColor(context, R.color.aw_surface_3),
+                itemTextColor = ContextCompat.getColor(context, R.color.aw_text_1),
+                selectedItemTextColor = ContextCompat.getColor(context, R.color.aw_text_1),
+            )
         val viewHolderProvider: ViewHolderProvider = { viewGroup ->
             val view = LayoutInflater.from(context).inflate(R.layout.browser_tabstray_item, viewGroup, false)
 

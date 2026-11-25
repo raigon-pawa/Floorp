@@ -28,7 +28,7 @@ private const val LEARN_MORE_URL = "https://support.mozilla.org/kb/permission-re
 /** An activity to show the permissions of an add-on. */
 class PermissionsDetailsActivity : AppCompatActivity(), View.OnClickListener {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT))
+        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_on_permissions)
         window.setupPersistentInsets()

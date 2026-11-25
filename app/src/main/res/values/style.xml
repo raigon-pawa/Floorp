@@ -3,32 +3,138 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 
 <resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- The one look of the app: always dark, black and grey. Colours are defined in archwave_theme.xml. -->
     <style name="AppThemeNotActionBar" parent="Theme.Material3.Dark.NoActionBar">
         <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
 
-        <item name="colorPrimary">@color/dark</item>
-        <item name="colorPrimaryDark">@color/evenDarker</item>
-        <item name="colorAccent">@color/accent</item>
+        <!-- Material 3 colour roles. Filled controls are white, so everything "on" them is black. -->
+        <item name="colorPrimary">@color/aw_text_1</item>
+        <item name="colorOnPrimary">@color/aw_black</item>
+        <item name="colorPrimaryContainer">@color/aw_surface_3</item>
+        <item name="colorOnPrimaryContainer">@color/aw_text_1</item>
+        <item name="colorPrimaryInverse">@color/aw_text_1</item>
+        <item name="colorSecondary">@color/aw_text_1</item>
+        <item name="colorOnSecondary">@color/aw_black</item>
+        <item name="colorSecondaryContainer">@color/aw_surface_3</item>
+        <item name="colorOnSecondaryContainer">@color/aw_text_1</item>
+        <item name="colorTertiary">@color/aw_text_2</item>
+        <item name="colorOnTertiary">@color/aw_black</item>
+        <item name="colorTertiaryContainer">@color/aw_surface_3</item>
+        <item name="colorOnTertiaryContainer">@color/aw_text_1</item>
+        <item name="android:colorBackground">@color/aw_black</item>
+        <item name="colorOnBackground">@color/aw_text_1</item>
+        <item name="colorSurface">@color/aw_black</item>
+        <item name="colorOnSurface">@color/aw_text_1</item>
+        <item name="colorSurfaceVariant">@color/aw_surface_3</item>
+        <item name="colorOnSurfaceVariant">@color/aw_text_2</item>
+        <item name="colorSurfaceDim">@color/aw_black</item>
+        <item name="colorSurfaceBright">@color/aw_surface_3</item>
+        <item name="colorSurfaceContainerLowest">@color/aw_black</item>
+        <item name="colorSurfaceContainerLow">@color/aw_surface_1</item>
+        <item name="colorSurfaceContainer">@color/aw_surface_2</item>
+        <item name="colorSurfaceContainerHigh">@color/aw_surface_2</item>
+        <item name="colorSurfaceContainerHighest">@color/aw_surface_3</item>
+        <!-- Snackbars use the inverse roles; keep them dark like every other raised surface. -->
+        <item name="colorSurfaceInverse">@color/aw_surface_3</item>
+        <item name="colorOnSurfaceInverse">@color/aw_text_1</item>
+        <item name="colorOutline">@color/aw_text_disabled</item>
+        <item name="colorOutlineVariant">@color/aw_divider</item>
+        <item name="colorError">@color/aw_error</item>
+        <item name="colorOnError">@color/aw_black</item>
+        <item name="colorErrorContainer">@color/aw_surface_3</item>
+        <item name="colorOnErrorContainer">@color/aw_error</item>
+        <!-- Surfaces keep their exact grey instead of being lightened by elevation. -->
+        <item name="elevationOverlayEnabled">false</item>
 
-        <item name="android:navigationBarColor">@color/evenDarker</item>
-        <item name="android:windowBackground">@color/dark</item>
+        <!-- AppCompat and platform colours. Material 3 hard-wires its purple-tinted defaults into the text colours. -->
+        <item name="colorPrimaryDark">@color/aw_black</item>
+        <item name="colorAccent">@color/aw_text_1</item>
+        <item name="colorControlActivated">@color/aw_text_1</item>
+        <item name="colorControlNormal">@color/aw_text_2</item>
+        <item name="colorSwitchThumbNormal">@color/aw_text_2</item>
+        <item name="colorBackgroundFloating">@color/aw_surface_2</item>
+        <item name="android:textColorPrimary">@color/archwave_text_primary</item>
+        <item name="android:textColorSecondary">@color/archwave_text_secondary</item>
+        <item name="android:textColorTertiary">@color/archwave_text_secondary</item>
+        <item name="android:textColorHint">@color/aw_text_hint</item>
+        <item name="android:textColorHighlight">@color/aw_selection</item>
+        <item name="android:textColorLink">@color/aw_text_1</item>
+        <item name="android:textColorAlertDialogListItem">@color/aw_text_1</item>
+        <!-- Android Components' prompts fill their buttons with this colour and put white text on it. -->
+        <item name="android:colorEdgeEffect">@color/aw_text_disabled</item>
+        <!-- The system bars are transparent (edge-to-edge), so this is also what shows behind them. -->
+        <item name="android:windowBackground">@color/aw_black</item>
+        <item name="android:navigationBarColor">@color/aw_black</item>
         <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+        <!-- The Material 3 switch has a white thumb both on and off; the AppCompat one dims it when off. -->
+        <item name="switchStyle">@style/Widget.AppCompat.CompoundButton.Switch</item>
+        <item name="actionBarStyle">@style/ArchwaveActionBar</item>
+        <item name="materialTimePickerTheme">@style/ArchwaveTimePicker</item>
+        <item name="android:dialogTheme">@style/ArchwavePanelDialog</item>
+
+        <!-- Theme attributes that Android Components layouts and drawables read. -->
+        <item name="mozac_primary_text_color">@color/aw_text_1</item>
+        <item name="mozac_caption_text_color">@color/aw_text_2</item>
+        <item name="mozac_accent">@color/aw_text_1</item>
+        <item name="mozac_contrast_text">@color/aw_black</item>
+        <item name="mozac_widget_favicon_background_color">@color/aw_surface_2</item>
+        <item name="mozac_widget_favicon_border_color">@color/aw_divider</item>
+        <item name="mozacPromptLoginEditTextCursorColor">@color/aw_text_1</item>
     </style>
 
-    <style name="AppTheme" parent="Theme.Material3.Dark">
-        <item name="preferenceTheme">@style/PreferenceThemeOverlay</item>
+    <!-- Black like the rest of the window, so the status bar area above it matches. -->
+    <style name="ArchwaveActionBar" parent="Widget.Material3.ActionBar.Solid">
+        <item name="background">@color/aw_black</item>
+    </style>
 
-        <item name="colorPrimary">@color/dark</item>
-        <item name="colorPrimaryDark">@color/evenDarker</item>
-        <item name="colorAccent">@color/accent</item>
+    <!-- The time picker tells the selected hour/minute field and AM/PM half apart only by these container roles,
+         which the app theme maps to the same grey as the unselected ones. -->
+    <style name="ArchwaveTimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
+        <item name="colorPrimaryContainer">@color/aw_text_1</item>
+        <item name="colorOnPrimaryContainer">@color/aw_black</item>
+        <item name="colorTertiaryContainer">@color/aw_text_1</item>
+        <item name="colorOnTertiaryContainer">@color/aw_black</item>
+    </style>
 
-        <item name="android:navigationBarColor">@color/evenDarker</item>
-        <item name="android:windowBackground">@color/dark</item>
-        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+    <!-- Android Components' prompts (add-on permissions, downloads, site permissions) are plain dialogs that paint
+         themselves with the activity's window background: black on a black page. The parent is the platform
+         default, so only the hairline along their top edge is new. -->
+    <style name="ArchwavePanelDialog" parent="android:Theme.Material.Dialog">
+        <item name="android:windowContentOverlay">@drawable/archwave_panel_edge</item>
+    </style>
+
+    <style name="AppTheme" parent="AppThemeNotActionBar">
+        <item name="windowActionBar">true</item>
+        <item name="windowNoTitle">false</item>
     </style>
 
     <style name="AddonsActivityTheme" parent="AppTheme">
-        <item name="mozac_primary_text_color">@color/photonDarkGrey90</item>
-        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+        <!-- In the add-ons manager this colour is only used for text on the amber and red message bars. -->
+        <item name="mozac_primary_text_color">@color/aw_black</item>
+    </style>
+
+    <!-- Theme of the application context, where GeckoView reads the accent it uses in web content: text selection
+         and its handles, focus rings, checkboxes. A mid grey shows on white and on black pages. The parent is the
+         platform default the application context had before, so nothing else changes for pages. -->
+    <style name="ArchwaveEngineColors" parent="android:Theme.DeviceDefault.Light.DarkActionBar">
+        <item name="android:colorAccent">@color/aw_text_hint</item>
+    </style>
+
+    <!-- The two styles below replace library styles of the same name, so the library's own items are copied by hand
+         from Android Components 160.0.1: compare them again when that version changes. -->
+    <!-- Android Components' bottom sheets (save login, credit card, address): the library style is a light theme. -->
+    <style name="MozDialogStyle" parent="ThemeOverlay.Material3.BottomSheetDialog" tools:ignore="UnusedResources">
+        <item name="android:windowIsFloating">false</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+
+    <!-- Android Components' crash prompt: the library style is a light dialog. -->
+    <style name="Theme.Mozac.CrashReporter" parent="Theme.AppCompat.Dialog" tools:ignore="UnusedResources">
+        <item name="windowNoTitle">true</item>
+        <item name="android:windowMinWidthMajor">96%</item>
+        <item name="android:windowMinWidthMinor">96%</item>
+        <item name="android:windowAnimationStyle">@null</item>
+        <item name="colorAccent">@color/aw_text_1</item>
+        <item name="colorBackgroundFloating">@color/aw_surface_2</item>
     </style>
 </resources>

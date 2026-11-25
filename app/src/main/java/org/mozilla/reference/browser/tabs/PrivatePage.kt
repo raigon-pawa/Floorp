@@ -10,10 +10,9 @@ import org.mozilla.reference.browser.R
 
 /** Builds the about:privatebrowsing page, which the app serves itself instead of loading it from the engine. */
 object PrivatePage {
-    /** Load and generate a private browsing page for the given url and html/css resources */
+    /** Load and generate a private browsing page from the given html/css resources */
     fun createPrivateBrowsingPage(
         context: Context,
-        url: String,
         @RawRes htmlRes: Int = R.raw.private_mode,
         @RawRes cssRes: Int = R.raw.private_style,
     ): String {
@@ -28,7 +27,6 @@ object PrivatePage {
             .use { it.readText() }
             .replace("%pageTitle%", context.getString(R.string.private_browsing_title))
             .replace("%pageBody%", context.getString(R.string.private_browsing_body))
-            .replace("%privateBrowsingSupportUrl%", url)
             .replace("%css%", css)
     }
 }

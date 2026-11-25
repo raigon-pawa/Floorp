@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Android Components text, overridden by name: the library's example address is mozilla.org. -->
+    <string name="mozac_browser_errorpages_port_blocked_message" tools:ignore="UnusedResources"><![CDATA[
+      <p>The requested address specified a port (e.g., <q>example.com:80</q> for port 80 on example.com) normally used for purposes <em>other</em> than Web browsing. The browser has canceled the request for your protection and security.</p>
+    ]]></string>
+</resources>

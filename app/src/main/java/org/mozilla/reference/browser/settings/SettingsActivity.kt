@@ -19,7 +19,7 @@ import org.mozilla.reference.browser.R
 class SettingsActivity : AppCompatActivity(), SettingsFragment.ActionBarUpdater {
     override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.activity_main)
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT))
+        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         window.setupPersistentInsets(true)
 

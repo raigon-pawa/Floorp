@@ -17,7 +17,7 @@ import org.mozilla.reference.browser.ext.requireComponents
 /** A simple activity whose only purpose is to load the [CrashListFragment]. */
 class CrashListActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT))
+        enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
         super.onCreate(savedInstanceState)
         window.setupPersistentInsets()
 
