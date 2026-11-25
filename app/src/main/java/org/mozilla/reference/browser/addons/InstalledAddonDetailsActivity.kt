@@ -10,6 +10,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.isVisible
@@ -23,6 +24,7 @@ import mozilla.components.feature.addons.ui.translateName
 import mozilla.components.feature.addons.update.AddonUpdater
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
+import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
@@ -189,18 +191,29 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
 
     private fun bindRemoveButton(addon: Addon) {
         findViewById<View>(R.id.remove_add_on).setOnClickListener {
-            this.components.core.addonManager.uninstallAddon(
-                addon,
-                onSuccess = {
-                    finish()
-                },
-                onError = { _, _ ->
-                    val message =
-                        getString(addonsR.string.mozac_feature_addons_failed_to_uninstall, addon.translateName(this))
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                },
-            )
+            // Removing deletes the extension's settings and data at once, so it is confirmed first.
+            AlertDialog.Builder(this)
+                .setTitle(getString(R.string.archwave_addons_remove_title, addon.translateName(this)))
+                .setMessage(R.string.archwave_addons_remove_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(addonsR.string.mozac_feature_addons_remove) { _, _ -> removeAddon(addon) }
+                .show()
+                .withCenterAlignedButtons()
         }
+    }
+
+    private fun removeAddon(addon: Addon) {
+        this.components.core.addonManager.uninstallAddon(
+            addon,
+            onSuccess = {
+                finish()
+            },
+            onError = { _, _ ->
+                val message =
+                    getString(addonsR.string.mozac_feature_addons_failed_to_uninstall, addon.translateName(this))
+                Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
+            },
+        )
     }
 
     private fun SwitchCompat.setState(checked: Boolean) {

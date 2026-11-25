@@ -23,4 +23,8 @@
     <string name="archwave_addons_keep_extensions_disabled">Keep disabled</string>
     <!-- Developer setting "Custom Add-on collection": explanation above the two fields. -->
     <string name="archwave_addons_custom_collection_message">List the extensions of an addons.mozilla.org collection instead of the recommended ones. Leave both fields empty for the default. Archwave restarts to apply the change.</string>
+    <!-- Installed add-on details: title of the confirmation before Remove. %1$s is the extension's name. -->
+    <string name="archwave_addons_remove_title">Remove %1$s?</string>
+    <!-- Installed add-on details: text of the confirmation before Remove. -->
+    <string name="archwave_addons_remove_message">The extension and its settings and data will be deleted.</string>
 </resources>
