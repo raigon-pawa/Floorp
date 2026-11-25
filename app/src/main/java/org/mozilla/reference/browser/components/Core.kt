@@ -84,6 +84,8 @@ class Core(
                 httpsOnlyMode = Settings.httpsOnlyModeFor(Settings.isHttpsOnly(context)),
                 dohSettingsMode = Settings.dohModeFor(dohProviderUrl),
                 dohProviderUrl = dohProviderUrl,
+                // Used by Gecko whenever the resolver URL is empty; its own default is mozilla.cloudflare-dns.com.
+                dohDefaultProviderUrl = context.getString(R.string.doh_provider_quad9),
                 emailTrackerBlockingPrivateBrowsing = true,
                 preferredColorScheme = PreferredColorScheme.Dark,
                 // Black instead of the default white, so blank tabs and page loads do not flash.

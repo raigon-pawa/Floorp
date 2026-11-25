@@ -55,7 +55,10 @@ class PrivacySettingsFragment : PreferenceFragmentCompat() {
             OnPreferenceChangeListener { _, value ->
                 val url = value as String
                 requireComponents.core.engine.settings.apply {
-                    // Provider first, so the mode never applies to the previous resolver.
+                    // Each setter reaches Gecko separately. Turning DoH off: mode first, because an empty resolver
+                    // under the DoH mode means Gecko's built-in one. Otherwise resolver first, so the DoH mode never
+                    // applies to the previous resolver.
+                    if (url.isEmpty()) dohSettingsMode = Settings.dohModeFor(url)
                     dohProviderUrl = url
                     dohSettingsMode = Settings.dohModeFor(url)
                 }
