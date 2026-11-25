@@ -8,6 +8,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.View
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
@@ -15,13 +16,13 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.AddonManagerException
 import mozilla.components.feature.addons.R as addonsR
+import mozilla.components.feature.addons.ui.toLocalizedString
 import mozilla.components.feature.addons.ui.translateName
+import mozilla.components.feature.addons.update.AddonUpdater
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
@@ -49,9 +50,9 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
     private fun bindAddon(addon: Addon) {
         lifecycleScope.launch {
             try {
-                val addons = withContext(Dispatchers.IO) { baseContext.components.core.addonManager.getAddons() }
+                // Reads the engine's state only; unlike getAddons() this never waits for the catalogue.
                 val installed =
-                    addons.find { addon.id == it.id }
+                    components.core.addonManager.getAddonByID(addon.id)
                         ?: throw AddonManagerException(Exception("Addon ${addon.id} not found"))
 
                 bindUI(installed)
@@ -80,19 +81,34 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
 
         bindAllowInPrivateBrowsingSwitch(addon)
 
+        bindCheckForUpdates(addon)
+
         bindRemoveButton(addon)
     }
 
     private fun bindEnableSwitch(addon: Addon) {
         val switch = findViewById<SwitchCompat>(R.id.enable_switch)
+        // bindUI runs again once the add-on is loaded: the previous listener must not see that update as a tap.
+        switch.setOnCheckedChangeListener(null)
         switch.setState(addon.isEnabled())
         switch.setOnCheckedChangeListener { _, isChecked ->
+            val onError: (Throwable) -> Unit = {
+                bindAddon(addon)
+                val message =
+                    if (isChecked) {
+                        addonsR.string.mozac_feature_addons_failed_to_enable
+                    } else {
+                        addonsR.string.mozac_feature_addons_failed_to_disable
+                    }
+                Toast.makeText(this, getString(message, addon.translateName(this)), Toast.LENGTH_SHORT).show()
+            }
             if (isChecked) {
                 this.components.core.addonManager.enableAddon(
                     addon,
                     onSuccess = {
                         switch.setState(true)
                     },
+                    onError = onError,
                 )
             } else {
                 this.components.core.addonManager.disableAddon(
@@ -100,6 +116,7 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
                     onSuccess = {
                         switch.setState(false)
                     },
+                    onError = onError,
                 )
             }
         }
@@ -110,9 +127,8 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
         view.isVisible = shouldSettingsBeVisible(addon)
         view.isEnabled = shouldSettingsBeVisible(addon)
         view.setOnClickListener {
-            val intent = Intent(this, AddonSettingsActivity::class.java)
-            intent.putExtra("add_on", addon)
-            this.startActivity(intent)
+            // A tab has what a bare engine view lacks: select boxes, dialogs, file pickers, downloads, links.
+            addon.installedState?.optionsPageUrl?.let { openInBrowserTab(it) }
         }
     }
 
@@ -134,6 +150,7 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
 
     private fun bindAllowInPrivateBrowsingSwitch(addon: Addon) {
         val switch = findViewById<SwitchCompat>(R.id.allow_in_private_browsing_switch)
+        switch.setOnCheckedChangeListener(null)
         switch.isChecked = addon.isAllowedInPrivateBrowsing()
         switch.setOnCheckedChangeListener { _, isChecked ->
             this.components.core.addonManager.setAddonAllowedInPrivateBrowsing(
@@ -146,12 +163,39 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
         }
     }
 
+    private fun bindCheckForUpdates(addon: Addon) {
+        val view = findViewById<TextView>(R.id.check_for_updates)
+        view.setOnClickListener {
+            view.isEnabled = false
+            view.setText(R.string.archwave_addons_checking_for_updates)
+            components.core.addonManager.updateAddon(addon.id) { status ->
+                runOnUiThread {
+                    if (isDestroyed) return@runOnUiThread
+                    view.isEnabled = true
+                    view.setText(R.string.archwave_addons_check_for_updates)
+                    val message =
+                        when (status) {
+                            is AddonUpdater.Status.Error -> getString(R.string.archwave_addons_update_check_failed)
+                            else -> status.toLocalizedString(this)
+                        }
+                    Toast.makeText(this, message, Toast.LENGTH_LONG).show()
+                    if (status == AddonUpdater.Status.SuccessfullyUpdated) bindAddon(addon)
+                }
+            }
+        }
+    }
+
     private fun bindRemoveButton(addon: Addon) {
         findViewById<View>(R.id.remove_add_on).setOnClickListener {
             this.components.core.addonManager.uninstallAddon(
                 addon,
                 onSuccess = {
                     finish()
+                },
+                onError = { _, _ ->
+                    val message =
+                        getString(addonsR.string.mozac_feature_addons_failed_to_uninstall, addon.translateName(this))
+                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
                 },
             )
         }

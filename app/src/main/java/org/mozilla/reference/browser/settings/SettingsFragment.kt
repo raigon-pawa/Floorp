@@ -116,6 +116,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         AlertDialog.Builder(context)
             .apply {
                 setTitle(context.getString(R.string.preferences_customize_amo_collection))
+                setMessage(R.string.archwave_addons_custom_collection_message)
                 setView(dialogView)
                 setNegativeButton(R.string.customize_addon_collection_cancel) { dialog: DialogInterface, _ ->
                     dialog.cancel()
@@ -132,9 +133,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         )
                         .show()
 
+                    // The add-on provider reads the collection once per process, so start the app again in a new one.
                     Handler(Looper.getMainLooper())
                         .postDelayed(
                             {
+                                val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                                launch?.component?.let { context.startActivity(Intent.makeRestartActivityTask(it)) }
                                 exitProcess(0)
                             },
                             AMO_COLLECTION_OVERRIDE_EXIT_DELAY,

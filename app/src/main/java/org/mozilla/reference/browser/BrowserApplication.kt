@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import mozilla.components.browser.state.action.SystemAction
+import mozilla.components.browser.state.selector.selectedTab
 import mozilla.components.concept.engine.webextension.isUnsupported
 import mozilla.components.feature.addons.update.GlobalAddonDependencyProvider
 import mozilla.components.support.AppServicesInitializer
@@ -79,6 +80,9 @@ open class BrowserApplication : Application() {
         WebExtensionSupport.initialize(
             runtime = components.core.engine,
             store = components.core.store,
+            // Decides whether popups and extension tabs open as private, and keeps extensions not allowed in private
+            // browsing out of private tabs.
+            isInPrivateBrowsingMode = { components.core.store.state.selectedTab?.content?.private == true },
             onNewTabOverride = { _, engineSession, url, selected, isPrivate ->
                 val tabId =
                     components.useCases.tabsUseCases.addTab(

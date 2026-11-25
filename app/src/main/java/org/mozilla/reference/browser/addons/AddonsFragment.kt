@@ -7,36 +7,57 @@ package org.mozilla.reference.browser.addons
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuInflater
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.core.view.MenuProvider
+import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import mozilla.components.concept.engine.CancellableOperation
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.AddonManagerException
-import mozilla.components.feature.addons.R as addonsR
+import mozilla.components.feature.addons.ui.AddonFilePicker
 import mozilla.components.feature.addons.ui.AddonsManagerAdapter
 import mozilla.components.feature.addons.ui.AddonsManagerAdapterDelegate
+import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
 
+private const val FIND_MORE_URL = "https://addons.mozilla.org/android/"
+
 /** Fragment use for managing add-ons. */
-class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate {
+class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
     private val logger = Logger("AddonsFragment")
     private val webExtensionPromptFeature = ViewBoundFeatureWrapper<WebExtensionPromptFeature>()
-    private lateinit var recyclerView: RecyclerView
-    private lateinit var addons: List<Addon>
     private var adapter: AddonsManagerAdapter? = null
+    private var loadJob: Job? = null
 
-    private val addonProgressOverlay: View
-        get() = requireView().findViewById(R.id.addonProgressOverlay)
+    /** The running install started from this screen, if any; it can be cancelled until the engine asks for consent. */
+    private var installOperation: CancellableOperation? = null
+    private lateinit var addonFilePicker: AddonFilePicker
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        // The picker must register for its result before the fragment is started. Gecko checks the signature, and the
+        // prompt feature below shows the permission, success and failure dialogs of file installs too.
+        addonFilePicker =
+            AddonFilePicker(requireContext(), requireContext().components.core.addonManager).apply {
+                registerForResults(this@AddonsFragment)
+            }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -59,44 +80,77 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate {
             owner = this,
             view = rootView,
         )
+        // One layout manager for the fragment's life, so the scroll position survives reloads of the list.
+        rootView.findViewById<RecyclerView>(R.id.add_ons_list).layoutManager = LinearLayoutManager(requireContext())
+        rootView.findViewById<View>(R.id.add_ons_retry).setOnClickListener { bindRecyclerView() }
+        rootView.findViewById<View>(R.id.cancel_install).setOnClickListener { cancelInstall() }
+        requireActivity().addMenuProvider(this, viewLifecycleOwner)
+
+        // Installs from a file or from the addons.mozilla.org page finish outside this screen's callbacks.
+        viewLifecycleOwner.lifecycleScope.launch {
+            requireContext()
+                .components
+                .core
+                .store
+                .flow(viewLifecycleOwner)
+                .map { it.extensions.keys }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { bindRecyclerView() }
+        }
     }
 
     override fun onStart() {
         super.onStart()
-
-        this@AddonsFragment.view?.let { view ->
-            bindRecyclerView(view)
-        }
-
-        addonProgressOverlay.visibility = View.GONE
+        bindRecyclerView()
+        addonProgressOverlay.isVisible = installOperation != null
     }
 
-    private fun bindRecyclerView(rootView: View) {
-        recyclerView = rootView.findViewById(R.id.add_ons_list)
-        recyclerView.layoutManager = LinearLayoutManager(requireContext())
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                addons = withContext(Dispatchers.IO) { requireContext().components.core.addonManager.getAddons() }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        adapter = null
+    }
 
-                adapter =
-                    AddonsManagerAdapter(
-                        this@AddonsFragment,
-                        addons,
-                        // Names in white, everything else in the secondary grey the list uses by default.
-                        style = AddonsManagerAdapter.Style(addonNameTextColor = R.color.aw_text_1),
-                        store = requireContext().components.core.store,
-                    )
-                recyclerView.adapter = adapter
-            } catch (e: AddonManagerException) {
-                logger.error("Failed to load add-ons", e)
-                Toast.makeText(
-                        activity,
-                        addonsR.string.mozac_feature_addons_failed_to_load_extensions,
-                        Toast.LENGTH_SHORT,
-                    )
-                    .show()
+    private val addonProgressOverlay: View
+        get() = requireView().findViewById(R.id.addonProgressOverlay)
+
+    private fun bindRecyclerView() {
+        val rootView = view ?: return
+        val recyclerView = rootView.findViewById<RecyclerView>(R.id.add_ons_list)
+        val loading = rootView.findViewById<View>(R.id.add_ons_loading)
+        val loadError = rootView.findViewById<View>(R.id.add_ons_load_error)
+        val addonManager = requireContext().components.core.addonManager
+        loading.isVisible = adapter == null
+        loadJob?.cancel()
+        loadJob =
+            viewLifecycleOwner.lifecycleScope.launch {
+                val addons =
+                    try {
+                        addonManager.getAddons()
+                    } catch (e: AddonManagerException) {
+                        logger.error("Failed to load add-ons", e)
+                        null
+                    }
+                loading.isVisible = false
+                // The manager hides catalogue errors and returns the installed add-ons alone.
+                // shortcut: also shown if every recommended add-on is installed; fine while the collection is large.
+                loadError.isVisible = addons == null || addons.none { !it.isInstalled() }
+                if (addons == null) return@launch
+
+                // Updating the existing adapter, instead of a new one, keeps the scroll position.
+                adapter?.updateAddons(addons)
+                    ?: AddonsManagerAdapter(
+                            this@AddonsFragment,
+                            addons,
+                            // Names in white, everything else in the secondary grey the list uses by default.
+                            style = AddonsManagerAdapter.Style(addonNameTextColor = R.color.aw_text_1),
+                            store = requireContext().components.core.store,
+                        )
+                        .also {
+                            adapter = it
+                            recyclerView.adapter = it
+                        }
             }
-        }
     }
 
     override fun onAddonItemClicked(addon: Addon) {
@@ -112,39 +166,48 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate {
     }
 
     override fun onInstallAddonButtonClicked(addon: Addon) {
-        if (isInstallationInProgress) {
+        if (installOperation != null) {
             return
         }
-        installAddon(addon)
+        addonProgressOverlay.isVisible = true
+        installOperation =
+            requireContext()
+                .components
+                .core
+                .addonManager
+                .installAddon(
+                    url = addon.downloadUrl,
+                    // The list follows the store's extensions, so only the overlay is left to update here.
+                    onSuccess = { runIfFragmentIsAttached { onInstallFinished() } },
+                    onError = { _ -> runIfFragmentIsAttached { onInstallFinished() } },
+                )
     }
 
-    private val installAddon: ((Addon) -> Unit) = { addon ->
-        addonProgressOverlay.visibility = View.VISIBLE
-        isInstallationInProgress = true
-        requireContext()
-            .components
-            .core
-            .addonManager
-            .installAddon(
-                url = addon.downloadUrl,
-                onSuccess = {
-                    runIfFragmentIsAttached {
-                        isInstallationInProgress = false
-                        this@AddonsFragment.view?.let { view ->
-                            bindRecyclerView(view)
-                        }
-                        addonProgressOverlay.visibility = View.GONE
-                    }
-                },
-                onError = { _ ->
-                    runIfFragmentIsAttached {
-                        addonProgressOverlay.visibility = View.GONE
-                        isInstallationInProgress = false
-                    }
-                },
-            )
+    private fun cancelInstall() {
+        installOperation?.cancel()
+        onInstallFinished()
     }
 
-    /** Whether or not an add-on installation is in progress. */
-    private var isInstallationInProgress = false
+    private fun onInstallFinished() {
+        installOperation = null
+        view?.findViewById<View>(R.id.addonProgressOverlay)?.isVisible = false
+    }
+
+    override fun shouldShowFindMoreAddonsButton() = true
+
+    override fun onFindMoreAddonsButtonClicked() = requireContext().openInBrowserTab(FIND_MORE_URL)
+
+    override fun onCreateMenu(
+        menu: Menu,
+        menuInflater: MenuInflater,
+    ) {
+        menu.add(R.string.archwave_addons_install_from_file).setOnMenuItemClickListener {
+            if (!addonFilePicker.launch()) {
+                Toast.makeText(requireContext(), R.string.archwave_addons_no_file_picker, Toast.LENGTH_LONG).show()
+            }
+            true
+        }
+    }
+
+    override fun onMenuItemSelected(menuItem: MenuItem) = false
 }

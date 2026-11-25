@@ -10,17 +10,32 @@
     app:cardBackgroundColor="@color/aw_surface_2"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <TextView
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:gravity="start|center_vertical"
-        android:layout_marginStart="8dp"
-        android:layout_marginEnd="8dp"
-        app:drawableStartCompat="@drawable/mozac_ic_extensions_black"
-        app:drawableTint="@color/icons"
-        android:drawablePadding="8dp"
-        android:text="@string/mozac_extension_install_progress_caption"/>
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:padding="16dp"
+            android:gravity="start|center_vertical"
+            android:layout_marginStart="8dp"
+            app:drawableStartCompat="@drawable/mozac_ic_extensions_black"
+            app:drawableTint="@color/icons"
+            android:drawablePadding="8dp"
+            android:text="@string/mozac_extension_install_progress_caption"/>
+
+        <Button
+            android:id="@+id/cancel_install"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:text="@string/mozac_feature_addons_install_addon_dialog_cancel"
+            android:textColor="@color/aw_text_1" />
+    </LinearLayout>
 
 </androidx.cardview.widget.CardView>
-
