@@ -13,6 +13,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlin.coroutines.resume
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeoutOrNull
@@ -210,7 +212,12 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             // it called, so the suggestions must name this wrapper, not the wrapped provider.
             override suspend fun onInputChanged(text: String) =
                 if (enabled()) {
-                    provider.onInputChanged(text).map { (it as? Suggestion)?.copy(provider = this) ?: it }
+                    val suggestions = provider.onInputChanged(text)
+                    // The request cannot be interrupted, and the awesome bar shows whatever a provider returns, even
+                    // after the text changed: answers for "a" arriving after those for "arch" replaced them. Typing
+                    // cancels this call, so drop the answer then.
+                    currentCoroutineContext().ensureActive()
+                    suggestions.map { (it as? Suggestion)?.copy(provider = this) ?: it }
                 } else {
                     emptyList()
                 }
