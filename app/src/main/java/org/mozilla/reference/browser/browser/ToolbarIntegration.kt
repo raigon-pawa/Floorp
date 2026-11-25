@@ -10,8 +10,10 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toDrawable
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.launch
@@ -25,7 +27,9 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.storage.sync.PlacesHistoryStorage
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.browser.toolbar.display.DisplayToolbar
+import mozilla.components.concept.engine.webextension.Action
 import mozilla.components.concept.menu.MenuController
+import mozilla.components.concept.menu.candidate.AsyncDrawableMenuIcon
 import mozilla.components.concept.menu.candidate.CompoundMenuCandidate
 import mozilla.components.concept.menu.candidate.ContainerStyle
 import mozilla.components.concept.menu.candidate.DividerMenuCandidate
@@ -35,7 +39,7 @@ import mozilla.components.concept.menu.candidate.NestedMenuCandidate
 import mozilla.components.concept.menu.candidate.RowMenuCandidate
 import mozilla.components.concept.menu.candidate.SmallMenuCandidate
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
-import mozilla.components.feature.addons.menu.createMenuCandidate
+import mozilla.components.concept.menu.candidate.TextStyle
 import mozilla.components.feature.pwa.WebAppUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
@@ -54,6 +58,7 @@ import org.mozilla.reference.browser.ext.share
 import org.mozilla.reference.browser.settings.SettingsActivity
 
 private const val URL_TEXT_SIZE_SP = 13f
+private const val MENU_ICON_DP = 24
 
 /**
  * Wires the browser toolbar to the selected tab, or to the tab given by [sessionId]: URL loading and search,
@@ -196,9 +201,7 @@ class ToolbarIntegration(
                             ?.takeIf { (_, shown) -> shown.enabled == true }
                     listOfNotNull(browserAction, pageAction).map { (global, shown) ->
                         // The toolbar used to click the global action too; the engine applies it to the current tab.
-                        shown.createMenuCandidate(context, onClick = global.onClick).let {
-                            if (it.text.isEmpty()) it.copy(text = extension.name.orEmpty()) else it
-                        }
+                        extensionActionItem(shown, extension.name.orEmpty(), onClick = global.onClick)
                     }
                 }
         if (actions.isEmpty()) {
@@ -224,6 +227,42 @@ class ToolbarIntegration(
             id = R.string.menu_extensions,
             text = title,
             subMenuItems = listOf(back, DividerMenuCandidate()) + actions + listOf(DividerMenuCandidate(), manage),
+        )
+    }
+
+    private fun extensionActionItem(action: Action, name: String, onClick: () -> Unit): MenuCandidate {
+        val enabled = action.enabled != false
+        val density = context.resources.displayMetrics.density
+        val fallback = AppCompatResources.getDrawable(context, iconsR.drawable.mozac_ic_extension_24)
+        return TextMenuCandidate(
+            text = action.title?.takeIf { it.isNotBlank() } ?: name,
+            start =
+                AsyncDrawableMenuIcon(
+                    // The view is not measured yet when the icon is requested, so ask for the size it will have.
+                    loadDrawable = { _, _ ->
+                        val icon =
+                            action.loadIcon?.invoke((MENU_ICON_DP * density).toInt())?.toDrawable(context.resources)
+                        val badge = action.badgeText?.takeIf { it.isNotEmpty() }
+                        if (icon == null || badge == null) {
+                            icon
+                        } else {
+                            BadgedIcon(
+                                icon,
+                                badge,
+                                action.badgeTextColor ?: ContextCompat.getColor(context, R.color.aw_black),
+                                action.badgeBackgroundColor ?: ContextCompat.getColor(context, R.color.aw_text_2),
+                                density,
+                            )
+                        }
+                    },
+                    loadingDrawable = fallback,
+                    fallbackDrawable = fallback,
+                ),
+            textStyle =
+                if (enabled) TextStyle()
+                else TextStyle(color = ContextCompat.getColor(context, R.color.aw_text_disabled)),
+            containerStyle = ContainerStyle(isEnabled = enabled),
+            onClick = onClick,
         )
     }
 
