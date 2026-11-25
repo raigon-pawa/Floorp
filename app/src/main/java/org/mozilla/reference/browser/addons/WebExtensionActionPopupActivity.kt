@@ -146,6 +146,10 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
             val session = engineSession
             if (session != null) {
                 showPopup(session)
+            } else if (popupTabId != null) {
+                // Restored after its popup was closed (the process died, or the activity was destroyed in the
+                // background): there is nothing left to show.
+                activity?.finish()
             } else {
                 consumeFrom(requireContext().components.core.store) { state ->
                     state.extensions[webExtensionId]?.let { extState ->
@@ -224,9 +228,10 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
 
         override fun onDestroy() {
             super.onDestroy()
-            // Each click on the action creates a new session: close this one when the popup goes away for good, not
-            // when it rotates or the system destroys it behind the file picker (the recreated popup finds its tab).
-            if (activity?.isFinishing == true) {
+            // Each click on the action creates a new session: close this one when the popup goes away, except for a
+            // rotation (the recreated popup finds its tab). Destroyed in the background, the popup does not come back
+            // with its page anyway, and the tab and its session would otherwise stay in the store for good.
+            if (activity?.isChangingConfigurations != true) {
                 popupTabId?.let {
                     requireContext().components.core.store.dispatch(CustomTabListAction.RemoveCustomTabAction(it))
                 }
