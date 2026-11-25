@@ -169,7 +169,8 @@ class TabTrayMenuTest {
         navigationToolbar {}
             .openTabTrayMenu {}
             .openNewTab {
-                verifyNewTabAddressView("about:blank")
+                // A blank page shows an empty address with the hint.
+                verifyNoTabAddressView()
                 checkNumberOfTabsTabCounter("1")
             }
             .openTabTrayMenu {}
@@ -184,9 +185,8 @@ class TabTrayMenuTest {
                 verifyExistingOpenTabs("about:blank")
                 verifyExistingOpenTabs(genericURL.title)
             }
-            .clickOpenTab("about:blank") {
-                verifyUrl("about:blank")
-            }
+            .clickOpenTab("about:blank") {}
+        navigationToolbar { verifyNoTabAddressView() }
     }
 
     // This test verifies the new tab is open and that its items are all in place
@@ -201,7 +201,8 @@ class TabTrayMenuTest {
                 openPrivateBrowsing()
             }
             .openNewTab {
-                verifyNewTabAddressView("data:text/html")
+                // The private page's own address is never shown.
+                verifyNoTabAddressView()
                 checkNumberOfTabsTabCounter("1")
             }
             .openTabTrayMenu {
