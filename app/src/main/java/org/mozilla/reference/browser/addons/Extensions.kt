@@ -14,6 +14,7 @@ import android.view.View
 import androidx.fragment.app.Fragment
 import java.text.NumberFormat
 import java.util.Locale
+import mozilla.components.browser.state.selector.selectedTab
 import org.mozilla.reference.browser.BrowserActivity
 import org.mozilla.reference.browser.ext.components
 
@@ -35,14 +36,15 @@ internal inline fun Fragment.runIfFragmentIsAttached(block: () -> Unit) {
 internal fun isWebUrl(url: String?): Boolean = url != null && (url.startsWith("https://") || url.startsWith("http://"))
 
 /**
- * Opens [url] in a new tab of this app and brings the browser to the front, closing the add-on screens above it. The
- * current tab becomes the parent, so Back from the new tab returns to it.
+ * Opens [url] in a new normal tab of this app and brings the browser to the front, closing the add-on screens above it.
+ * A normal current tab becomes the parent, so Back from the new tab returns to it; a private one does not, so closing
+ * the new tab cannot lead into private browsing.
  */
 internal fun Context.openInBrowserTab(url: String) {
     components.useCases.tabsUseCases.addTab(
         url,
         selectTab = true,
-        parentId = components.core.store.state.selectedTabId,
+        parentId = components.core.store.state.selectedTab?.takeUnless { it.content.private }?.id,
     )
     startActivity(Intent(this, BrowserActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
