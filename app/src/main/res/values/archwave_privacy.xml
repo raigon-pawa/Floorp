@@ -35,6 +35,9 @@
 
     <!-- Privacy settings rows -->
     <string name="preferences_tracking_protection_summary">Strict: blocks trackers and fingerprinters</string>
+    <string name="preferences_tracking_protection_summary_normal">Strict in normal tabs only: blocks trackers and fingerprinters</string>
+    <string name="preferences_tracking_protection_summary_private">Strict in private tabs only: blocks trackers and fingerprinters</string>
+    <string name="preferences_tracking_protection_summary_off">Off: trackers are not blocked</string>
     <string name="preferences_https_only">HTTPS-only mode</string>
     <string name="preferences_https_only_summary">Upgrade every site to HTTPS and ask before loading one that has no HTTPS</string>
     <string name="preferences_doh">DNS over HTTPS</string>

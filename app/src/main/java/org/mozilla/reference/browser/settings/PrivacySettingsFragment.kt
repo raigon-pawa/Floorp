@@ -31,10 +31,26 @@ class PrivacySettingsFragment : PreferenceFragmentCompat() {
         val prefTrackingProtectionPrivate = findPreference<SwitchPreferenceCompat>(trackingProtectionPrivateKey)
         val globalPrivacyControl = findPreference<SwitchPreferenceCompat>(globalPrivacyControlKey)
 
+        // The summary of the section says what the two switches add up to.
+        val showTrackingSummary = { normal: Boolean, private: Boolean ->
+            prefTrackingProtectionNormal
+                ?.parent
+                ?.setSummary(
+                    when {
+                        normal && private -> R.string.preferences_tracking_protection_summary
+                        normal -> R.string.preferences_tracking_protection_summary_normal
+                        private -> R.string.preferences_tracking_protection_summary_private
+                        else -> R.string.preferences_tracking_protection_summary_off
+                    }
+                )
+        }
+        showTrackingSummary(Settings.isTrackingProtectionNormal(context), Settings.isTrackingProtectionPrivate(context))
         prefTrackingProtectionNormal?.onPreferenceChangeListener = getChangeListenerForTrackingProtection { enabled ->
+            showTrackingSummary(enabled, prefTrackingProtectionPrivate?.isChecked == true)
             requireComponents.core.createTrackingProtectionPolicy(normalMode = enabled)
         }
         prefTrackingProtectionPrivate?.onPreferenceChangeListener = getChangeListenerForTrackingProtection { enabled ->
+            showTrackingSummary(prefTrackingProtectionNormal?.isChecked == true, enabled)
             requireComponents.core.createTrackingProtectionPolicy(privateMode = enabled)
         }
 
