@@ -176,6 +176,17 @@
             android:name="mozilla.telemetry.glean.debug.GleanDebugActivity"
             tools:ignore="MissingClass"
             tools:node="remove" />
+
+        <!-- EmojiCompat would ask Google Play services' font provider for its emoji font on every start; the
+             system emoji font is enough. -->
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="${applicationId}.androidx-startup"
+            tools:node="merge">
+            <meta-data
+                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+                tools:node="remove" />
+        </provider>
     </application>
 
 </manifest>
