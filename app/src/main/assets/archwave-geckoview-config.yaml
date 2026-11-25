@@ -4,8 +4,8 @@
 #
 # Gecko prefs with no typed GeckoView setting. EngineProvider passes this file to the runtime builder, so these are
 # default-branch prefs that exist before Gecko makes its first request. Never list a pref that GeckoRuntimeSettings or
-# ContentBlocking manages (network.trr.*, dom.security.https_only_mode, privacy.*, network.cookie.*...): GeckoView
-# would fight it. Remote Settings, Safe Browsing, add-on update checks and the add-on blocklist stay on.
+# ContentBlocking manages (network.trr.*, dom.security.https_only_mode, most privacy.*, network.cookie.*...):
+# GeckoView would fight it. Remote Settings, Safe Browsing, add-on update checks and the add-on blocklist stay on.
 prefs:
   # Speculative traffic: link prefetch, DNS prefetch, speculative connections, hyperlink-auditing pings
   network.prefetch-next: false
@@ -21,6 +21,9 @@ prefs:
   network.captive-portal-service.enabled: false
   network.connectivity-service.enabled: false
   captivedetect.canonicalURL: ""
+  # Tracking protection in private tabs follows the app's per-session switch. Gecko's default (true) turns it on
+  # for every private tab whatever the session asks; GeckoView has no setting for this pref.
+  privacy.trackingprotection.pbmode.enabled: false
   # HTTPS-only mode: no plain-HTTP background request to guess whether a site has HTTPS
   dom.security.https_only_mode_send_http_background_request: false
   # Cross-site referrers: origin only

@@ -252,19 +252,39 @@ class Core(
     fun createTrackingProtectionPolicy(
         normalMode: Boolean = Settings.isTrackingProtectionNormal(context),
         privateMode: Boolean = Settings.isTrackingProtectionPrivate(context),
-    ): TrackingProtectionPolicy {
-        val trackingPolicy = TrackingProtectionPolicy.strict()
-        return when {
-            normalMode && privateMode -> trackingPolicy
-            normalMode && !privateMode -> trackingPolicy.forRegularSessionsOnly()
-            !normalMode && privateMode -> trackingPolicy.forPrivateSessionsOnly()
-            else -> TrackingProtectionPolicy.none()
-        }
-    }
+    ): TrackingProtectionPolicy = trackingProtectionPolicyFor(normalMode, privateMode)
 
     private val lazySecurePrefs = lazy { SecureAbove22Preferences(context, KEY_STORAGE_NAME) }
 
     companion object {
         private const val KEY_STORAGE_NAME = "core_prefs"
+
+        /** The tracking protection policy for the two Settings switches. */
+        fun trackingProtectionPolicyFor(normalMode: Boolean, privateMode: Boolean): TrackingProtectionPolicy {
+            val trackingPolicy = TrackingProtectionPolicy.strict()
+            return when {
+                normalMode && privateMode -> trackingPolicy
+                // Without strict social blocking, as Android Components does for private-only: Gecko applies it to
+                // every
+                // tab, private ones included. Social trackers stay blocked in normal tabs through the tracking list.
+                normalMode && !privateMode ->
+                    TrackingProtectionPolicy.select(
+                            trackingCategories = trackingPolicy.trackingCategories,
+                            cookiePolicy = trackingPolicy.cookiePolicy,
+                            strictSocialTrackingProtection = false,
+                            cookiePurging = trackingPolicy.cookiePurging,
+                            bounceTrackingProtectionMode = trackingPolicy.bounceTrackingProtectionMode,
+                            allowListBaselineTrackingProtection = trackingPolicy.allowListBaselineTrackingProtection,
+                            allowListConvenienceTrackingProtection =
+                                trackingPolicy.allowListConvenienceTrackingProtection,
+                            fingerprintingProtection = trackingPolicy.fingerprintingProtection,
+                            fingerprintingProtectionPrivateBrowsing =
+                                trackingPolicy.fingerprintingProtectionPrivateBrowsing,
+                        )
+                        .forRegularSessionsOnly()
+                !normalMode && privateMode -> trackingPolicy.forPrivateSessionsOnly()
+                else -> TrackingProtectionPolicy.none()
+            }
+        }
     }
 }
