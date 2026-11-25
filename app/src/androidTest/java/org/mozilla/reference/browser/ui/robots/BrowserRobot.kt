@@ -130,6 +130,7 @@ class BrowserRobot {
             val copyText = mDevice.findObject(By.textContains("Copy"))
             copyText.click()
         }
+        waitForClipboardOverlayToGo()
     }
 
     fun verifyLinkContextMenuItems() {
@@ -181,9 +182,7 @@ class BrowserRobot {
                 UiSelector().resourceId("$packageName:id/snackbar_text").textContains("Link copied to clipboard")
             )
             .waitUntilGone(waitingTime)
-        // Android 13+ also shows its own clipboard overlay for a few seconds, over the toolbar: a tap on the address
-        // then lands on the overlay's "Send to nearby device" button.
-        mDevice.wait(Until.gone(By.pkg("com.android.systemui").desc("Send to nearby device")), waitingTime)
+        waitForClipboardOverlayToGo()
     }
 
     fun verifyMediaPlayerControlButtonState(state: String) {
@@ -252,6 +251,18 @@ fun browser(interact: BrowserRobot.() -> Unit): BrowserRobot.Transition {
     BrowserRobot().interact()
     return BrowserRobot.Transition()
 }
+
+/**
+ * Android 13+ shows its own clipboard overlay for a few seconds after a copy, over the toolbar: a tap on the address
+ * then lands on the overlay's "Send to nearby device" button and opens Quick Share instead of the edit field.
+ */
+private fun waitForClipboardOverlayToGo() {
+    val overlay = By.res("com.android.systemui", "clipboard_ui")
+    mDevice.wait(Until.hasObject(overlay), CLIPBOARD_OVERLAY_APPEAR_MS)
+    mDevice.wait(Until.gone(overlay), waitingTime)
+}
+
+private const val CLIPBOARD_OVERLAY_APPEAR_MS = 3000L
 
 private fun snackbarRestoreButton() =
     mDevice.findObject(UiSelector().resourceId("$packageName:id/snackbar_action").textContains("Restore"))
