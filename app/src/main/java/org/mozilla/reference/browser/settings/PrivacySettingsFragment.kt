@@ -67,6 +67,12 @@ class PrivacySettingsFragment : PreferenceFragmentCompat() {
         // Search suggestions need no listener: the address bar reads the preference on every keystroke.
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Also after the activity is recreated (rotation), which restores this page but not the title.
+        (activity as SettingsFragment.ActionBarUpdater).updateTitle(R.string.privacy_settings)
+    }
+
     private fun getChangeListenerForTrackingProtection(
         createTrackingProtectionPolicy: (Boolean) -> TrackingProtectionPolicy
     ): OnPreferenceChangeListener = OnPreferenceChangeListener { _, value ->
