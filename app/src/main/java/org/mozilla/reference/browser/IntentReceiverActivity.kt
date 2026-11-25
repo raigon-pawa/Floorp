@@ -7,10 +7,13 @@ package org.mozilla.reference.browser
 import android.app.Activity
 import android.app.SearchManager
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.os.Process
 import androidx.core.net.toUri
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
 import mozilla.components.feature.intent.ext.sanitize
+import mozilla.components.feature.media.service.AbstractMediaSessionService
 import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.support.utils.WebURLFinder
 import org.mozilla.reference.browser.ext.components
@@ -24,6 +27,14 @@ class IntentReceiverActivity : Activity() {
         super.onCreate(savedInstanceState)
         val intent = (intent?.let { Intent(it) } ?: Intent()).sanitize()
         restrictToWhatOtherAppsMaySend(intent)
+
+        // Tapping the media notification brings back the tab that plays.
+        if (intent.action == AbstractMediaSessionService.ACTION_SWITCH_TAB && isFromThisApp()) {
+            intent
+                .getStringExtra(AbstractMediaSessionService.EXTRA_TAB_ID)
+                ?.takeIf { id -> components.core.store.state.tabs.any { it.id == id } }
+                ?.let { components.useCases.tabsUseCases.selectTab(it) }
+        }
 
         // Explicitly remove the new task and clear task flags (Our browser activity is a single
         // task activity and we never want to start a second task here).
@@ -78,6 +89,10 @@ class IntentReceiverActivity : Activity() {
         val text = IncomingIntentRules.sharedTextOrNull(getStringExtra(extra), findUrl)
         if (text == null) removeExtra(extra) else putExtra(extra, text)
     }
+
+    // shortcut: before Android 14 the launching app is unknown, so the tab id, a random UUID, is the only guard.
+    private fun isFromThisApp() =
+        Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE || launchedFromUid == Process.myUid()
 
     private companion object {
         val INTERNAL_EXTRAS =
