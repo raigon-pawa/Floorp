@@ -4,7 +4,9 @@
 
 package org.mozilla.reference.browser.ui
 
+import android.net.Uri
 import androidx.core.net.toUri
+import androidx.test.platform.app.InstrumentationRegistry
 import mockwebserver3.MockWebServer
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import org.junit.Assert.assertEquals
@@ -12,15 +14,20 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.browser.StartPage
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.RetryTestRule
 import org.mozilla.reference.browser.helpers.TestAssetHelper
 import org.mozilla.reference.browser.helpers.TestHelper
+import org.mozilla.reference.browser.settings.BrowsingDataCleaner
+import org.mozilla.reference.browser.settings.ClearDataDialogFragment
 import org.mozilla.reference.browser.settings.ClearableData
+import org.mozilla.reference.browser.ui.robots.SettingsViewRobot
 import org.mozilla.reference.browser.ui.robots.mDevice
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
+import org.mozilla.reference.browser.ui.robots.startPage
 
 /**
  * Tests for verifying the settings view options exist as expected:
@@ -177,6 +184,60 @@ class SettingsViewTest {
         } finally {
             runCatching { mockWebServer.close() }
         }
+    }
+
+    @Test
+    fun clearOpenTabsLeavesOneStartTabTest() {
+        withPage { page ->
+            navigationToolbar {}.enterUrlAndEnterToBrowser(page) {}
+            navigationToolbar {}
+                .openThreeDotMenu {}
+                .openSettings {
+                    clickClearBrowsingData()
+                    toggleClearDataItem(ClearableData.TABS.label)
+                    confirmClearData()
+                }
+                .goBack {}
+            verifyOneStartTab()
+        }
+    }
+
+    // The prompt BrowserActivity shows at start for a clear the process did not finish: here the browser screen, and
+    // with it EnsureTabFeature, is running while the tabs go, so a second replacement tab would show up.
+    @Test
+    fun interruptedClearOfOpenTabsLeavesOneStartTabTest() {
+        withPage { page ->
+            navigationToolbar {}.enterUrlAndEnterToBrowser(page) {}
+            BrowsingDataCleaner.setPending(TestHelper.appContext, setOf(ClearableData.TABS))
+            val activity = browserActivityTestRule.activity
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                ClearDataDialogFragment.showIfInterrupted(activity, activity.supportFragmentManager)
+            }
+            SettingsViewRobot().confirmClearData()
+            verifyOneStartTab()
+        }
+    }
+
+    private fun withPage(test: (Uri) -> Unit) {
+        val mockWebServer =
+            MockWebServer().apply {
+                dispatcher = AndroidAssetDispatcher()
+                start()
+            }
+        try {
+            test(TestAssetHelper.getGenericAsset(mockWebServer, 1).url)
+        } finally {
+            runCatching { mockWebServer.close() }
+        }
+    }
+
+    private fun verifyOneStartTab() {
+        startPage { verifyStartPage() }
+        var urls = emptyList<String>()
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            urls = TestHelper.appContext.components.core.store.state.tabs.map { it.content.url }
+        }
+        assertEquals(listOf(StartPage.URL), urls)
     }
 
     /* Can't check further because after creating the custom add-on collection

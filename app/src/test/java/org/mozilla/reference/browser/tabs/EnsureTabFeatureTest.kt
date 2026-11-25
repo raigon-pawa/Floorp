@@ -64,6 +64,19 @@ class EnsureTabFeatureTest {
     }
 
     @Test
+    fun `removing every tab while started leaves exactly one start-page tab`() {
+        // What a clear of open tabs does: BrowsingDataCleaner leaves the replacement tab to this feature.
+        val (store, feature) = started()
+        store.dispatch(RestoreCompleteAction)
+        store.dispatch(TabListAction.AddTabAction(createTab("https://example.org/", id = "normal"), select = true))
+        store.dispatch(TabListAction.AddTabAction(createTab("https://example.com/", id = "p", private = true)))
+        TabsUseCases(store).removeAllTabs(recoverable = false)
+        assertEquals(StartPage.URL, store.state.tabs.single().content.url)
+        assertEquals(store.state.tabs.single().id, store.state.selectedTabId)
+        feature.stop()
+    }
+
+    @Test
     fun `tabs restored before restore completes are kept and no start-page tab is added`() {
         val (store, feature) = started()
         store.dispatch(TabListAction.AddTabAction(createTab("https://example.org/", id = "restored")))

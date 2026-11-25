@@ -10,6 +10,7 @@ import android.content.DialogInterface
 import android.os.Bundle
 import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
 import androidx.fragment.app.DialogFragment
@@ -99,7 +100,8 @@ object BrowsingDataCleaner {
             .mapNotNull { name -> ClearableData.entries.find { it.name == name } }
             .toSet()
 
-    private fun setPending(
+    @VisibleForTesting
+    internal fun setPending(
         context: Context,
         items: Set<ClearableData>,
     ) =
