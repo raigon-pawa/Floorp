@@ -319,7 +319,7 @@ class ToolbarIntegration(
     }
 
     /** Takes Back ahead of the keyboard, which otherwise only hides itself, while the address is being edited. */
-    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    @RequiresApi(Build.VERSION_CODES.BAKLAVA)
     private fun addEditBackCallback() {
         val dispatcher = toolbar.findOnBackInvokedDispatcher() ?: return
         val callback = OnBackInvokedCallback { leaveEditMode() }
@@ -409,7 +409,9 @@ class ToolbarIntegration(
         toolbar.edit.setOnEditFocusChangeListener { editing ->
             removeEditBackCallback()
             if (editing) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) addEditBackCallback()
+                // Back callbacks only receive Back where predictive back is on: by default from Android 16 for this
+                // target SDK (the manifest does not opt in earlier). Before that the key listener above takes it.
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA) addEditBackCallback()
             } else {
                 // Leaving edit mode (Enter, a suggestion, Back) hides the field but would leave the keyboard up.
                 editField.hideKeyboard()
