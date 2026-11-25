@@ -4,8 +4,10 @@
 
 package org.mozilla.reference.browser.downloads
 
+import android.content.Intent
 import android.os.Environment
 import androidx.core.app.NotificationManagerCompat
+import mozilla.components.browser.state.state.content.DownloadState.Status
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.AbstractFetchDownloadService
 import mozilla.components.feature.downloads.DefaultPackageNameProvider
@@ -45,4 +47,14 @@ class DownloadService : AbstractFetchDownloadService() {
         )
     }
     override val packageNameProvider: PackageNameProvider by lazy { DefaultPackageNameProvider(applicationContext) }
+
+    // The base class stops the service when the app is swiped away from recents, which cancelled running downloads
+    // and deleted their partial files without a word. A download in progress keeps going in this foreground service.
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        if (store.state.downloads.values.none { it.status in UNFINISHED }) super.onTaskRemoved(rootIntent)
+    }
+
+    private companion object {
+        val UNFINISHED = setOf(Status.INITIATED, Status.DOWNLOADING, Status.PAUSED)
+    }
 }
