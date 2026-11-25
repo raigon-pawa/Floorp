@@ -47,6 +47,8 @@ import org.mozilla.reference.browser.ext.share
 import org.mozilla.reference.browser.settings.SettingsActivity
 import org.mozilla.reference.browser.tabs.synced.SyncedTabsActivity
 
+private const val URL_TEXT_SIZE_SP = 13f
+
 /**
  * Wires the browser toolbar to the selected tab, or to the tab given by [sessionId]: URL loading and search,
  * autocomplete, the overflow menu and keeping the toolbar above the keyboard.
@@ -219,6 +221,13 @@ class ToolbarIntegration(
                     suggestionForeground = ContextCompat.getColor(context, R.color.aw_text_1),
                 )
         }
+
+        // JetBrains Mono for the address only (shown and edited). It is wider than the system font.
+        val mono = ResourcesCompat.getFont(context, R.font.jetbrains_mono_nl_regular)
+        toolbar.display.typeface = mono
+        toolbar.display.textSize = URL_TEXT_SIZE_SP
+        toolbar.edit.typeface = mono
+        toolbar.edit.textSize = URL_TEXT_SIZE_SP
 
         ToolbarAutocompleteFeature(toolbar).apply {
             updateAutocompleteProviders(listOf(historyStorage, shippedDomainsProvider))
