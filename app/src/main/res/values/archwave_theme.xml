@@ -23,6 +23,8 @@
     <color name="mozac_feature_readerview_text_color" tools:ignore="UnusedResources">@color/aw_text_2</color>
     <color name="mozac_feature_readerview_selected" tools:ignore="UnusedResources">@color/aw_text_1</color>
     <color name="mozac_feature_readerview_text_color_disabled" tools:ignore="UnusedResources">@color/aw_text_disabled</color>
+    <color name="mozac_feature_readerview_dark_background" tools:ignore="UnusedResources">@color/aw_surface_3</color>
+    <color name="mozac_feature_readerview_light_background" tools:ignore="UnusedResources">#FFEEEEEE</color>
     <color name="mozac_feature_addons_text_color_accent" tools:ignore="UnusedResources">@color/aw_text_1</color>
     <color name="mozac_feature_addons_messagebar_warning_background_color" tools:ignore="UnusedResources">@color/aw_warning</color>
     <color name="mozac_feature_addons_messagebar_error_background_color" tools:ignore="UnusedResources">@color/aw_error</color>

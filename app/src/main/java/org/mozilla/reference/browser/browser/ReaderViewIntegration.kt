@@ -7,6 +7,7 @@ package org.mozilla.reference.browser.browser
 import android.content.Context
 import android.util.AttributeSet
 import android.view.View
+import android.widget.TextView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -15,6 +16,7 @@ import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.engine.Engine
 import mozilla.components.feature.findinpage.view.FindInPageBar
+import mozilla.components.feature.readerview.R as readerviewR
 import mozilla.components.feature.readerview.ReaderViewFeature
 import mozilla.components.feature.readerview.view.ReaderViewControlsView
 import mozilla.components.support.base.feature.LifecycleAwareFeature
@@ -58,7 +60,13 @@ class ReaderViewIntegration(
 
     init {
         toolbar.addPageAction(readerViewButton)
-        readerViewAppearanceButton.setOnClickListener { feature.showControls() }
+        readerViewAppearanceButton.setOnClickListener {
+            feature.showControls()
+            // The controls are inflated when first shown; their layout hard-codes purple text on the light and sepia
+            // scheme buttons.
+            listOf(readerviewR.id.mozac_feature_readerview_color_light, readerviewR.id.mozac_feature_readerview_color_sepia)
+                .forEach { (view as? View)?.findViewById<TextView>(it)?.setTextColor(context.getColor(R.color.aw_black)) }
+        }
     }
 
     private val feature =
