@@ -142,13 +142,22 @@ object BrowsingDataCleaner {
                 )
             }
         }
-        if (ClearableData.HISTORY in items) components.core.historyStorage.deleteEverything()
+        if (ClearableData.HISTORY in items) clearHistory(components)
         if (ClearableData.CACHE in items) {
             withContext(Dispatchers.IO) { components.core.icons.clear() }
             components.core.thumbnailStorage.clearThumbnails().join()
         }
         if (ClearableData.PERMISSIONS in items) clearSitePermissions(context, components)
         if (ClearableData.DOWNLOADS in items) components.useCases.downloadsUseCases.removeAllDownloads()
+    }
+
+    /** Places logs and swallows its own errors, so a failed delete would pass as done without the check. */
+    private suspend fun clearHistory(components: Components) {
+        val history = components.core.historyStorage
+        val startedAt = System.currentTimeMillis()
+        history.deleteEverything()
+        // Visits after the start can come from pages that are still open.
+        check(history.getDetailedVisits(0, startedAt).isEmpty()) { "History was not deleted" }
     }
 
     /** Resets every web site's permissions to "ask", in the app's records and in the engine, but not extensions'. */

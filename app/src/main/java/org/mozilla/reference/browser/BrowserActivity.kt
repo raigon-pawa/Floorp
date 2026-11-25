@@ -50,6 +50,7 @@ import org.mozilla.reference.browser.browser.BrowserFragment
 import org.mozilla.reference.browser.browser.CrashIntegration
 import org.mozilla.reference.browser.browser.withoutSystemBarMargins
 import org.mozilla.reference.browser.ext.components
+import org.mozilla.reference.browser.settings.ClearDataDialogFragment
 
 /** Activity that holds the [BrowserFragment]. */
 open class BrowserActivity : AppCompatActivity() {
@@ -112,6 +113,8 @@ open class BrowserActivity : AppCompatActivity() {
             false,
         )
         showNoticeIfCrashedSinceLastStart()
+        // A clear of browsing data that the process did not live to finish is offered again at once, not hidden.
+        ClearDataDialogFragment.showIfInterrupted(this, supportFragmentManager)
         lifecycle.addObserver(webExtensionPopupObserver)
         addExtensionObservers()
 
