@@ -12,6 +12,7 @@ import androidx.core.content.res.ResourcesCompat
 import com.google.android.material.tabs.TabLayout
 import mozilla.components.feature.tabs.tabstray.TabsFeature
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.reference.browser.R
 
 /** Tab strip at the top of the tabs tray that switches it between normal and private tabs. */
 class TabsPanel
@@ -28,13 +29,13 @@ constructor(
     init {
         normalTab =
             newTab().apply {
-                contentDescription = "Tabs"
+                contentDescription = context.getString(R.string.tabs_tray_normal_tabs)
                 icon = resources.getThemedDrawable(iconsR.drawable.mozac_ic_tab_24)
             }
 
         privateTab =
             newTab().apply {
-                contentDescription = "Private tabs"
+                contentDescription = context.getString(R.string.tabs_tray_private_tabs)
                 icon = resources.getThemedDrawable(iconsR.drawable.mozac_ic_private_mode_24)
             }
 

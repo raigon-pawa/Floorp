@@ -24,7 +24,7 @@ constructor(
     private var closeTabsTray: (() -> Unit)? = null
 
     init {
-        navigationContentDescription = "back"
+        navigationContentDescription = context.getString(R.string.tabs_tray_back)
         setNavigationIcon(iconsR.drawable.mozac_ic_back_24)
         setNavigationOnClickListener {
             closeTabsTray?.invoke()
