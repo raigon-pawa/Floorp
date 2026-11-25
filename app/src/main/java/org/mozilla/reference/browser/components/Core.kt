@@ -5,7 +5,7 @@
 package org.mozilla.reference.browser.components
 
 import android.content.Context
-import android.content.SharedPreferences
+import android.graphics.Color
 import android.os.Environment
 import androidx.preference.PreferenceManager
 import java.util.concurrent.TimeUnit
@@ -23,6 +23,7 @@ import mozilla.components.browser.thumbnails.storage.ThumbnailStorage
 import mozilla.components.concept.engine.DefaultSettings
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
+import mozilla.components.concept.engine.mediaquery.PreferredColorScheme
 import mozilla.components.concept.fetch.Client
 import mozilla.components.feature.addons.AddonManager
 import mozilla.components.feature.addons.amo.AMOAddonsProvider
@@ -52,8 +53,6 @@ import org.mozilla.reference.browser.BrowserActivity
 import org.mozilla.reference.browser.EngineProvider
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.R.string.pref_key_remote_debugging
-import org.mozilla.reference.browser.R.string.pref_key_tracking_protection_normal
-import org.mozilla.reference.browser.R.string.pref_key_tracking_protection_private
 import org.mozilla.reference.browser.browser.CrashedTabMiddleware
 import org.mozilla.reference.browser.downloads.DownloadService
 import org.mozilla.reference.browser.ext.components
@@ -72,21 +71,29 @@ class Core(
     /** The browser engine component initialized based on the build configuration (see build variants). */
     val engine: Engine by lazy {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        val dohProviderUrl = Settings.getDohProviderUrl(context)
 
         val defaultSettings =
             DefaultSettings(
                 requestInterceptor = AppRequestInterceptor(context),
                 remoteDebuggingEnabled = prefs.getBoolean(context.getPreferenceKey(pref_key_remote_debugging), false),
                 testingModeEnabled = prefs.getBoolean(context.getPreferenceKey(R.string.pref_key_testing_mode), false),
-                trackingProtectionPolicy = createTrackingProtectionPolicy(prefs),
+                trackingProtectionPolicy = createTrackingProtectionPolicy(),
                 historyTrackingDelegate = HistoryDelegate(lazyHistoryStorage),
-                globalPrivacyControlEnabled =
-                    prefs.getBoolean(
-                        context.getPreferenceKey(R.string.pref_key_global_privacy_control),
-                        false,
-                    ),
+                globalPrivacyControlEnabled = Settings.isGlobalPrivacyControl(context),
+                httpsOnlyMode = Settings.httpsOnlyModeFor(Settings.isHttpsOnly(context)),
+                dohSettingsMode = Settings.dohModeFor(dohProviderUrl),
+                dohProviderUrl = dohProviderUrl,
+                emailTrackerBlockingPrivateBrowsing = true,
+                preferredColorScheme = PreferredColorScheme.Dark,
+                // Black instead of the default white, so blank tabs and page loads do not flash.
+                clearColor = Color.BLACK,
             )
-        EngineProvider.createEngine(context, defaultSettings)
+        EngineProvider.createEngine(context, defaultSettings).also {
+            // GeckoEngine does not copy these from DefaultSettings, so they must be set on the live settings.
+            it.settings.queryParameterStripping = true
+            it.settings.queryParameterStrippingPrivateBrowsing = true
+        }
     }
 
     /** The [Client] implementation (`concept-fetch`) used for HTTP requests. */
@@ -233,7 +240,6 @@ class Core(
     /**
      * Constructs a [TrackingProtectionPolicy] based on current preferences.
      *
-     * @param prefs the shared preferences to use when reading tracking protection settings.
      * @param normalMode whether or not tracking protection should be enabled in normal browsing mode, defaults to the
      *   current preference value.
      * @param privateMode whether or not tracking protection should be enabled in private browsing mode, default to the
@@ -241,11 +247,10 @@ class Core(
      * @return the constructed tracking protection policy based on preferences.
      */
     fun createTrackingProtectionPolicy(
-        prefs: SharedPreferences = PreferenceManager.getDefaultSharedPreferences(context),
-        normalMode: Boolean = prefs.getBoolean(context.getPreferenceKey(pref_key_tracking_protection_normal), true),
-        privateMode: Boolean = prefs.getBoolean(context.getPreferenceKey(pref_key_tracking_protection_private), true),
+        normalMode: Boolean = Settings.isTrackingProtectionNormal(context),
+        privateMode: Boolean = Settings.isTrackingProtectionPrivate(context),
     ): TrackingProtectionPolicy {
-        val trackingPolicy = TrackingProtectionPolicy.recommended()
+        val trackingPolicy = TrackingProtectionPolicy.strict()
         return when {
             normalMode && privateMode -> trackingPolicy
             normalMode && !privateMode -> trackingPolicy.forRegularSessionsOnly()

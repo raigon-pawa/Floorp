@@ -37,7 +37,7 @@
     <string name="preferences_tracking_protection_private">Enable in Private Browsing Mode</string>
 
     <!-- Preference for enabling global privacy control in normal mode -->
-    <string name="preferences_global_privacy_control">Tell websites not to share &amp; sell data</string>
+    <string name="preferences_global_privacy_control">Global Privacy Control</string>
 
     <!-- Preference about page -->
     <string name="preferences_about_page">About Archwave</string>
@@ -73,7 +73,7 @@
     <string name="privacy">Privacy</string>
 
     <!-- Preference summary for privacy -->
-    <string name="preferences_privacy_summary">Tracking, cookies, data choices</string>
+    <string name="preferences_privacy_summary">Tracking protection, HTTPS-only, DNS over HTTPS, search suggestions</string>
 
     <!-- Preference category for sync settings -->
     <string name="sync_category">Choose what to sync</string>

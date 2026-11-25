@@ -7,23 +7,45 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
-        android:title="@string/tracker_category">
+        android:title="@string/tracker_category"
+        android:summary="@string/preferences_tracking_protection_summary">
 
         <androidx.preference.SwitchPreferenceCompat
-            android:defaultValue="true"
+            android:defaultValue="@bool/pref_default_tracking_protection_normal"
             android:title="@string/preferences_tracking_protection_normal"
             android:key="@string/pref_key_tracking_protection_normal"/>
 
         <androidx.preference.SwitchPreferenceCompat
-            android:defaultValue="true"
+            android:defaultValue="@bool/pref_default_tracking_protection_private"
             android:title="@string/preferences_tracking_protection_private"
             android:key="@string/pref_key_tracking_protection_private"/>
 
     </PreferenceCategory>
 
     <androidx.preference.SwitchPreferenceCompat
-        android:defaultValue="false"
+        android:defaultValue="@bool/pref_default_https_only"
+        android:title="@string/preferences_https_only"
+        android:summary="@string/preferences_https_only_summary"
+        android:key="@string/pref_key_https_only"/>
+
+    <androidx.preference.ListPreference
+        android:defaultValue="@string/pref_default_doh_provider"
+        android:title="@string/preferences_doh"
+        android:entries="@array/doh_provider_entries"
+        android:entryValues="@array/doh_provider_values"
+        android:key="@string/pref_key_doh_provider"
+        app:useSimpleSummaryProvider="true"/>
+
+    <androidx.preference.SwitchPreferenceCompat
+        android:defaultValue="@bool/pref_default_global_privacy_control"
         android:title="@string/preferences_global_privacy_control"
+        android:summary="@string/preferences_global_privacy_control_summary"
         android:key="@string/pref_key_global_privacy_control"/>
+
+    <androidx.preference.SwitchPreferenceCompat
+        android:defaultValue="@bool/pref_default_search_suggestions"
+        android:title="@string/preferences_search_suggestions"
+        android:summary="@string/preferences_search_suggestions_summary"
+        android:key="@string/pref_key_search_suggestions"/>
 
 </androidx.preference.PreferenceScreen>

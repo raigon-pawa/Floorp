@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- Preference keys -->
+    <string name="pref_key_https_only" translatable="false">pref_key_https_only</string>
+    <string name="pref_key_doh_provider" translatable="false">pref_key_doh_provider</string>
+    <string name="pref_key_search_suggestions" translatable="false">pref_key_search_suggestions</string>
+
+    <!-- Defaults: the preference XML and Settings.kt both read these, so they cannot drift apart -->
+    <bool name="pref_default_tracking_protection_normal">true</bool>
+    <bool name="pref_default_tracking_protection_private">true</bool>
+    <bool name="pref_default_https_only">true</bool>
+    <bool name="pref_default_global_privacy_control">true</bool>
+    <bool name="pref_default_search_suggestions">false</bool>
+    <string name="pref_default_doh_provider" translatable="false">@string/doh_provider_quad9</string>
+
+    <!-- DNS over HTTPS resolvers. The stored value is the resolver URL; an empty value means the system resolver. -->
+    <string name="doh_provider_quad9" translatable="false">https://dns.quad9.net/dns-query</string>
+    <string name="doh_provider_cloudflare" translatable="false">https://cloudflare-dns.com/dns-query</string>
+    <string name="doh_provider_mullvad" translatable="false">https://dns.mullvad.net/dns-query</string>
+    <string-array name="doh_provider_entries">
+        <item>Quad9 (default)</item>
+        <item>Cloudflare</item>
+        <item>Mullvad</item>
+        <item>Off: use the system resolver</item>
+    </string-array>
+    <string-array name="doh_provider_values" translatable="false">
+        <item>@string/doh_provider_quad9</item>
+        <item>@string/doh_provider_cloudflare</item>
+        <item>@string/doh_provider_mullvad</item>
+        <item />
+    </string-array>
+
+    <!-- Privacy settings rows -->
+    <string name="preferences_tracking_protection_summary">Strict: blocks trackers and fingerprinters</string>
+    <string name="preferences_https_only">HTTPS-only mode</string>
+    <string name="preferences_https_only_summary">Upgrade every site to HTTPS and ask before loading one that has no HTTPS</string>
+    <string name="preferences_doh">DNS over HTTPS</string>
+    <string name="preferences_global_privacy_control_summary">Tell websites not to share or sell your data</string>
+    <string name="preferences_search_suggestions">Search suggestions</string>
+    <string name="preferences_search_suggestions_summary">Send what you type to the search engine for suggestions. Never in private tabs</string>
+</resources>

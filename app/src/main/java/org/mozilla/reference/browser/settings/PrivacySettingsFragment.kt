@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser.settings
 
 import android.os.Bundle
+import androidx.preference.ListPreference
 import androidx.preference.Preference.OnPreferenceChangeListener
 import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
@@ -41,6 +42,26 @@ class PrivacySettingsFragment : PreferenceFragmentCompat() {
             requireComponents.core.engine.settings.globalPrivacyControlEnabled = enabled
             requireComponents.useCases.sessionUseCases.reload.invoke()
         }
+
+        findPreference<SwitchPreferenceCompat>(context.getPreferenceKey(R.string.pref_key_https_only))
+            ?.onPreferenceChangeListener =
+            OnPreferenceChangeListener { _, enabled ->
+                requireComponents.core.engine.settings.httpsOnlyMode = Settings.httpsOnlyModeFor(enabled as Boolean)
+                true
+            }
+
+        findPreference<ListPreference>(context.getPreferenceKey(R.string.pref_key_doh_provider))
+            ?.onPreferenceChangeListener =
+            OnPreferenceChangeListener { _, value ->
+                val url = value as String
+                requireComponents.core.engine.settings.apply {
+                    // Provider first, so the mode never applies to the previous resolver.
+                    dohProviderUrl = url
+                    dohSettingsMode = Settings.dohModeFor(url)
+                }
+                true
+            }
+        // Search suggestions need no listener: the address bar reads the preference on every keystroke.
     }
 
     private fun getChangeListenerForTrackingProtection(
