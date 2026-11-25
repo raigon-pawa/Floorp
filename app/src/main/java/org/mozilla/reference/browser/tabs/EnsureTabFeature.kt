@@ -8,6 +8,9 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
@@ -24,18 +27,24 @@ import org.mozilla.reference.browser.browser.StartPage
  * Keeps a tab selected in the browser: whenever none is (first launch, the last tab closed, Close all tabs, the last
  * private tab closed), selects the most recently used normal tab or, without one, opens a start-page tab. Only bound by
  * the main browser screen, so custom tabs and web apps never get a tab from it, and only while that screen is started.
+ *
+ * @param pendingIntentTabs how many incoming intents are about to add a tab; none is opened while that is above 0.
  */
 class EnsureTabFeature(
     private val store: BrowserStore,
     private val tabsUseCases: TabsUseCases,
     private val mainDispatcher: CoroutineDispatcher = Dispatchers.Main,
+    private val pendingIntentTabs: StateFlow<Int> = MutableStateFlow(0),
 ) : LifecycleAwareFeature {
     private var scope: CoroutineScope? = null
 
     override fun start() {
         scope =
             store.flowScoped(dispatcher = mainDispatcher) { flow ->
-                flow.map(::needsTab).distinctUntilChanged().filter { it }.collect { ensureTab() }
+                combine(flow.map(::needsTab), pendingIntentTabs) { needed, pending -> needed && pending == 0 }
+                    .distinctUntilChanged()
+                    .filter { it }
+                    .collect { ensureTab() }
             }
     }
 
@@ -49,7 +58,8 @@ class EnsureTabFeature(
      */
     internal fun ensureTab() {
         val state = store.state
-        if (!needsTab(state)) return
+        // An intent that is about to add its own tab (a search waiting for the engines) would come second.
+        if (!needsTab(state) || pendingIntentTabs.value > 0) return
         val recent = state.normalTabs.maxByOrNull { it.lastAccess }
         if (recent != null) {
             tabsUseCases.selectTab(recent.id)
