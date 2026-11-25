@@ -60,6 +60,7 @@ import org.mozilla.reference.browser.R.string.pref_key_remote_debugging
 import org.mozilla.reference.browser.browser.CrashedTabMiddleware
 import org.mozilla.reference.browser.browser.KeepTitleMiddleware
 import org.mozilla.reference.browser.browser.TrackingProtectionStateMiddleware
+import org.mozilla.reference.browser.downloads.DownloadQueueMiddleware
 import org.mozilla.reference.browser.downloads.DownloadService
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.ext.getPreferenceKey
@@ -154,6 +155,7 @@ class Core(
                         SearchMiddleware(context),
                         RecordingDevicesMiddleware(context, context.components.notificationsDelegate),
                         CrashedTabMiddleware(),
+                        DownloadQueueMiddleware(),
                         TrackingProtectionStateMiddleware { engine.settings.trackingProtectionPolicy },
                         KeepTitleMiddleware(),
                         // Keeps closed tabs for a few seconds, for the tabs tray's Undo.
