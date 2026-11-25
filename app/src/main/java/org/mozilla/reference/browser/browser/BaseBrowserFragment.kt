@@ -452,6 +452,9 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
     private fun fullScreenChanged(enabled: Boolean) {
         if (enabled) {
             activity?.enterImmersiveMode()
+            // The clipping behaviour still reads a hidden toolbar's translation on every layout pass: one left
+            // scrolled away would clip the fullscreen page by the toolbar height.
+            toolbar.translationY = 0f
             toolbar.visibility = View.GONE
             engineView.setDynamicToolbarMaxHeight(0)
         } else {
