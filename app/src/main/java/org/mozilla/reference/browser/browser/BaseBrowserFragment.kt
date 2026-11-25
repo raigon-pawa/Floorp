@@ -63,6 +63,8 @@ import mozilla.components.support.utils.DefaultDownloadFileUtils
 import mozilla.components.ui.widgets.behavior.DependencyGravity
 import mozilla.components.ui.widgets.behavior.EngineViewClippingBehavior
 import mozilla.components.ui.widgets.behavior.EngineViewScrollingGesturesBehavior
+import org.mozilla.geckoview.BasicSelectionActionDelegate
+import org.mozilla.geckoview.GeckoView
 import org.mozilla.reference.browser.BuildConfig
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.addons.WebExtensionPromptFeature
@@ -550,7 +552,20 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
         }
     }
 
-    @CallSuper override fun onBackPressed(): Boolean = backButtonHandler.any { it.onBackPressed() }
+    @CallSuper
+    override fun onBackPressed(): Boolean = clearTextSelection() || backButtonHandler.any { it.onBackPressed() }
+
+    /** Back first clears a text selection and its action bar, as elsewhere in Android, instead of going back. */
+    private fun clearTextSelection(): Boolean {
+        // shortcut: GeckoEngineView (Android Components 160) holds its GeckoView as child 0 and does not say whether
+        // there is a selection; if an upgrade moves it, Back goes back with a selection again.
+        val geckoView = (engineView as? ViewGroup)?.getChildAt(0) as? GeckoView
+        // GeckoView's own delegate: the app sets none, so the engine view's clearSelection() has nothing to clear.
+        val selection = geckoView?.session?.selectionActionDelegate as? BasicSelectionActionDelegate
+        if (selection?.selection == null) return false
+        selection.clearSelection()
+        return true
+    }
 
     final override fun onHomePressed(): Boolean = pictureInPictureIntegration.get()?.onHomePressed() ?: false
 
