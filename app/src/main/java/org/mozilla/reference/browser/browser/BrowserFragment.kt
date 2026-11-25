@@ -6,6 +6,8 @@ package org.mozilla.reference.browser.browser
 
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.coroutines.Dispatchers
@@ -100,6 +102,10 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     }
 
     private fun setupAwesomeBar() {
+        // The toolbar is drawn over the bottom of the list; keep the last suggestion clear of it.
+        awesomeBar.updateLayoutParams<ViewGroup.MarginLayoutParams> {
+            bottomMargin = resources.getDimensionPixelSize(R.dimen.browser_toolbar_height)
+        }
         val context = requireContext().applicationContext
         val store = requireComponents.core.store
         val defaultSearch = requireComponents.useCases.searchUseCases.defaultSearch

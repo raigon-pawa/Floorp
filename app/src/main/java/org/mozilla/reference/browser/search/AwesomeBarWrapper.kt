@@ -82,6 +82,10 @@ constructor(
     override fun containsProvider(provider: AwesomeBar.SuggestionProvider): Boolean =
         providers.value.any { current -> current.id == provider.id }
 
+    // Editing opens with the page address already in the field, before input counts as started, so without this the
+    // list kept the suggestions of the previous edit until the first keystroke.
+    override fun onInputStarted() = onInputChanged("")
+
     override fun onInputChanged(text: String) {
         hiddenSuggestions.value = emptySet()
         this.text.value = text
