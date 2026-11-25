@@ -18,6 +18,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
 import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
@@ -43,6 +44,7 @@ import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.AS
 import mozilla.components.feature.sitepermissions.SitePermissionsRules.AutoplayAction
 import mozilla.components.feature.tabs.WindowFeature
 import mozilla.components.feature.webauthn.WebAuthnFeature
+import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
@@ -57,6 +59,7 @@ import mozilla.components.ui.widgets.behavior.EngineViewScrollingGesturesBehavio
 import org.mozilla.reference.browser.BuildConfig
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.addons.WebExtensionPromptFeature
+import org.mozilla.reference.browser.downloads.AskFirstDownloadManager
 import org.mozilla.reference.browser.downloads.DownloadService
 import org.mozilla.reference.browser.ext.getPreferenceKey
 import org.mozilla.reference.browser.ext.requireComponents
@@ -326,11 +329,16 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                         },
                     ),
                 downloadManager =
-                    FetchDownloadManager(
-                        requireContext().applicationContext,
-                        requireComponents.core.store,
-                        DownloadService::class,
-                        notificationsDelegate = requireComponents.notificationsDelegate,
+                    AskFirstDownloadManager(
+                        FetchDownloadManager(
+                            requireContext().applicationContext,
+                            requireComponents.core.store,
+                            DownloadService::class,
+                            notificationsDelegate =
+                                NotificationsDelegate(NotificationManagerCompat.from(requireContext())),
+                        ),
+                        requireComponents.notificationsDelegate,
+                        ::shouldShowRequestPermissionRationale,
                     ),
                 onNeedToRequestPermissions = { permissions ->
                     requestDownloadPermissionsLauncher.launch(permissions)
