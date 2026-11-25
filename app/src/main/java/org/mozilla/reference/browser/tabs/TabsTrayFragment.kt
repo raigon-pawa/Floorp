@@ -42,6 +42,9 @@ import org.mozilla.reference.browser.ext.requireComponents
 class TabsTrayFragment : Fragment(), UserInteractionHandler {
     private var tabsFeature: TabsFeature? = null
 
+    // Whether the panel shown has any tab. Switching to an empty panel is not closing its last tab.
+    private var showingTabs = false
+
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -60,7 +63,8 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
             TabsFeature(
                 trayAdapter,
                 requireComponents.core.store,
-                ::closeTabsTray,
+                // The library also calls this on the first update after a switch to an empty panel.
+                onCloseTray = { if (showingTabs) closeTabsTray() },
             ) {
                 !it.content.private
             }
@@ -206,6 +210,7 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
         return object : TabsTray by tabsAdapter {
             override fun updateTabs(tabs: List<TabSessionState>, selectedTabId: String?) {
                 tabsAdapter.updateTabs(tabs, selectedTabId)
+                showingTabs = tabs.isNotEmpty()
                 // Once, to the tab the user came from. The adapter applies its first list at once.
                 val selected = tabs.indexOfFirst { it.id == selectedTabId }
                 if (!scrolledToSelected && selected >= 0) {
