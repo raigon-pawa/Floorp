@@ -222,7 +222,9 @@ class ToolbarIntegration(
                 extensionsMenuItem(state, tab),
                 DividerMenuCandidate(),
             ) +
-            (tab?.let(::pageMenuItems) ?: emptyList()) +
+            // The start page is not a page: nothing to find in it or to show as a desktop site.
+            (tab?.takeUnless { (it as? TabSessionState)?.let(StartPage::isStartTab) == true }?.let(::pageMenuItems)
+                ?: emptyList()) +
             TextMenuCandidate(context.getString(R.string.menu_settings)) {
                 startActivity(SettingsActivity::class.java)
             }

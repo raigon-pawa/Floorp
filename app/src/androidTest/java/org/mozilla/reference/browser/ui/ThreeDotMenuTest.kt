@@ -63,16 +63,16 @@ class ThreeDotMenuTest {
         navigationToolbar {}
             .openThreeDotMenu {
                 verifyThreeDotMenuExists()
-                // These items should not exist in the home screen menu
-                verifyBackButtonDoesntExist()
-                verifyForwardButtonDoesntExist()
-                verifyReloadButtonDoesntExist()
+                // The start page's tab has the navigation row (its buttons disabled until there is somewhere to go)...
+                verifyBackButtonExists()
+                verifyForwardButtonExists()
+                verifyReloadButtonExists()
                 verifyStopButtonDoesntExist()
-                verifyShareButtonDoesntExist()
+                verifyShareButtonExists()
+                // ...but nothing that only makes sense for a web page.
                 verifyRequestDesktopSiteToggleDoesntExist()
                 verifyAddToHomescreenButtonDoesntExist()
                 verifyFindInPageButtonDoesntExist()
-                // Only these items should exist in the home screen menu
                 verifyNewTabButtonExists()
                 verifyNewPrivateTabButtonExists()
                 verifyAddOnsButtonExists()
