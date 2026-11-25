@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser.ui
 
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.uiautomator.UiDevice
 import mockwebserver3.MockWebServer
 import org.junit.After
 import org.junit.Before
@@ -66,6 +67,25 @@ class CrashRecoveryTest {
         loadUrl(nextPage.url.toString())
         browser {
             verifyPageContent(nextPage.content)
+            verifyNoTabCrashedSnackbar()
+        }
+    }
+
+    // Back on a crashed tab must go back, not be swallowed until the tab is restored.
+    @Test
+    fun goBackFromCrashedTabTest() {
+        val page = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+        val nextPage = TestAssetHelper.getGenericAsset(mockWebServer, 2)
+
+        loadUrl(page.url.toString())
+        browser { verifyPageContent(page.content) }
+        loadUrl(nextPage.url.toString())
+        browser { verifyPageContent(nextPage.content) }
+        loadUrl("about:crashcontent")
+        browser { verifyTabCrashedSnackbar() }
+        UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).pressBack()
+        browser {
+            verifyPageContent(page.content)
             verifyNoTabCrashedSnackbar()
         }
     }
