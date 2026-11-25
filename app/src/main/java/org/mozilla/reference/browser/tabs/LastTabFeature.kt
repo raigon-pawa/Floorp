@@ -4,7 +4,6 @@
 
 package org.mozilla.reference.browser.tabs
 
-import android.app.Activity
 import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.state.SessionState
 import mozilla.components.browser.state.state.TabSessionState
@@ -18,7 +17,7 @@ class LastTabFeature(
     private val store: BrowserStore,
     private val tabId: String? = null,
     private val removeTabUseCase: TabsUseCases.RemoveTabUseCase,
-    private val activity: Activity,
+    private val finishActivity: () -> Unit,
 ) : LifecycleAwareFeature, UserInteractionHandler {
     override fun start() = Unit
 
@@ -34,7 +33,7 @@ class LastTabFeature(
             tab.source is SessionState.Source.External || tab.source is SessionState.Source.Internal.CustomTab
 
         return if (isExternalOrCustomTab && !tab.restored) {
-            activity.finish()
+            finishActivity()
             removeTabUseCase(tab.id)
             true
         } else {

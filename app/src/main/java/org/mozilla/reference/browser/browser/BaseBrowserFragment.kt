@@ -212,7 +212,7 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 requireComponents.core.store,
                 sessionId,
                 requireComponents.useCases.tabsUseCases.removeTab,
-                requireActivity(),
+                requireActivity()::finish,
             ),
         )
 
