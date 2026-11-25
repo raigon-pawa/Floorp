@@ -32,7 +32,6 @@ import mozilla.components.feature.awesomebar.provider.SearchActionProvider
 import mozilla.components.feature.awesomebar.provider.SearchSuggestionProvider
 import mozilla.components.feature.awesomebar.provider.SessionSuggestionProvider
 import mozilla.components.feature.readerview.view.ReaderViewControlsBar
-import mozilla.components.feature.tabs.toolbar.TabsToolbarFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.ktx.android.content.isOSOnLowMemory
@@ -91,13 +90,7 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
             EnsureTabFeature(requireComponents.core.store, requireComponents.useCases.tabsUseCases),
         )
 
-        TabsToolbarFeature(
-            toolbar = toolbar,
-            sessionId = sessionId,
-            store = requireComponents.core.store,
-            showTabs = ::showTabs,
-            lifecycleOwner = this,
-        )
+        toolbar.addBrowserAction(TabCounterButton(this, requireComponents.core.store, ::showTabs))
 
         thumbnailsFeature.bind(
             view,
