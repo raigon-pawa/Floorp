@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<!-- Start page tile: a plain duck head for DuckDuckGo (not the DuckDuckGo logo). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="1.75"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M10,5a6,6 0,1 0,0.01 0ZM15.4,8.8L21.5,12.2L15.6,14.4" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M11.6,8.4a1.3,1.3 0,1 0,0.01 0Z" />
+</vector>

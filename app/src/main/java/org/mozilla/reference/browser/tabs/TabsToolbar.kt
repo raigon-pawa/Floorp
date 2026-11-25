@@ -9,6 +9,7 @@ import android.util.AttributeSet
 import mozilla.components.feature.tabs.tabstray.TabsFeature
 import mozilla.components.ui.icons.R as iconsR
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.browser.StartPage
 import org.mozilla.reference.browser.ext.components
 
 /** Toolbar of the tabs tray, with back navigation and the new tab and close tabs actions. */
@@ -35,7 +36,7 @@ constructor(
                 R.id.newTab -> {
                     when (isPrivateTray) {
                         true -> tabsUseCases.addTab.invoke("about:privatebrowsing", selectTab = true, private = true)
-                        false -> tabsUseCases.addTab.invoke("about:blank", selectTab = true)
+                        false -> tabsUseCases.addTab.invoke(StartPage.URL, selectTab = true)
                     }
                     closeTabsTray?.invoke()
                 }

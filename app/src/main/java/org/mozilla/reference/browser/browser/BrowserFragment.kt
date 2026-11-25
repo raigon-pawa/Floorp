@@ -35,6 +35,7 @@ import org.mozilla.reference.browser.tabs.TabsTrayFragment
 class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val thumbnailsFeature = ViewBoundFeatureWrapper<BrowserThumbnails>()
     private val readerViewFeature = ViewBoundFeatureWrapper<ReaderViewIntegration>()
+    private val startPageIntegration = ViewBoundFeatureWrapper<StartPageIntegration>()
 
     private val awesomeBar: AwesomeBarWrapper
         get() = requireView().findViewById(R.id.awesomeBar)
@@ -60,6 +61,16 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     ) {
         super.onViewCreated(view, savedInstanceState)
         setupAwesomeBar()
+
+        startPageIntegration.bind(
+            view,
+            StartPageIntegration(
+                view.findViewById(R.id.startPage),
+                requireComponents.core.store,
+                toolbar,
+                requireComponents.useCases.sessionUseCases.loadUrl,
+            ),
+        )
 
         TabsToolbarFeature(
             toolbar = toolbar,

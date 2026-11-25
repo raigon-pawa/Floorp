@@ -30,10 +30,20 @@
             android:layout_height="match_parent" />
     </mozilla.components.ui.widgets.VerticalSwipeRefreshLayout>
 
+    <!-- Over the engine view, under the awesome bar and the toolbar. -->
+    <androidx.compose.ui.platform.ComposeView
+        android:id="@+id/startPage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="@dimen/browser_toolbar_height"
+        android:visibility="gone" />
+
+    <!-- Opaque, so it covers the start page while the address is edited. -->
     <org.mozilla.reference.browser.search.AwesomeBarWrapper
         android:id="@+id/awesomeBar"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/aw_black"
         android:padding="4dp"
         android:visibility="gone" />
 

@@ -208,7 +208,7 @@ class ToolbarIntegration(
         return listOfNotNull(tab?.let(::menuToolbar)) +
             listOf(
                 TextMenuCandidate(context.getString(R.string.menu_new_tab)) {
-                    tabsUseCases.addTab(url = "about:blank", selectTab = true)
+                    tabsUseCases.addTab(url = StartPage.URL, selectTab = true)
                 },
                 TextMenuCandidate(context.getString(R.string.menu_new_private_tab)) {
                     tabsUseCases.addTab(url = "about:privatebrowsing", selectTab = true, private = true)

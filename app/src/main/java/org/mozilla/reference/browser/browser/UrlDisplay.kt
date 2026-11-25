@@ -36,11 +36,11 @@ object UrlDisplay {
                 .also { privatePageUrl = it }
 
     /**
-     * True for the pages whose address is shown as empty: a blank page and our own private browsing page. A blank page
-     * in a tab [openedByPage] keeps its address: the opener can write anything into it.
+     * True for the pages whose address is shown as empty: a blank page (the start page's too) and our own private
+     * browsing page. A blank page in a tab [openedByPage] keeps its address: the opener can write anything into it.
      */
     fun isHidden(url: String, privatePageUrl: String?, openedByPage: Boolean = false): Boolean =
-        (url == ABOUT_BLANK && !openedByPage) || url == privatePageUrl
+        ((url == ABOUT_BLANK || url == StartPage.URL) && !openedByPage) || url == privatePageUrl
 
     /**
      * Returns what to show for [url]. `https://` is dropped but `http://` stays, so an insecure page is obvious; user

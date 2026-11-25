@@ -1,0 +1,58 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+package org.mozilla.reference.browser.browser
+
+import androidx.compose.ui.platform.ComposeView
+import androidx.compose.ui.platform.ViewCompositionStrategy
+import androidx.core.view.isVisible
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import mozilla.components.browser.state.store.BrowserStore
+import mozilla.components.browser.toolbar.BrowserToolbar
+import mozilla.components.feature.session.SessionUseCases
+import mozilla.components.lib.state.ext.flowScoped
+import mozilla.components.support.base.feature.LifecycleAwareFeature
+
+/**
+ * Shows the start page in [view] whenever [StartPage.isShown] says so. It sits above the engine view and below the
+ * awesome bar, which covers it while the address is edited. A tile loads its site in the current tab (or a new one when
+ * there is none), so Back returns to the start page.
+ */
+class StartPageIntegration(
+    private val view: ComposeView,
+    private val store: BrowserStore,
+    private val toolbar: BrowserToolbar,
+    private val loadUrl: SessionUseCases.LoadUrlUseCase,
+) : LifecycleAwareFeature {
+    private var scope: CoroutineScope? = null
+
+    init {
+        // The fragment's view is rebuilt on every tabs tray visit; the composition goes with it.
+        view.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        view.setContent { StartPageContent(onSearch = ::editAddress, onOpen = { loadUrl(it) }) }
+        // Right away, so coming back from the tabs tray does not show a frame of the blank page first.
+        view.isVisible = StartPage.isShown(store.state)
+    }
+
+    override fun start() {
+        scope =
+            store.flowScoped(dispatcher = Dispatchers.Main) { flow ->
+                flow.map(StartPage::isShown).distinctUntilChanged().collect { view.isVisible = it }
+            }
+    }
+
+    override fun stop() {
+        scope?.cancel()
+    }
+
+    // The address bar would open with "about:blank" in it.
+    private fun editAddress() {
+        toolbar.editMode()
+        toolbar.edit.updateUrl("")
+    }
+}

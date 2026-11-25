@@ -125,6 +125,7 @@ class UrlDisplayTest {
     @Test
     fun `blank and our private page show as empty, other data URLs do not`() {
         assertEquals("", show("about:blank"))
+        assertEquals("", show(StartPage.URL))
         assertEquals("", show(privatePage))
         assertTrue(UrlDisplay.isHidden(privatePage, privatePage))
         // Any page can navigate to a data: URL, and to one that only starts like ours.
@@ -133,6 +134,7 @@ class UrlDisplayTest {
         assertEquals("$privatePage#", show("$privatePage#"))
         assertFalse(UrlDisplay.isHidden(lookalike, privatePage))
         assertFalse(UrlDisplay.isHidden("about:blank#x", privatePage))
+        assertFalse(UrlDisplay.isHidden("about:blank?other", privatePage))
     }
 
     @Test
