@@ -167,7 +167,7 @@ open class BrowserApplication : Application() {
         launch(Dispatchers.IO) {
             store
                 .flow()
-                .map { state -> state.selectedTab?.takeUnless { it.content.loading }?.id }
+                .map { state -> state.tabToFlush() }
                 .distinctUntilChanged()
                 .collect { id -> id?.let { store.dispatch(EngineAction.FlushEngineSessionStateAction(it)) } }
         }
@@ -187,6 +187,16 @@ open class BrowserApplication : Application() {
         const val SESSION_SAVE_DELAY_MS = 2000L
     }
 }
+
+/**
+ * The selected tab whose session state to ask Gecko for, or null. Only a tab with a live, uncrashed engine session: a
+ * flush on any other tab makes the library create a session for it (loading it in the background) or, when crashed,
+ * re-dispatch the flush on every looper turn.
+ */
+internal fun BrowserState.tabToFlush(): String? =
+    selectedTab
+        ?.takeIf { !it.content.loading && it.engineState.engineSession != null && !it.engineState.crashed }
+        ?.id
 
 /**
  * Crashes are recorded in the crash database and never sent, so the memory images Gecko writes for them (private tabs
