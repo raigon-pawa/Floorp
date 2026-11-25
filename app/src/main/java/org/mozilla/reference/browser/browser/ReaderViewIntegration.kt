@@ -20,6 +20,7 @@ import mozilla.components.feature.readerview.view.ReaderViewControlsView
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.ui.icons.R as iconsR
+import org.mozilla.reference.browser.R
 
 /**
  * Adds the reader view toggle to the toolbar, shown only on pages where reader mode is available, plus the floating
@@ -40,8 +41,8 @@ class ReaderViewIntegration(
             image = ContextCompat.getDrawable(context, iconsR.drawable.mozac_ic_reader_view_24)!!,
             // No accent colour: the active state is the filled icon.
             imageSelected = ContextCompat.getDrawable(context, iconsR.drawable.mozac_ic_reader_view_fill_24)!!,
-            contentDescription = "Enable Reader View",
-            contentDescriptionSelected = "Disable Reader View",
+            contentDescription = context.getString(R.string.archwave_reader_view_enable),
+            contentDescriptionSelected = context.getString(R.string.archwave_reader_view_disable),
             selected = store.state.selectedTab?.readerState?.active ?: false,
             visible = { readerViewButtonVisible },
         ) { enabled ->
