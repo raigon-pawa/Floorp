@@ -46,7 +46,6 @@ class ThemeOverridesTest {
     private val styles =
         mapOf(
             "mozilla.components.feature.prompts" to "MozDialogStyle",
-            "mozilla.components.lib.crash" to "Theme_Mozac_CrashReporter",
         )
 
     private fun libraryId(
