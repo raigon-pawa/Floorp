@@ -15,11 +15,19 @@ class BrowsingDataCleanerTest {
     private fun flags(vararg items: ClearableData) = BrowsingDataCleaner.engineFlags(items.toSet())
 
     @Test
-    fun `cookies clear cookies, site storage and logins to sites, nothing else`() {
+    fun `cookies clear cookies, site storage, media licences and logins to sites, nothing else`() {
         assertEquals(
-            BrowsingData.COOKIES or BrowsingData.DOM_STORAGES or BrowsingData.AUTH_SESSIONS,
+            BrowsingData.COOKIES or
+                BrowsingData.DOM_STORAGES or
+                BrowsingData.AUTH_SESSIONS or
+                BrowsingDataCleaner.ENGINE_SITE_DATA,
             flags(ClearableData.COOKIES),
         )
+    }
+
+    @Test
+    fun `history clears the engine's site interaction records`() {
+        assertEquals(BrowsingDataCleaner.ENGINE_HISTORY, flags(ClearableData.HISTORY))
     }
 
     @Test
@@ -31,7 +39,7 @@ class BrowsingDataCleanerTest {
     fun `app-side choices need no engine data`() {
         assertEquals(
             0,
-            flags(ClearableData.TABS, ClearableData.HISTORY, ClearableData.PERMISSIONS, ClearableData.DOWNLOADS),
+            flags(ClearableData.TABS, ClearableData.PERMISSIONS, ClearableData.DOWNLOADS),
         )
     }
 

@@ -57,13 +57,32 @@ object BrowsingDataCleaner {
         private set
 
     /**
+     * GeckoView's own history bit, missing from the public flags but passed through unchanged. GeckoView has no history
+     * of its own: it removes the per-site user-interaction records (storageAccessAPI permissions, a list of the sites
+     * the user interacted with) of sites without stored data. Mapping: ClearFlags in
+     * GeckoViewStorageController.sys.mjs.
+     */
+    const val ENGINE_HISTORY = 1 shl 3
+
+    /**
+     * The site-data bit of ALL_SITE_DATA without the rest: media licences (EME). HSTS is not mapped in GeckoView 160.
+     */
+    const val ENGINE_SITE_DATA = 1 shl 8
+
+    /**
      * The engine part of each choice. History lives in the app's own storage, permissions are cleared per site (the
      * engine-wide flag would also reset extensions' permissions), and tabs and downloads are app state.
      */
     fun engineFlags(items: Set<ClearableData>): Int {
         var flags = 0
+        if (ClearableData.HISTORY in items) flags = flags or ENGINE_HISTORY
         if (ClearableData.COOKIES in items) {
-            flags = flags or BrowsingData.COOKIES or BrowsingData.DOM_STORAGES or BrowsingData.AUTH_SESSIONS
+            flags =
+                flags or
+                    BrowsingData.COOKIES or
+                    BrowsingData.DOM_STORAGES or
+                    BrowsingData.AUTH_SESSIONS or
+                    ENGINE_SITE_DATA
         }
         if (ClearableData.CACHE in items) flags = flags or BrowsingData.NETWORK_CACHE or BrowsingData.IMAGE_CACHE
         return flags
