@@ -399,6 +399,7 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 store = requireComponents.core.store,
                 sessionId = sessionId,
                 fragmentManager = parentFragmentManager,
+                dialog = ::cancelableAppLinkDialog,
                 launchInApp = {
                     prefs.getBoolean(
                         requireContext().getPreferenceKey(R.string.pref_key_launch_external_app),
