@@ -16,6 +16,7 @@ import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.CustomTabsUseCases
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.lib.publicsuffixlist.PublicSuffixList
+import org.mozilla.reference.browser.ext.components
 
 /** Component group for miscellaneous components. */
 @Suppress("LongParameterList")
@@ -50,7 +51,14 @@ class Utilities(
      */
     val intentProcessors by lazy {
         externalIntentProcessors +
-            TabIntentProcessor(tabsUseCases, searchUseCases.newTabSearch, applicationScope = applicationScope)
+            TabIntentProcessor(
+                tabsUseCases,
+                searchUseCases.newTabSearch,
+                // Without the engine, the processor warms up DNS for the link through the system resolver,
+                // bypassing DNS over HTTPS; with it, it only resolves the DoH provider's host.
+                engine = context.components.core.engine,
+                applicationScope = applicationScope,
+            )
     }
 
     val publicSuffixList by lazy {
