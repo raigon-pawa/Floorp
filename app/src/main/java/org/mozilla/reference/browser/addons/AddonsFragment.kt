@@ -148,12 +148,13 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                 // shortcut: also shown if every recommended add-on is installed; fine while the collection is large.
                 loadError.isVisible = addons == null || addons.none { !it.isInstalled() }
                 if (addons == null) return@launch
+                val listed = withCatalogueData(addons)
 
                 // Updating the existing adapter, instead of a new one, keeps the scroll position.
-                adapter?.updateAddons(addons)
+                adapter?.updateAddons(listed)
                     ?: AddonsManagerAdapter(
                             this@AddonsFragment,
-                            addons,
+                            listed,
                             // Names in white, everything else in the secondary grey the list uses by default.
                             style = AddonsManagerAdapter.Style(addonNameTextColor = R.color.aw_text_1),
                             store = requireContext().components.core.store,
@@ -164,6 +165,34 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                             it.registerAdapterDataObserver(keepTopInViewOnInsert(recyclerView))
                         }
             }
+    }
+
+    /**
+     * Installed add-ons are built from the extension alone, so they show 0 stars, "Reviews: 0" and no description. Give
+     * those in the recommended collection their catalogue rating and description. Only when the catalogue just loaded,
+     * so its cache is fresh and this does not go to the network again.
+     */
+    @Suppress("TooGenericExceptionCaught") // Without the catalogue data the list is still right, just plainer.
+    private suspend fun withCatalogueData(addons: List<Addon>): List<Addon> {
+        if (addons.none { !it.isInstalled() } || addons.none { it.isInstalled() }) return addons
+        val catalogue =
+            try {
+                requireContext().components.core.addonProvider.getFeaturedAddons(allowCache = true).associateBy {
+                    it.id
+                }
+            } catch (e: Exception) {
+                logger.warn("Could not read the catalogue for installed add-ons", e)
+                return addons
+            }
+        return addons.map { addon ->
+            val listed = catalogue[addon.id]?.takeIf { addon.isInstalled() } ?: return@map addon
+            addon.copy(
+                rating = listed.rating,
+                translatableDescription = listed.translatableDescription,
+                ratingUrl = listed.ratingUrl,
+                detailUrl = listed.detailUrl,
+            )
+        }
     }
 
     /** A just installed add-on is added at the top; keep it in view if the list was scrolled to the top. */

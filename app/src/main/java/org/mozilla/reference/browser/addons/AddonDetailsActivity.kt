@@ -20,6 +20,7 @@ import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.addons.ui.translateDescription
 import mozilla.components.feature.addons.ui.translateName
+import mozilla.components.feature.addons.ui.translateSummary
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
@@ -53,6 +54,11 @@ class AddonDetailsActivity : AppCompatActivity() {
     }
 
     private fun bindRating(addon: Addon) {
+        // An installed add-on read from the engine has no catalogue rating: it comes as 0 from 0 reviews.
+        if (addon.rating?.reviews?.let { it > 0 } != true) {
+            hide(R.id.rating_label, R.id.rating_view, R.id.users_count)
+            return
+        }
         addon.rating?.let {
             val ratingView = findViewById<RatingBar>(R.id.rating_view)
             val userCountView = findViewById<TextView>(R.id.users_count)
@@ -104,7 +110,8 @@ class AddonDetailsActivity : AppCompatActivity() {
 
     private fun bindDetails(addon: Addon) {
         val detailsView = findViewById<TextView>(R.id.details)
-        val detailsText = addon.translateDescription(this)
+        // Installed add-ons have only their manifest's short description, which the engine passes as the summary.
+        val detailsText = addon.translateDescription(this).ifBlank { addon.translateSummary(this) }
 
         val parsedText = detailsText.replace("\n", "<br/>")
         val text = HtmlCompat.fromHtml(parsedText, HtmlCompat.FROM_HTML_MODE_COMPACT).withLinksInBrowserTabs()
