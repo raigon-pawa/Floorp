@@ -14,7 +14,6 @@ import mozilla.components.feature.downloads.DefaultPackageNameProvider
 import mozilla.components.feature.downloads.DownloadEstimator
 import mozilla.components.feature.downloads.FileSizeFormatter
 import mozilla.components.feature.downloads.PackageNameProvider
-import mozilla.components.feature.downloads.filewriter.DefaultDownloadFileWriter
 import mozilla.components.feature.downloads.filewriter.DownloadFileWriter
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.utils.DefaultDownloadFileUtils
@@ -33,18 +32,21 @@ class DownloadService : AbstractFetchDownloadService() {
     override val fileSizeFormatter: FileSizeFormatter by lazy { components.fileSizeFormatter }
     override val downloadEstimator: DownloadEstimator by lazy { components.downloadEstimator }
     override val downloadFileUtils: DownloadFileUtils by lazy {
-        DefaultDownloadFileUtils(
-            context = applicationContext,
-            downloadLocation = {
-                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
-            },
+        PendingAwareDownloadFileUtils(
+            applicationContext,
+            DefaultDownloadFileUtils(
+                context = applicationContext,
+                downloadLocation = {
+                    Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
+                },
+            ),
         )
     }
+    // A paused or interrupted download stays hidden instead of showing up as a finished, truncated file.
     override val downloadFileWriter: DownloadFileWriter by lazy {
-        DefaultDownloadFileWriter(
-            context = applicationContext,
-            downloadFileUtils = downloadFileUtils,
-        )
+        PendingUntilCompleteFileWriter(applicationContext, downloadFileUtils) {
+            store.state.downloads[it.id]?.status == Status.DOWNLOADING
+        }
     }
     override val packageNameProvider: PackageNameProvider by lazy { DefaultPackageNameProvider(applicationContext) }
 
