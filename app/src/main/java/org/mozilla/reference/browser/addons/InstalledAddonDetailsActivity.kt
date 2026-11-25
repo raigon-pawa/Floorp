@@ -102,17 +102,14 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
             if (isChecked) {
                 this.components.core.addonManager.enableAddon(
                     addon,
-                    onSuccess = {
-                        switch.setState(true)
-                    },
+                    // The whole screen follows: Settings appears with the options page of the enabled add-on.
+                    onSuccess = { bindUI(it) },
                     onError = onError,
                 )
             } else {
                 this.components.core.addonManager.disableAddon(
                     addon,
-                    onSuccess = {
-                        switch.setState(false)
-                    },
+                    onSuccess = { bindUI(it) },
                     onError = onError,
                 )
             }
@@ -210,5 +207,7 @@ class InstalledAddonDetailsActivity : AppCompatActivity() {
         isChecked = checked
     }
 
-    private fun shouldSettingsBeVisible(addon: Addon) = !addon.installedState?.optionsPageUrl.isNullOrEmpty()
+    // A disabled add-on's options page is not loaded: it opened as a blank tab that stayed dead.
+    private fun shouldSettingsBeVisible(addon: Addon) =
+        addon.isEnabled() && !addon.installedState?.optionsPageUrl.isNullOrEmpty()
 }
