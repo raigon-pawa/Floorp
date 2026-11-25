@@ -26,10 +26,12 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.BaseTransientBottomBar
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
+import com.google.android.material.timepicker.MaterialTimePicker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
@@ -89,6 +91,7 @@ open class BrowserActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         setContentView(R.layout.activity_main)
         super.onCreate(savedInstanceState)
+        if (savedInstanceState != null) removeStalePrompts()
         // Below Android 13 the toolbar's ImeInsetsSynchronizer does nothing either; the classic window that those
         // versions keep is resized for the keyboard by adjustResize.
         enableEdgeToEdgeFromAndroid13()
@@ -152,6 +155,22 @@ open class BrowserActivity : AppCompatActivity() {
                 }
             },
         )
+    }
+
+    /**
+     * After process death the system restores the page's prompt dialogs, but the page's requests died with the process.
+     * The library drops most of them on start, but a date or time picker is a second dialog of its own, which stayed,
+     * answered nothing and had a fresh picker shown on top of it. Removed here before any of them is drawn.
+     */
+    private fun removeStalePrompts() {
+        val state = components.core.store.state
+        if ((state.tabs + state.customTabs).any { it.content.promptRequests.isNotEmpty() }) return
+        val stale =
+            supportFragmentManager.fragments.filter {
+                it.tag == PROMPT_FRAGMENT_TAG || it is MaterialDatePicker<*> || it is MaterialTimePicker
+            }
+        if (stale.isEmpty()) return
+        supportFragmentManager.beginTransaction().apply { stale.forEach(::remove) }.commitNow()
     }
 
     override fun onRestoreInstanceState(savedInstanceState: Bundle) {
@@ -361,5 +380,9 @@ open class BrowserActivity : AppCompatActivity() {
 
     private companion object {
         const val PREF_LAST_CRASH_CHECK = "archwave.last_crash_check"
+
+        // shortcut: FRAGMENT_TAG of feature-prompts' PromptFeature (Android Components 160) is internal; if a library
+        // update renames it, stale prompts other than the pickers are left to the library again.
+        const val PROMPT_FRAGMENT_TAG = "mozac_feature_prompt_dialog"
     }
 }
