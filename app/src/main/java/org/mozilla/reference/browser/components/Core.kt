@@ -21,6 +21,7 @@ import mozilla.components.browser.storage.sync.RemoteTabsStorage
 import mozilla.components.browser.thumbnails.ThumbnailsMiddleware
 import mozilla.components.browser.thumbnails.storage.ThumbnailStorage
 import mozilla.components.concept.engine.DefaultSettings
+import mozilla.components.concept.engine.DownloadDelegate
 import mozilla.components.concept.engine.Engine
 import mozilla.components.concept.engine.EngineSession.TrackingProtectionPolicy
 import mozilla.components.concept.engine.mediaquery.PreferredColorScheme
@@ -90,6 +91,13 @@ class Core(
                 preferredColorScheme = PreferredColorScheme.Dark,
                 // Black instead of the default white, so blank tabs and page loads do not flash.
                 clearColor = Color.BLACK,
+                // Without it the download prompt named the file from its URL alone, while the download service
+                // used the server's Content-Disposition: the prompt showed another name than the file got.
+                downloadDelegate =
+                    object : DownloadDelegate {
+                        override fun guessFileName(contentDisposition: String?, url: String?, mimeType: String?) =
+                            downloadFileUtils.guessFileName(contentDisposition, url, mimeType)
+                    },
             )
         EngineProvider.createEngine(context, defaultSettings).also {
             // GeckoEngine does not copy these from DefaultSettings, so they must be set on the live settings.
@@ -103,6 +111,15 @@ class Core(
         EngineProvider.createClient(context)
     }
 
+    private val downloadFileUtils by lazy {
+        DefaultDownloadFileUtils(
+            context = context,
+            downloadLocation = {
+                Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
+            },
+        )
+    }
+
     /** The [BrowserStore] holds the global [BrowserState]. */
     val store by lazy {
         BrowserStore(
@@ -112,14 +129,7 @@ class Core(
                             applicationContext = context,
                             downloadServiceClass = DownloadService::class.java,
                             deleteFileFromStorage = { false },
-                            downloadFileUtils =
-                                DefaultDownloadFileUtils(
-                                    context = context,
-                                    downloadLocation = {
-                                        Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS)
-                                            .path
-                                    },
-                                ),
+                            downloadFileUtils = downloadFileUtils,
                         ),
                         ThumbnailsMiddleware(thumbnailStorage),
                         ReaderViewMiddleware(),
