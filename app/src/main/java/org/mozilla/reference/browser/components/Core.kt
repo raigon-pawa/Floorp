@@ -57,6 +57,7 @@ import org.mozilla.reference.browser.EngineProvider
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.R.string.pref_key_remote_debugging
 import org.mozilla.reference.browser.browser.CrashedTabMiddleware
+import org.mozilla.reference.browser.browser.KeepTitleMiddleware
 import org.mozilla.reference.browser.browser.TrackingProtectionStateMiddleware
 import org.mozilla.reference.browser.downloads.DownloadService
 import org.mozilla.reference.browser.ext.components
@@ -144,6 +145,7 @@ class Core(
                         RecordingDevicesMiddleware(context, context.components.notificationsDelegate),
                         CrashedTabMiddleware(),
                         TrackingProtectionStateMiddleware { engine.settings.trackingProtectionPolicy },
+                        KeepTitleMiddleware(),
                         // Keeps closed tabs for a few seconds, for the tabs tray's Undo.
                         UndoMiddleware(),
                     ) + EngineMiddleware.create(engine)
