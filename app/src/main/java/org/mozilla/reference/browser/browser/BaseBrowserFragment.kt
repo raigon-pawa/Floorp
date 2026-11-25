@@ -538,4 +538,13 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
 
         return activityResultHandler.any { it.onActivityResult(requestCode, data, resultCode) }
     }
+
+    // PromptFeature starts the file picker from this fragment, so its result comes back here with the feature's own
+    // request code; the activity only sees the code AndroidX remapped it to.
+    @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!onActivityResult(requestCode, data, resultCode)) {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
 }
