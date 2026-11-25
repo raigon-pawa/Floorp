@@ -157,7 +157,7 @@ object BrowsingDataCleaner {
         components: Components,
     ) {
         val storage = components.core.geckoSitePermissionsStorage
-        storage.all().forEach { storage.remove(it, private = false) }
+        storage.all().filter { isWebOrigin(it.origin) }.forEach { storage.remove(it, private = false) }
         // Permissions the app has no record of (granted by the engine itself, or before the record existed).
         val controller = EngineProvider.getOrCreateRuntime(context).storageController
         controller.allPermissions
