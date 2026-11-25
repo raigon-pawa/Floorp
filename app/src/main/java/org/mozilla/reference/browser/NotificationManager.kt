@@ -18,8 +18,13 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.TabData
+import mozilla.components.feature.webnotifications.WebNotificationIntentProcessor
 import mozilla.components.support.base.ids.SharedIdsHelper
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.kotlin.isSameOriginAs
+import mozilla.components.support.ktx.kotlin.stripDefaultPort
+import mozilla.components.support.utils.ext.getParcelableExtraCompat
+import org.mozilla.geckoview.WebNotification
 
 /** Manages notification channels and allows displaying different supported types of notifications. */
 object NotificationManager {
@@ -30,7 +35,32 @@ object NotificationManager {
     // Default
     private const val NOTIFICATION_CHANNEL_ID = "default-notification-channel"
 
+    /** Extra of a web notification's tap intent (internal const EXTRA_ON_CLICK in feature-webnotifications). */
+    const val EXTRA_WEB_NOTIFICATION = "mozac.feature.webnotifications.generic.onclick"
+
     private val logger = Logger("NotificationManager")
+
+    /**
+     * Passes a tap on a web notification to the page and brings its site forward: the tab that shows it, or a new tab
+     * when there is none. Only call it from [BrowserActivity], which is not exported: the notification can then only
+     * come from this app's own PendingIntent.
+     */
+    fun onWebNotificationTapped(components: Components, intent: Intent) {
+        if (!WebNotificationIntentProcessor(components.core.engine).process(intent)) return
+        val notification = intent.getParcelableExtraCompat(EXTRA_WEB_NOTIFICATION, WebNotification::class.java)
+        // Null for notifications of extensions.
+        val source = notification?.source ?: return
+        val tab =
+            components.core.store.state.tabs.firstOrNull {
+                it.content.private == notification.privateBrowsing && it.content.url.isSameOriginAs(source)
+            }
+        if (tab != null) {
+            components.useCases.tabsUseCases.selectTab(tab.id)
+        } else {
+            // The source of a service worker's notification is its script, so open the site's start instead.
+            components.useCases.tabsUseCases.addTab(source.stripDefaultPort(), private = notification.privateBrowsing)
+        }
+    }
 
     /**
      * Displays a notification for each valid tab received from a device.
