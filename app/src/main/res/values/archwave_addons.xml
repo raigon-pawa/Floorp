@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- Add-ons manager: shown above the list when the recommended extensions could not be downloaded. -->
+    <string name="archwave_addons_load_failed">Couldn’t load the recommended extensions.</string>
+    <!-- Add-ons manager: button next to archwave_addons_load_failed that loads the list again. -->
+    <string name="archwave_addons_retry">Retry</string>
+    <!-- Add-ons manager: overflow menu item that installs an extension from a .xpi file on the device. -->
+    <string name="archwave_addons_install_from_file">Install from file</string>
+    <!-- Add-ons manager: shown when no app on the device can pick a file for archwave_addons_install_from_file. -->
+    <string name="archwave_addons_no_file_picker">No app on this device can pick a file.</string>
+    <!-- Installed add-on details: row that looks for a newer version of the extension now. -->
+    <string name="archwave_addons_check_for_updates">Check for updates</string>
+    <!-- Installed add-on details: shown while the update check of archwave_addons_check_for_updates runs. -->
+    <string name="archwave_addons_checking_for_updates">Checking for updates…</string>
+    <!-- Installed add-on details: shown when the update check failed, for example without a connection. -->
+    <string name="archwave_addons_update_check_failed">Couldn’t check for updates. Try again later.</string>
+    <!-- Installed add-on details: result of archwave_addons_check_for_updates when the engine could not install an update. -->
+    <string name="archwave_addons_update_failed">Couldn’t update. If the update needs new permissions, allow them in its notification, or try again later.</string>
+    <!-- Dialog after the extensions process crashed repeatedly: button that leaves extensions off for now. -->
+    <string name="archwave_addons_keep_extensions_disabled">Keep disabled</string>
+    <!-- Developer setting "Custom Add-on collection": explanation above the two fields. -->
+    <string name="archwave_addons_custom_collection_message">List the extensions of an addons.mozilla.org collection instead of the recommended ones. Leave both fields empty for the default. Archwave restarts to apply the change.</string>
+</resources>

@@ -18,10 +18,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
 import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
+import androidx.core.app.NotificationManagerCompat
 import androidx.fragment.app.Fragment
 import androidx.preference.PreferenceManager
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-import mozilla.components.browser.state.selector.selectedTab
+import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.toolbar.BrowserToolbar
 import mozilla.components.compose.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.engine.EngineView
@@ -38,8 +39,12 @@ import mozilla.components.feature.session.ScreenOrientationFeature
 import mozilla.components.feature.session.SessionFeature
 import mozilla.components.feature.session.SwipeRefreshFeature
 import mozilla.components.feature.sitepermissions.SitePermissionsFeature
+import mozilla.components.feature.sitepermissions.SitePermissionsRules
+import mozilla.components.feature.sitepermissions.SitePermissionsRules.Action.ASK_TO_ALLOW
+import mozilla.components.feature.sitepermissions.SitePermissionsRules.AutoplayAction
 import mozilla.components.feature.tabs.WindowFeature
 import mozilla.components.feature.webauthn.WebAuthnFeature
+import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
@@ -54,6 +59,7 @@ import mozilla.components.ui.widgets.behavior.EngineViewScrollingGesturesBehavio
 import org.mozilla.reference.browser.BuildConfig
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.addons.WebExtensionPromptFeature
+import org.mozilla.reference.browser.downloads.AskFirstDownloadManager
 import org.mozilla.reference.browser.downloads.DownloadService
 import org.mozilla.reference.browser.ext.getPreferenceKey
 import org.mozilla.reference.browser.ext.requireComponents
@@ -316,6 +322,7 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                 requireContext(),
                 store = requireComponents.core.store,
                 useCases = requireComponents.useCases.downloadsUseCases,
+                tabId = sessionId,
                 fragmentManager = childFragmentManager,
                 downloadFileUtils =
                     DefaultDownloadFileUtils(
@@ -325,11 +332,16 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                         },
                     ),
                 downloadManager =
-                    FetchDownloadManager(
-                        requireContext().applicationContext,
-                        requireComponents.core.store,
-                        DownloadService::class,
-                        notificationsDelegate = requireComponents.notificationsDelegate,
+                    AskFirstDownloadManager(
+                        FetchDownloadManager(
+                            requireContext().applicationContext,
+                            requireComponents.core.store,
+                            DownloadService::class,
+                            notificationsDelegate =
+                                NotificationsDelegate(NotificationManagerCompat.from(requireContext())),
+                        ),
+                        requireComponents.notificationsDelegate,
+                        ::shouldShowRequestPermissionRationale,
                     ),
                 onNeedToRequestPermissions = { permissions ->
                     requestDownloadPermissionsLauncher.launch(permissions)
@@ -423,6 +435,21 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                     requestSitePermissionsLauncher.launch(permissions)
                 },
                 onShouldShowRequestPermissionRationale = { shouldShowRequestPermissionRationale(it) },
+                // Every category still asks, as without rules; audible media only plays after a tap.
+                sitePermissionsRules =
+                    SitePermissionsRules(
+                        camera = ASK_TO_ALLOW,
+                        location = ASK_TO_ALLOW,
+                        notification = ASK_TO_ALLOW,
+                        microphone = ASK_TO_ALLOW,
+                        autoplayAudible = AutoplayAction.BLOCKED,
+                        autoplayInaudible = AutoplayAction.ALLOWED,
+                        persistentStorage = ASK_TO_ALLOW,
+                        mediaKeySystemAccess = ASK_TO_ALLOW,
+                        crossOriginStorageAccess = ASK_TO_ALLOW,
+                        localDeviceAccess = ASK_TO_ALLOW,
+                        localNetworkAccess = ASK_TO_ALLOW,
+                    ),
                 promptsStyling =
                     SitePermissionsFeature.PromptsStyling(gravity = Gravity.BOTTOM, shouldWidthMatchParent = true),
                 store = requireComponents.core.store,
@@ -475,7 +502,8 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
     final override fun onHomePressed(): Boolean = pictureInPictureIntegration.get()?.onHomePressed() ?: false
 
     final override fun onPictureInPictureModeChanged(enabled: Boolean) {
-        val session = requireComponents.core.store.state.selectedTab
+        pictureInPictureIntegration.get()?.onPictureInPictureModeChanged(enabled)
+        val session = requireComponents.core.store.state.findTabOrCustomTabOrSelectedTab(sessionId)
         val fullScreenMode = session?.content?.fullScreen ?: false
         // If we're exiting PIP mode and we're in fullscreen mode, then we should exit fullscreen mode as well.
         if (!enabled && fullScreenMode) {

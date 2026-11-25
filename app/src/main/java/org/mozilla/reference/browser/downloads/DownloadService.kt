@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser.downloads
 
 import android.os.Environment
+import androidx.core.app.NotificationManagerCompat
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.downloads.AbstractFetchDownloadService
 import mozilla.components.feature.downloads.DefaultPackageNameProvider
@@ -22,7 +23,11 @@ import org.mozilla.reference.browser.ext.components
 class DownloadService : AbstractFetchDownloadService() {
     override val httpClient by lazy { components.core.client }
     override val store: BrowserStore by lazy { components.core.store }
-    override val notificationsDelegate: NotificationsDelegate by lazy { components.notificationsDelegate }
+    // Bound to no activity, so it posts but never asks: AskFirstDownloadManager asks before the download starts, and
+    // the app's delegate would ask a second time after "Don't allow".
+    override val notificationsDelegate: NotificationsDelegate by lazy {
+        NotificationsDelegate(NotificationManagerCompat.from(applicationContext))
+    }
     override val fileSizeFormatter: FileSizeFormatter by lazy { components.fileSizeFormatter }
     override val downloadEstimator: DownloadEstimator by lazy { components.downloadEstimator }
     override val downloadFileUtils: DownloadFileUtils by lazy {

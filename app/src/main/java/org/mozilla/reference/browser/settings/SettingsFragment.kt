@@ -116,14 +116,21 @@ class SettingsFragment : PreferenceFragmentCompat() {
         AlertDialog.Builder(context)
             .apply {
                 setTitle(context.getString(R.string.preferences_customize_amo_collection))
+                setMessage(R.string.archwave_addons_custom_collection_message)
                 setView(dialogView)
                 setNegativeButton(R.string.customize_addon_collection_cancel) { dialog: DialogInterface, _ ->
                     dialog.cancel()
                 }
 
                 setPositiveButton(R.string.customize_addon_collection_ok) { _, _ ->
+                    // Only both fields together select a collection; restart only if the one in use changes.
+                    fun collectionInUse() =
+                        (RBSettings.getOverrideAmoUser(context) to RBSettings.getOverrideAmoCollection(context))
+                            .takeIf { RBSettings.isAmoCollectionOverrideConfigured(context) }
+                    val before = collectionInUse()
                     RBSettings.setOverrideAmoUser(context, userView.text.toString())
                     RBSettings.setOverrideAmoCollection(context, collectionView.text.toString())
+                    if (collectionInUse() == before) return@setPositiveButton
 
                     Toast.makeText(
                             context,
@@ -132,9 +139,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         )
                         .show()
 
+                    // The add-on provider reads the collection once per process, so start the app again in a new one.
                     Handler(Looper.getMainLooper())
                         .postDelayed(
                             {
+                                val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
+                                launch?.component?.let { context.startActivity(Intent.makeRestartActivityTask(it)) }
                                 exitProcess(0)
                             },
                             AMO_COLLECTION_OVERRIDE_EXIT_DELAY,

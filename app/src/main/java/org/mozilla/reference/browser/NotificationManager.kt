@@ -4,6 +4,7 @@
 
 package org.mozilla.reference.browser
 
+import android.Manifest.permission.POST_NOTIFICATIONS
 import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
@@ -13,13 +14,27 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Build.VERSION.SDK_INT
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.FragmentManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import mozilla.components.concept.sync.Device
 import mozilla.components.concept.sync.TabData
+import mozilla.components.feature.sitepermissions.NotificationPermissionDialogFragment
+import mozilla.components.feature.webnotifications.WebNotificationIntentProcessor
+import mozilla.components.lib.state.ext.flow
+import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.base.ids.SharedIdsHelper
 import mozilla.components.support.base.log.logger.Logger
+import mozilla.components.support.ktx.kotlin.isSameOriginAs
+import mozilla.components.support.ktx.kotlin.stripDefaultPort
+import mozilla.components.support.utils.ext.getParcelableExtraCompat
+import org.mozilla.geckoview.WebNotification
 
 /** Manages notification channels and allows displaying different supported types of notifications. */
 object NotificationManager {
@@ -30,7 +45,60 @@ object NotificationManager {
     // Default
     private const val NOTIFICATION_CHANNEL_ID = "default-notification-channel"
 
+    /** Extra of a web notification's tap intent (internal const EXTRA_ON_CLICK in feature-webnotifications). */
+    const val EXTRA_WEB_NOTIFICATION = "mozac.feature.webnotifications.generic.onclick"
+
     private val logger = Logger("NotificationManager")
+
+    /**
+     * Once a site may notify, Android Components offers the system notification settings when the app may not post
+     * notifications. This asks Android first instead, and keeps that offer only when Android no longer shows its
+     * prompt. Register it on the activity's fragment manager.
+     */
+    fun askBeforeOfferingSettings(activity: AppCompatActivity, delegate: NotificationsDelegate) =
+        object : FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentStarted(fm: FragmentManager, f: Fragment) {
+                if (f !is NotificationPermissionDialogFragment || SDK_INT < Build.VERSION_CODES.TIRAMISU) return
+                delegate.requestNotificationPermission(
+                    onPermissionGranted = { f.dismissAllowingStateLoss() },
+                    // True right after a "no" in the prompt; false when Android refused without asking.
+                    onPermissionRejected = {
+                        if (activity.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS)) {
+                            f.dismissAllowingStateLoss()
+                        }
+                    },
+                )
+            }
+        }
+
+    /**
+     * Passes a tap on a web notification to the page and brings its site forward: the tab that shows it, or a new tab
+     * when there is none. Only call it from [BrowserActivity], which is not exported: the notification can then only
+     * come from this app's own PendingIntent.
+     */
+    fun onWebNotificationTapped(components: Components, intent: Intent) {
+        if (!WebNotificationIntentProcessor(components.core.engine).process(intent)) return
+        val notification = intent.getParcelableExtraCompat(EXTRA_WEB_NOTIFICATION, WebNotification::class.java)
+        // Null for notifications of extensions.
+        val source = notification?.source ?: return
+        // Right after a cold start the tabs are still being restored.
+        components.applicationScope.launch(Dispatchers.Main) {
+            val state = components.core.store.flow().first { it.restoreComplete }
+            val sameSite =
+                state.tabs.filter {
+                    it.content.private == notification.privateBrowsing && it.content.url.isSameOriginAs(source)
+                }
+            // The page that showed it, when it is still open.
+            val tab = sameSite.firstOrNull { it.content.url == source } ?: sameSite.firstOrNull()
+            val tabsUseCases = components.useCases.tabsUseCases
+            if (tab != null) {
+                tabsUseCases.selectTab(tab.id)
+            } else {
+                // The source of a service worker's notification is its script, so open the site's start instead.
+                tabsUseCases.addTab(source.stripDefaultPort(), private = notification.privateBrowsing)
+            }
+        }
+    }
 
     /**
      * Displays a notification for each valid tab received from a device.

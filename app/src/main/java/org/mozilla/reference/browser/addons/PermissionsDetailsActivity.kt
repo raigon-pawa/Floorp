@@ -4,7 +4,6 @@
 
 package org.mozilla.reference.browser.addons
 
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -14,7 +13,6 @@ import android.widget.TextView
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toUri
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import mozilla.components.feature.addons.Addon
@@ -32,6 +30,7 @@ class PermissionsDetailsActivity : AppCompatActivity(), View.OnClickListener {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_on_permissions)
         window.setupPersistentInsets()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val addon = requireNotNull(intent.getParcelableExtraCompat("add_on", Addon::class.java))
 
@@ -86,8 +85,10 @@ class PermissionsDetailsActivity : AppCompatActivity(), View.OnClickListener {
         val textView: TextView,
     ) : RecyclerView.ViewHolder(view)
 
-    override fun onClick(v: View?) {
-        val intent = Intent(Intent.ACTION_VIEW).setData(LEARN_MORE_URL.toUri())
-        startActivity(intent)
+    override fun onClick(v: View?) = openInBrowserTab(LEARN_MORE_URL)
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 }

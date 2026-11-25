@@ -33,21 +33,17 @@ import org.mozilla.reference.browser.helpers.TestHelper.getStringResource
 import org.mozilla.reference.browser.helpers.TestHelper.itemWithResId
 import org.mozilla.reference.browser.helpers.TestHelper.itemWithResIdContainingText
 import org.mozilla.reference.browser.helpers.TestHelper.packageName
+import org.mozilla.reference.browser.helpers.TestHelper.scrollToElementByText
 import org.mozilla.reference.browser.helpers.click
 
 /** Implementation of Robot Pattern for the addons manager. */
 class AddonsManagerRobot {
     fun verifyAddonsRecommendedView() {
         assertTrue(mDevice.findObject(UiSelector().text("Recommended")).waitForExists(waitingTime))
-        // Check uBlock is displayed in the "Recommended" section
+        // Check uBlock is displayed in the "Recommended" section. Its summary comes from live AMO data and changes.
+        assertUIObjectExists(itemWithResIdContainingText("$packageName:id/add_on_name", "uBlock Origin"))
         assertUIObjectExists(
-            itemWithResIdContainingText("$packageName:id/add_on_name", "uBlock Origin"),
-            itemWithResIdContainingText(
-                "$packageName:id/add_on_description",
-                "Finally, an efficient wide-spectrum content blocker. Easy on CPU and memory.",
-            ),
-        )
-        assertUIObjectExists(
+            itemWithResId("$packageName:id/add_on_description"),
             itemWithResId("$packageName:id/rating"),
             itemWithResId("$packageName:id/review_count"),
             itemWithResId("$packageName:id/add_button"),
@@ -89,6 +85,32 @@ class AddonsManagerRobot {
                     .textContains(getStringResource(addonsR.string.mozac_feature_addons_installed_dialog_okay_button_2))
             )
             .click()
+    }
+
+    fun clickEnableSwitch() {
+        onView(withId(R.id.enable_switch)).perform(click())
+        mDevice.waitForIdle()
+    }
+
+    fun goBack() {
+        mDevice.pressBack()
+        mDevice.waitForIdle()
+    }
+
+    /** The add-on is listed under the section with the title [sectionTitle] (Enabled, Disabled, Recommended). */
+    fun verifyAddonInSection(addonName: String, sectionTitle: Int) {
+        assertTrue(mDevice.findObject(UiSelector().text(getStringResource(sectionTitle))).waitForExists(waitingTime))
+        // The section title is the first list item above the add-on's row.
+        val section = mDevice.findObject(UiSelector().text(getStringResource(sectionTitle)))
+        val row = itemWithResIdContainingText("$packageName:id/add_on_name", addonName)
+        assertTrue(row.waitForExists(waitingTime))
+        assertTrue("$addonName is not below that section", section.bounds.top < row.bounds.top)
+    }
+
+    fun clickFindMoreExtensions() {
+        val label = getStringResource(addonsR.string.mozac_feature_addons_find_more_extensions_button_text)
+        scrollToElementByText(label)
+        mDevice.findObject(UiSelector().text(label)).click()
     }
 
     fun clickRemoveAddonButton() {
@@ -197,6 +219,7 @@ class AddonsManagerRobot {
                     hasSibling(withId(R.id.details)),
                     hasSibling(withId(R.id.permissions)),
                     hasSibling(withId(R.id.allow_in_private_browsing_switch)),
+                    hasSibling(withId(R.id.check_for_updates)),
                 )
             )
             .check(matches(withEffectiveVisibility(ViewMatchers.Visibility.VISIBLE)))

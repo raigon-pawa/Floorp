@@ -4,7 +4,6 @@
 
 package org.mozilla.reference.browser.addons
 
-import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.text.method.LinkMovementMethod
@@ -14,11 +13,12 @@ import android.widget.TextView
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.net.toUri
 import androidx.core.text.HtmlCompat
+import androidx.core.view.isVisible
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Locale
+import java.util.TimeZone
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.addons.ui.translateDescription
@@ -34,6 +34,7 @@ class AddonDetailsActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_add_on_details)
         window.setupPersistentInsets()
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val addon = requireNotNull(intent.getParcelableExtraCompat("add_on", Addon::class.java))
         bind(addon)
@@ -68,17 +69,31 @@ class AddonDetailsActivity : AppCompatActivity() {
         }
     }
 
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
+    }
+
     private fun bindWebsite(addon: Addon) {
-        findViewById<View>(R.id.home_page_text).setOnClickListener {
-            val intent = Intent(Intent.ACTION_VIEW, addon.homepageUrl.toUri())
-            startActivity(intent)
+        val url = addon.homepageUrl
+        if (!isWebUrl(url)) {
+            hide(R.id.home_page_label, R.id.home_page_text, R.id.home_page_divider)
+            return
         }
+        findViewById<View>(R.id.home_page_text).setOnClickListener { openInBrowserTab(url) }
     }
 
     private fun bindLastUpdated(addon: Addon) {
-        val lastUpdatedView = findViewById<TextView>(R.id.last_updated_text)
-        lastUpdatedView.text = formatDate(addon.updatedAt)
+        // Empty when the engine has no (parsable) update date for an installed add-on.
+        val date = formatDate(addon.updatedAt)
+        if (date == null) {
+            hide(R.id.last_updated_label, R.id.last_updated_text, R.id.last_updated_divider)
+            return
+        }
+        findViewById<TextView>(R.id.last_updated_text).text = date
     }
+
+    private fun hide(vararg ids: Int) = ids.forEach { findViewById<View>(it).isVisible = false }
 
     private fun bindVersion(addon: Addon) {
         val versionView = findViewById<TextView>(R.id.version_text)
@@ -96,14 +111,16 @@ class AddonDetailsActivity : AppCompatActivity() {
         val detailsText = addon.translateDescription(this)
 
         val parsedText = detailsText.replace("\n", "<br/>")
-        val text = HtmlCompat.fromHtml(parsedText, HtmlCompat.FROM_HTML_MODE_COMPACT)
+        val text = HtmlCompat.fromHtml(parsedText, HtmlCompat.FROM_HTML_MODE_COMPACT).withLinksInBrowserTabs()
 
         detailsView.text = text
         detailsView.movementMethod = LinkMovementMethod.getInstance()
     }
 
-    private fun formatDate(text: String): String {
-        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
-        return DateFormat.getDateInstance().format(formatter.parse(text)!!)
+    private fun formatDate(text: String): String? {
+        val formatter = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.ROOT)
+        formatter.timeZone = TimeZone.getTimeZone("UTC")
+        val date = runCatching { formatter.parse(text) }.getOrNull() ?: return null
+        return DateFormat.getDateInstance().format(date)
     }
 }

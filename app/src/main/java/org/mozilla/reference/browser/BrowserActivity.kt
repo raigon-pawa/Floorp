@@ -14,12 +14,15 @@ import android.view.View
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import androidx.lifecycle.DefaultLifecycleObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.google.android.material.snackbar.BaseTransientBottomBar
@@ -27,16 +30,22 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.snackbar.Snackbar.LENGTH_INDEFINITE
 import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.action.ExtensionsProcessAction
+import mozilla.components.browser.state.action.WebExtensionAction
 import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.concept.engine.EngineView
+import mozilla.components.feature.addons.R as addonsR
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
 import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.view.setupPersistentInsets
 import mozilla.components.support.utils.SafeIntent
+import mozilla.components.support.webextensions.ExtensionsProcessDisabledPromptObserver
+import mozilla.components.support.webextensions.WebExtensionOptionsPageObserver
 import mozilla.components.support.webextensions.WebExtensionPopupObserver
 import org.mozilla.reference.browser.addons.WebExtensionActionPopupActivity
+import org.mozilla.reference.browser.addons.openInBrowserTab
 import org.mozilla.reference.browser.browser.BrowserFragment
 import org.mozilla.reference.browser.browser.CrashIntegration
 import org.mozilla.reference.browser.browser.withoutSystemBarMargins
@@ -68,8 +77,16 @@ open class BrowserActivity : AppCompatActivity() {
         }
 
         components.notificationsDelegate.bindToActivity(this)
+        supportFragmentManager.registerFragmentLifecycleCallbacks(
+            NotificationManager.askBeforeOfferingSettings(this, components.notificationsDelegate),
+            true,
+        )
 
         if (savedInstanceState == null) {
+            // Not when the system replays the intent of a task reopened from recents.
+            if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) {
+                NotificationManager.onWebNotificationTapped(components, intent)
+            }
             supportFragmentManager.beginTransaction().apply {
                 replace(R.id.container, createBrowserFragment(sessionId))
                 commit()
@@ -96,6 +113,7 @@ open class BrowserActivity : AppCompatActivity() {
         )
         showNoticeIfCrashedSinceLastStart()
         lifecycle.addObserver(webExtensionPopupObserver)
+        addExtensionObservers()
 
         onBackPressedDispatcher.addCallback(
             this,
@@ -112,6 +130,12 @@ open class BrowserActivity : AppCompatActivity() {
                 }
             },
         )
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        // Everything else that arrives here was already handled by the intent processors before it was sent.
+        NotificationManager.onWebNotificationTapped(components, intent)
     }
 
     @Suppress("DEPRECATION") // ComponentActivity wants us to use registerForActivityResult
@@ -203,6 +227,55 @@ open class BrowserActivity : AppCompatActivity() {
                 .withoutSystemBarMargins()
                 .show()
         }
+    }
+
+    /**
+     * Options pages requested by extensions open in a tab. That observer runs for the whole life of the activity, not
+     * only while it is visible, because the request usually comes from a popup or add-on screen on top of it.
+     */
+    private fun addExtensionObservers() {
+        val store = components.core.store
+        val optionsPageObserver =
+            WebExtensionOptionsPageObserver(
+                store,
+                onOpenOptionsPage = { page ->
+                    // The store accepts no new request while one is pending, so clear it first. Every live instance
+                    // (custom tabs and PWAs too) observes it: only the one that clears the request opens the tab.
+                    val pending = store.state.extensions.values.filter { it.activeOptionsPage == page }
+                    pending.forEach { store.dispatch(WebExtensionAction.ClearOptionsPageSession(it.id)) }
+                    if (pending.isNotEmpty()) openInBrowserTab(page.url)
+                },
+            )
+        optionsPageObserver.start()
+        lifecycle.addObserver(
+            object : DefaultLifecycleObserver {
+                override fun onDestroy(owner: LifecycleOwner) = optionsPageObserver.stop()
+            }
+        )
+
+        // After repeated crashes the engine stops starting the extensions process and asks whether to try again.
+        var processDialog: AlertDialog? = null
+        lifecycle.addObserver(
+            ExtensionsProcessDisabledPromptObserver(store) {
+                if (processDialog?.isShowing == true) return@ExtensionsProcessDisabledPromptObserver
+                processDialog =
+                    AlertDialog.Builder(this)
+                        .setTitle(addonsR.string.mozac_feature_extensions_manager_notification_title_text)
+                        .setMessage(addonsR.string.mozac_feature_extensions_manager_notification_content_text)
+                        .setPositiveButton(
+                            addonsR.string.mozac_feature_extensions_manager_notification_restart_button
+                        ) { _, _ ->
+                            store.dispatch(ExtensionsProcessAction.EnabledAction)
+                        }
+                        // The add-ons manager then offers the restart in its header.
+                        .setNegativeButton(R.string.archwave_addons_keep_extensions_disabled) { _, _ ->
+                            store.dispatch(ExtensionsProcessAction.DisabledAction)
+                        }
+                        .setOnDismissListener { store.dispatch(ExtensionsProcessAction.ShowPromptAction(show = false)) }
+                        .setCancelable(false)
+                        .show()
+            }
+        )
     }
 
     private fun openPopup(webExtensionState: WebExtensionState) {

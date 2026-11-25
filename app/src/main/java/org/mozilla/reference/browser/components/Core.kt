@@ -237,6 +237,7 @@ class Core(
             client,
             collectionUser = Settings.getOverrideAmoUser(context),
             collectionName = Settings.getOverrideAmoCollection(context),
+            maxCacheAgeInMinutes = DAY_IN_MINUTES,
         )
 
     /**

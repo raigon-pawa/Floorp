@@ -5,8 +5,13 @@
 package org.mozilla.reference.browser.addons
 
 import android.content.Context
+import android.content.Intent
+import android.content.res.ColorStateList
+import android.widget.Button
+import android.widget.CompoundButton
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +33,7 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.ktx.android.content.appVersionName
 import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.components
 
 /** Feature implementation for handling [WebExtensionPromptRequest] and showing the respective UI. */
 class WebExtensionPromptFeature(
@@ -40,8 +46,30 @@ class WebExtensionPromptFeature(
     private var isInstallationInProgress = false
     private var scope: CoroutineScope? = null
 
+    /**
+     * The library fills both permission buttons with the primary colour; Cancel is the safe choice, so tone it down. It
+     * also ticks the technical-and-interaction data box ("opt-out"); this build shares no data unless the user opts in,
+     * so untick it once per dialog, leaving a choice restored after a rotation alone.
+     */
+    private val denyButtonStyler =
+        object : FragmentManager.FragmentLifecycleCallbacks() {
+            override fun onFragmentStarted(fm: FragmentManager, f: Fragment) {
+                val dialog = (f as? PermissionsDialogFragment)?.dialog ?: return
+                dialog.findViewById<Button>(addonsR.id.deny_button)?.run {
+                    backgroundTintList = ColorStateList.valueOf(context.getColor(R.color.aw_surface_3))
+                    setTextColor(context.getColor(R.color.aw_text_1))
+                }
+                val arguments = f.arguments ?: return
+                if (!arguments.getBoolean(KEY_DATA_COLLECTION_DEFAULT_APPLIED)) {
+                    dialog.findViewById<CompoundButton>(addonsR.id.technical_and_interaction_data)?.isChecked = false
+                    arguments.putBoolean(KEY_DATA_COLLECTION_DEFAULT_APPLIED, true)
+                }
+            }
+        }
+
     /** Starts observing the selected session to listen for window requests and opens / closes tabs as needed. */
     override fun start() {
+        fragmentManager.registerFragmentLifecycleCallbacks(denyButtonStyler, false)
         scope =
             store.flowScoped(dispatcher = mainDispatcher) { flow ->
                 flow
@@ -86,6 +114,12 @@ class WebExtensionPromptFeature(
     }
 
     private fun handlePostInstallationRequest(addon: Addon) {
+        // Installs from the add-ons manager register themselves; web and file installs would wait for the next start.
+        // The registration is idempotent.
+        context.components.core.addonUpdater.registerForFutureUpdates(addon.id)
+        // The engine's handler for runtime.openOptionsPage() can be left holding the metadata from before the options
+        // page URL was known, so the request is dropped until the next start. Listing re-registers it with fresh data.
+        context.components.core.engine.listInstalledWebExtensions(onSuccess = {}, onError = {})
         showPostInstallationDialog(addon)
     }
 
@@ -99,6 +133,7 @@ class WebExtensionPromptFeature(
             promptRequest = promptRequest,
             permissions = promptRequest.permissions,
             origins = promptRequest.origins,
+            dataCollectionPermissions = promptRequest.dataCollectionPermissions,
         )
     }
 
@@ -106,7 +141,12 @@ class WebExtensionPromptFeature(
         addon: Addon,
         promptRequest: WebExtensionPromptRequest.AfterInstallation.Permissions.Optional,
     ) {
-        val shouldGrantWithoutPrompt = Addon.localizePermissions(promptRequest.permissions, context).isEmpty()
+        val shouldGrantWithoutPrompt =
+            canGrantOptionalPermissionsWithoutPrompt(
+                localizedPermissions = Addon.localizePermissions(promptRequest.permissions, context),
+                origins = promptRequest.origins,
+                dataCollectionPermissions = promptRequest.dataCollectionPermissions,
+            )
 
         // If we don't have any promptable permissions, just proceed.
         if (shouldGrantWithoutPrompt) {
@@ -121,6 +161,8 @@ class WebExtensionPromptFeature(
             addon = addon.copy(permissions = promptRequest.permissions),
             promptRequest = promptRequest,
             permissions = promptRequest.permissions,
+            origins = promptRequest.origins,
+            dataCollectionPermissions = promptRequest.dataCollectionPermissions,
             forOptionalPermissions = true,
         )
     }
@@ -136,6 +178,14 @@ class WebExtensionPromptFeature(
                     onConfirmButtonClicked = { _ ->
                         consumePromptRequest()
                     },
+                    onExtensionSettingsLinkClicked = { installed ->
+                        consumePromptRequest()
+                        context.startActivity(
+                            Intent(context, InstalledAddonDetailsActivity::class.java)
+                                .putExtra("add_on", installed)
+                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        )
+                    },
                 )
             dialog.show(fragmentManager, POST_INSTALLATION_DIALOG_FRAGMENT_TAG)
         }
@@ -144,6 +194,7 @@ class WebExtensionPromptFeature(
     /** Stops observing the selected session for incoming window requests. */
     override fun stop() {
         scope?.cancel()
+        fragmentManager.unregisterFragmentLifecycleCallbacks(denyButtonStyler)
     }
 
     @VisibleForTesting
@@ -152,6 +203,7 @@ class WebExtensionPromptFeature(
         promptRequest: WebExtensionPromptRequest.AfterInstallation.Permissions,
         permissions: List<String> = emptyList(),
         origins: List<String> = emptyList(),
+        dataCollectionPermissions: List<String> = emptyList(),
         forOptionalPermissions: Boolean = false,
     ) {
         if (!isInstallationInProgress && !hasExistingPermissionDialogFragment()) {
@@ -160,13 +212,14 @@ class WebExtensionPromptFeature(
                     addon = addon,
                     permissions = permissions,
                     origins = origins,
-                    dataCollectionPermissions = emptyList(),
+                    dataCollectionPermissions = dataCollectionPermissions,
                     forOptionalPermissions = forOptionalPermissions,
-                    onPositiveButtonClicked = { _, privateBrowsingAllowed, _ ->
+                    onPositiveButtonClicked = { _, privateBrowsingAllowed, technicalDataAllowed ->
                         handlePermissions(
                             promptRequest,
                             granted = true,
                             privateBrowsingAllowed = privateBrowsingAllowed,
+                            technicalDataAllowed = technicalDataAllowed,
                         )
                     },
                     onNegativeButtonClicked = {
@@ -191,7 +244,7 @@ class WebExtensionPromptFeature(
 
     private fun tryToReAttachButtonHandlersToPreviousDialog() {
         findPreviousDialogFragment()?.let { dialog ->
-            dialog.onPositiveButtonClicked = { addon, privateBrowsingAllowed, _ ->
+            dialog.onPositiveButtonClicked = { addon, privateBrowsingAllowed, technicalDataAllowed ->
                 store.state.webExtensionPromptRequest?.let { promptRequest ->
                     if (
                         promptRequest is WebExtensionPromptRequest.AfterInstallation.Permissions &&
@@ -201,6 +254,7 @@ class WebExtensionPromptFeature(
                             promptRequest,
                             granted = true,
                             privateBrowsingAllowed = privateBrowsingAllowed,
+                            technicalDataAllowed = technicalDataAllowed,
                         )
                     }
                 }
@@ -211,6 +265,7 @@ class WebExtensionPromptFeature(
                         promptRequest,
                         granted = false,
                         privateBrowsingAllowed = false,
+                        technicalDataAllowed = false,
                     )
                 }
             }
@@ -221,6 +276,7 @@ class WebExtensionPromptFeature(
         promptRequest: WebExtensionPromptRequest,
         granted: Boolean,
         privateBrowsingAllowed: Boolean,
+        technicalDataAllowed: Boolean,
     ) {
         when (promptRequest) {
             is WebExtensionPromptRequest.AfterInstallation.Permissions.Optional -> {
@@ -232,6 +288,7 @@ class WebExtensionPromptFeature(
                     PermissionPromptResponse(
                         isPermissionsGranted = granted,
                         isPrivateModeGranted = privateBrowsingAllowed,
+                        isTechnicalAndInteractionDataGranted = technicalDataAllowed,
                     )
                 promptRequest.onConfirm(response)
             }
@@ -276,15 +333,16 @@ class WebExtensionPromptFeature(
     @VisibleForTesting
     internal fun handleInstallationFailedRequest(exception: WebExtensionInstallException) {
         val addonName = exception.extensionName ?: ""
+        val appName = context.getString(R.string.app_name)
         var title = context.getString(addonsR.string.mozac_feature_addons_cant_install_extension, "")
         val message =
             when (exception) {
                 is WebExtensionInstallException.Blocklisted -> {
-                    context.getString(addonsR.string.mozac_feature_addons_blocklisted_2, addonName, R.string.app_name)
+                    context.getString(addonsR.string.mozac_feature_addons_blocklisted_2, addonName, appName)
                 }
 
                 is WebExtensionInstallException.SoftBlocked -> {
-                    context.getString(addonsR.string.mozac_feature_addons_soft_blocked_2, addonName, R.string.app_name)
+                    context.getString(addonsR.string.mozac_feature_addons_soft_blocked_2, addonName, appName)
                 }
 
                 is WebExtensionInstallException.UserCancelled -> {
@@ -318,7 +376,6 @@ class WebExtensionPromptFeature(
                 }
 
                 is WebExtensionInstallException.Incompatible -> {
-                    val appName = context.getString(R.string.app_name)
                     val version = context.appVersionName
                     context.getString(
                         addonsR.string.mozac_feature_addons_failed_to_install_incompatible_error,
@@ -358,5 +415,17 @@ class WebExtensionPromptFeature(
     companion object {
         private const val PERMISSIONS_DIALOG_FRAGMENT_TAG = "ADDONS_PERMISSIONS_DIALOG_FRAGMENT"
         private const val POST_INSTALLATION_DIALOG_FRAGMENT_TAG = "ADDONS_INSTALLATION_DIALOG_FRAGMENT"
+        private const val KEY_DATA_COLLECTION_DEFAULT_APPLIED = "archwave_data_collection_default_applied"
     }
 }
+
+/**
+ * Whether an extension's runtime request for optional permissions may be granted without asking the user. Site access
+ * ([origins]) and [dataCollectionPermissions] always need consent, even when no API permission has a message to show
+ * ([localizedPermissions] empty).
+ */
+internal fun canGrantOptionalPermissionsWithoutPrompt(
+    localizedPermissions: List<String>,
+    origins: List<String>,
+    dataCollectionPermissions: List<String>,
+): Boolean = localizedPermissions.isEmpty() && origins.isEmpty() && dataCollectionPermissions.isEmpty()
