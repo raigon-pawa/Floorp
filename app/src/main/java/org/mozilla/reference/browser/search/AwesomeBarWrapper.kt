@@ -6,8 +6,12 @@ package org.mozilla.reference.browser.search
 
 import android.content.Context
 import android.util.AttributeSet
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.res.colorResource
 import mozilla.components.compose.browser.awesomebar.AwesomeBar
@@ -44,33 +48,36 @@ constructor(
         }
 
         val descriptionColor = colorResource(R.color.aw_text_2)
-        AwesomeBar(
-            text = text.value,
-            providers = providers.value,
-            hiddenSuggestions = hiddenSuggestions.value,
-            orientation = AwesomeBarOrientation.BOTTOM,
-            colors =
-                AwesomeBarDefaults.colors(
-                    background = colorResource(R.color.aw_black),
-                    title = colorResource(R.color.aw_text_1),
-                    description = descriptionColor,
-                    autocompleteIcon = descriptionColor,
-                    // Not inside a MaterialTheme, so the default would come from the light baseline scheme.
-                    groupTitle = descriptionColor,
-                ),
-            onSuggestionClicked = { suggestion ->
-                suggestion.onSuggestionClicked?.invoke()
-                onStopListener?.invoke()
-            },
-            onAutoComplete = { suggestion ->
-                onEditSuggestionListener?.invoke(suggestion.editSuggestion!!)
-            },
-            onScroll = { hideKeyboard() },
-            onRemoveClicked = {
-                onSuggestionRemovedListener?.invoke(it)
-            },
-            profiler = context.components.core.engine.profiler,
-        )
+        // Next to the address field, which is at the bottom, not at the far end of the screen.
+        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter) {
+            AwesomeBar(
+                text = text.value,
+                providers = providers.value,
+                hiddenSuggestions = hiddenSuggestions.value,
+                orientation = AwesomeBarOrientation.BOTTOM,
+                colors =
+                    AwesomeBarDefaults.colors(
+                        background = colorResource(R.color.aw_black),
+                        title = colorResource(R.color.aw_text_1),
+                        description = descriptionColor,
+                        autocompleteIcon = descriptionColor,
+                        // Not inside a MaterialTheme, so the default would come from the light baseline scheme.
+                        groupTitle = descriptionColor,
+                    ),
+                onSuggestionClicked = { suggestion ->
+                    suggestion.onSuggestionClicked?.invoke()
+                    onStopListener?.invoke()
+                },
+                onAutoComplete = { suggestion ->
+                    onEditSuggestionListener?.invoke(suggestion.editSuggestion!!)
+                },
+                onScroll = { hideKeyboard() },
+                onRemoveClicked = {
+                    onSuggestionRemovedListener?.invoke(it)
+                },
+                profiler = context.components.core.engine.profiler,
+            )
+        }
     }
 
     override fun addProviders(vararg providers: AwesomeBar.SuggestionProvider) {
