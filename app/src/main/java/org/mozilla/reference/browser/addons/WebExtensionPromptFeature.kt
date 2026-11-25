@@ -37,8 +37,8 @@ import mozilla.components.feature.addons.ui.PermissionsDialogFragment
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
-import mozilla.components.support.ktx.android.content.appVersionName
 import mozilla.components.ui.widgets.withCenterAlignedButtons
+import org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
 
@@ -421,12 +421,12 @@ class WebExtensionPromptFeature(
                 }
 
                 is WebExtensionInstallException.Incompatible -> {
-                    val version = context.appVersionName
+                    // The extension's minimum and maximum versions are Gecko versions, not the app's.
                     context.getString(
                         addonsR.string.mozac_feature_addons_failed_to_install_incompatible_error,
                         addonName,
                         appName,
-                        version,
+                        context.getString(R.string.archwave_addons_engine_version, MOZ_APP_VERSION),
                     )
                 }
 
