@@ -27,8 +27,7 @@ import org.mozilla.reference.browser.browser.StartPage
  * Keeps a tab selected in the browser: whenever none is (first launch, the last tab closed, Close all tabs, the last
  * private tab closed), selects the most recently used normal tab or, without one, opens a start-page tab. Only bound by
  * the main browser screen, so custom tabs and web apps never get a tab from it, and only while that screen is started.
- *
- * @param pendingIntentTabs how many incoming intents are about to add a tab; none is opened while that is above 0.
+ * No tab is opened while incoming intents are about to add one of their own (pendingIntentTabs above 0).
  */
 class EnsureTabFeature(
     private val store: BrowserStore,

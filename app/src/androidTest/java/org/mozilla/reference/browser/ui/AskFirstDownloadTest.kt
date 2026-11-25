@@ -54,11 +54,9 @@ class AskFirstDownloadTest {
         if (::mockWebServer.isInitialized) runCatching { mockWebServer.close() }
     }
 
-    @Test
-    fun downloadStartsAfterNotificationsAreAllowed() = downloadAnswering("permission_allow_button")
+    @Test fun downloadStartsAfterNotificationsAreAllowed() = downloadAnswering("permission_allow_button")
 
-    @Test
-    fun downloadStartsAfterNotificationsAreDenied() = downloadAnswering("permission_deny_button")
+    @Test fun downloadStartsAfterNotificationsAreDenied() = downloadAnswering("permission_deny_button")
 
     private fun completed() =
         store.state.downloads.values.any {

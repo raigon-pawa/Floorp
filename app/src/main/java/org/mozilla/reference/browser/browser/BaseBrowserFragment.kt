@@ -363,10 +363,12 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                     DownloadsFeature.PromptsStyling(gravity = Gravity.BOTTOM, shouldWidthMatchParent = true),
                 onDownloadStopped = { download, _, status ->
                     // Without notifications nothing else says the file arrived or lets the user open it.
-                    if (status == DownloadState.Status.COMPLETED && view.isAttachedToWindow) {
-                        if (!NotificationManagerCompat.from(view.context).areNotificationsEnabled()) {
-                            showDownloadCompleted(view, download, downloadFileUtils)
-                        }
+                    if (
+                        status == DownloadState.Status.COMPLETED &&
+                            view.isAttachedToWindow &&
+                            !NotificationManagerCompat.from(view.context).areNotificationsEnabled()
+                    ) {
+                        showDownloadCompleted(view, download, downloadFileUtils)
                     }
                 },
             ),
