@@ -4,7 +4,6 @@
 
 package org.mozilla.reference.browser
 
-import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.PendingIntent
@@ -35,7 +34,8 @@ import mozilla.components.support.ktx.kotlin.tryGetHostFromUrl
 /**
  * Shows web notifications, as Android Components' WebNotificationFeature (160) does, but in a group of their own with a
  * summary. Without one Android grouped two or more of them itself, and a tap on that stack opened the launcher entry:
- * the page got no click and every notification in it was gone. Each tap now reaches its own notification's page.
+ * the page got no click and every notification in it was gone. Each tap now reaches its own notification's page. Taps
+ * go to [BrowserActivity], which passes them on (NotificationManager.onWebNotificationTapped).
  */
 class WebNotificationsFeature(
     private val context: Context,
@@ -43,7 +43,6 @@ class WebNotificationsFeature(
     private val icons: BrowserIcons,
     @param:DrawableRes private val smallIcon: Int,
     private val sitePermissionsStorage: SitePermissionsStorage,
-    private val activityClass: Class<out Activity>,
     private val notificationsDelegate: NotificationsDelegate,
 ) : WebNotificationDelegate {
     private val logger = Logger("WebNotificationsFeature")
@@ -115,7 +114,7 @@ class WebNotificationsFeature(
                 PendingIntent.getActivity(
                     context,
                     SUMMARY_ID,
-                    Intent(context, activityClass),
+                    Intent(context, BrowserActivity::class.java),
                     PendingIntent.FLAG_IMMUTABLE,
                 )
             )
@@ -129,7 +128,7 @@ class WebNotificationsFeature(
             PendingIntent.getActivity(
                 context,
                 requestId,
-                Intent(context, activityClass)
+                Intent(context, BrowserActivity::class.java)
                     .putExtra(NotificationManager.EXTRA_WEB_NOTIFICATION, notification.engineNotification)
                     .setAction(action),
                 PendingIntent.FLAG_IMMUTABLE,

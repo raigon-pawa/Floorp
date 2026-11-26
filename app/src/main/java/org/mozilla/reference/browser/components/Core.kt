@@ -56,7 +56,6 @@ import mozilla.components.service.sync.logins.SyncableLoginsStorage
 import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import org.mozilla.reference.browser.AppRequestInterceptor
-import org.mozilla.reference.browser.BrowserActivity
 import org.mozilla.reference.browser.EngineProvider
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.R.string.pref_key_remote_debugging
@@ -179,7 +178,6 @@ class Core(
                     icons,
                     R.drawable.ic_notification,
                     geckoSitePermissionsStorage,
-                    BrowserActivity::class.java,
                     notificationsDelegate = context.components.notificationsDelegate,
                 )
 

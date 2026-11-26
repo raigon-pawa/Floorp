@@ -2,10 +2,10 @@
 <!-- This Source Code Form is subject to the terms of the Mozilla Public
    - License, v. 2.0. If a copy of the MPL was not distributed with this
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Overrides browser-icons' Photon palette: the letter tile generated for a site without an icon (home screen
          shortcuts, tabs) is a grey with the white letter, not one of eight saturated colours. -->
-    <array name="mozac_browser_icons_photon_palette">
+    <array name="mozac_browser_icons_photon_palette" tools:ignore="UnusedResources">
         <item>#FF2A2A2A</item>
         <item>#FF333333</item>
         <item>#FF3D3D3D</item>
