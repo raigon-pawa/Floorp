@@ -5,6 +5,7 @@
 package org.mozilla.reference.browser.browser
 
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.ColorFilter
 import android.graphics.Paint
 import android.graphics.PixelFormat
@@ -12,9 +13,13 @@ import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import androidx.annotation.ColorInt
+import androidx.core.graphics.ColorUtils
 
 private const val TEXT_SIZE_DP = 9f
 private const val PILL_HEIGHT_PER_TEXT = 1.35f
+
+// calculateContrast needs an opaque background.
+private const val OPAQUE = 0xFF000000.toInt()
 
 /**
  * An extension's icon with its badge text over the bottom end, the way its toolbar button showed it.
@@ -70,4 +75,19 @@ class BadgedIcon(
     override fun getIntrinsicHeight() = icon.intrinsicHeight
 
     @Deprecated("Deprecated in Java") override fun getOpacity() = PixelFormat.TRANSLUCENT
+
+    /** Text colours for badges. */
+    companion object {
+        /** Black or white, whichever reads better on [background]. */
+        @ColorInt
+        fun textColorOn(@ColorInt background: Int): Int =
+            if (
+                ColorUtils.calculateContrast(Color.BLACK, background or OPAQUE) >=
+                    ColorUtils.calculateContrast(Color.WHITE, background or OPAQUE)
+            ) {
+                Color.BLACK
+            } else {
+                Color.WHITE
+            }
+    }
 }

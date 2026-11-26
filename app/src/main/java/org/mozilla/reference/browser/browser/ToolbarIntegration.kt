@@ -351,11 +351,13 @@ class ToolbarIntegration(
                     if (icon == null || badge == null) {
                         icon
                     } else {
+                        val background =
+                            action.badgeBackgroundColor ?: ContextCompat.getColor(context, R.color.aw_text_2)
                         BadgedIcon(
                             icon,
                             badge,
-                            action.badgeTextColor ?: ContextCompat.getColor(context, R.color.aw_black),
-                            action.badgeBackgroundColor ?: ContextCompat.getColor(context, R.color.aw_text_2),
+                            action.badgeTextColor ?: BadgedIcon.textColorOn(background),
+                            background,
                             density,
                         )
                     }
