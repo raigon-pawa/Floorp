@@ -4,6 +4,7 @@
 
 package org.mozilla.reference.browser
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.os.Parcel
@@ -34,6 +35,7 @@ import org.junit.Test
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.TestHelper.createCustomTabIntent
+import org.mozilla.reference.browser.settings.SettingsActivity
 
 /** Fires intents as another app could at the exported [IntentReceiverActivity] and checks what the browser opens. */
 class IntentReceiverTest {
@@ -164,6 +166,24 @@ class IntentReceiverTest {
                     .firstOrNull()
         }
         return resumed
+    }
+
+    @Test
+    fun theLauncherIconKeepsTheScreenOnTopOfTheBrowser() {
+        context.startActivity(Intent(context, SettingsActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        assertTrue(waitFor { resumed<SettingsActivity>() })
+
+        fire(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER))
+
+        assertTrue("the launcher icon closed Settings", waitFor { resumed<SettingsActivity>() })
+    }
+
+    private inline fun <reified T : Activity> resumed(): Boolean {
+        var found = false
+        instrumentation.runOnMainSync {
+            found = ActivityLifecycleMonitorRegistry.getInstance().getActivitiesInStage(Stage.RESUMED).any { it is T }
+        }
+        return found
     }
 
     @Test

@@ -57,15 +57,12 @@ class DownloadService : AbstractFetchDownloadService() {
     // (and with them their downloads) go. A paused download does not hold the process. Custom tabs and web apps run in
     // tasks of their own: closing one of them leaves the browser and its private tabs alone.
     override fun onTaskRemoved(rootIntent: Intent?) {
-        if (!isBrowserTask(rootIntent)) return
+        if (!BrowserActivity.isBrowserTask(rootIntent)) return
         components.useCases.tabsUseCases.removePrivateTabs()
         if (store.state.downloads.values.none { !it.private && it.status in RUNNING }) super.onTaskRemoved(rootIntent)
     }
 
-    internal companion object {
-        private val RUNNING = setOf(Status.INITIATED, Status.DOWNLOADING)
-
-        /** Whether the removed task, given by its root intent, is the main browser's. */
-        fun isBrowserTask(rootIntent: Intent?) = rootIntent?.component?.className == BrowserActivity::class.java.name
+    private companion object {
+        val RUNNING = setOf(Status.INITIATED, Status.DOWNLOADING)
     }
 }

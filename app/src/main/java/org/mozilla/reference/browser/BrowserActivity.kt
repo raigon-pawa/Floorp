@@ -378,11 +378,15 @@ open class BrowserActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private companion object {
-        const val PREF_LAST_CRASH_CHECK = "archwave.last_crash_check"
+    /** Tells the browser's task apart from those of custom tabs and web apps. */
+    companion object {
+        private const val PREF_LAST_CRASH_CHECK = "archwave.last_crash_check"
 
         // shortcut: FRAGMENT_TAG of feature-prompts' PromptFeature (Android Components 160) is internal; if a library
         // update renames it, stale prompts other than the pickers are left to the library again.
-        const val PROMPT_FRAGMENT_TAG = "mozac_feature_prompt_dialog"
+        private const val PROMPT_FRAGMENT_TAG = "mozac_feature_prompt_dialog"
+
+        /** Whether a task, given by its root (base) intent, is the main browser's task. */
+        fun isBrowserTask(rootIntent: Intent?) = rootIntent?.component?.className == BrowserActivity::class.java.name
     }
 }

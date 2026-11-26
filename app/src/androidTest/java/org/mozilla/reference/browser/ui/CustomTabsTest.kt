@@ -18,7 +18,6 @@ import org.junit.Test
 import org.mozilla.reference.browser.BrowserActivity
 import org.mozilla.reference.browser.ExternalAppBrowserActivity
 import org.mozilla.reference.browser.IntentReceiverActivity
-import org.mozilla.reference.browser.downloads.DownloadService
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.RetryTestRule
@@ -172,13 +171,13 @@ class CustomTabsTest {
         launchCustomTab(customTabPage.url.toString()).use {
             customTabScreen { verifyPageTitle(customTabPage.title) }
             val context = InstrumentationRegistry.getInstrumentation().targetContext
-            val tasks = context.getSystemService(ActivityManager::class.java).appTasks.map { it.taskInfo }
+            val tasks = context.getSystemService(ActivityManager::class.java).appTasks.mapNotNull { it.taskInfo }
             val customTabTask = tasks.single {
                 it.topActivity?.className == ExternalAppBrowserActivity::class.java.name
             }
             val browserTask = tasks.single { it.topActivity?.className == BrowserActivity::class.java.name }
-            assertFalse(DownloadService.isBrowserTask(customTabTask.baseIntent))
-            assertTrue(DownloadService.isBrowserTask(browserTask.baseIntent))
+            assertFalse(BrowserActivity.isBrowserTask(customTabTask.baseIntent))
+            assertTrue(BrowserActivity.isBrowserTask(browserTask.baseIntent))
         }
     }
 }
