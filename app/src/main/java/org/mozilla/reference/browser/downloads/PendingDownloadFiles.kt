@@ -8,6 +8,7 @@ import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -124,6 +125,12 @@ class PendingAwareDownloadFileUtils(
             (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                 fileName != null &&
                 context.contentResolver.findDownload(fileName) != null)
+
+    // The service's notification and its Open action start this; see OpenDownloadActivity.
+    override fun createOpenFileIntent(fileName: String?, directoryPath: String, downloadContentType: String?): Intent? =
+        delegate.createOpenFileIntent(fileName, directoryPath, downloadContentType)?.let {
+            OpenDownloadActivity.intentFor(context, it, fileName)
+        }
 
     override fun deleteMediaFile(contentResolver: ContentResolver, fileName: String?, directoryPath: String): Boolean =
         delegate.deleteMediaFile(contentResolver, fileName, directoryPath) ||

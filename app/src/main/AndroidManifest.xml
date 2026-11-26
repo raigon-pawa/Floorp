@@ -159,6 +159,14 @@
             android:foregroundServiceType="dataSync" />
 
         <activity
+            android:name=".downloads.OpenDownloadActivity"
+            android:theme="@android:style/Theme.NoDisplay"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:exported="false" />
+
+        <activity
           android:name=".settings.SettingsActivity"
           android:label="@string/settings"
           android:theme="@style/AppTheme"
