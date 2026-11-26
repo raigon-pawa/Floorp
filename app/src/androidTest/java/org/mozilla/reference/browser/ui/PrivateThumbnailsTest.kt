@@ -20,6 +20,7 @@ import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.TestAssetHelper
+import org.mozilla.reference.browser.ui.robots.navigationToolbar
 
 /** Private browsing leaves no pictures of its pages: the thumbnail of a private tab is never kept. */
 class PrivateThumbnailsTest {
@@ -60,10 +61,20 @@ class PrivateThumbnailsTest {
         val normalTab = tabs.addTab(TestAssetHelper.getGenericAsset(mockWebServer, 1).url.toString(), selectTab = true)
         assertTrue("no thumbnail for a normal tab", waitFor { thumbnail(normalTab, private = false) != null })
 
-        val privateTab = tabs.addTab(TestAssetHelper.getGenericAsset(mockWebServer, 2).url.toString(), private = true)
+        val privateTab =
+            tabs.addTab(
+                TestAssetHelper.getGenericAsset(mockWebServer, 2).url.toString(),
+                selectTab = true,
+                private = true,
+            )
         assertTrue(waitFor { store.state.findTab(privateTab)?.content?.loading == false })
+        // Opening the tray takes a fresh picture of the tab being left, which goes to the persistent cache. Once the
+        // page has painted: before that there is no picture to take.
+        SystemClock.sleep(SETTLE_MS)
+        navigationToolbar {}.openTabTrayMenu {}
         SystemClock.sleep(SETTLE_MS)
         assertNull("kept a thumbnail of a private tab", thumbnail(privateTab, private = true))
+        assertNull("kept a private tab's thumbnail in the normal cache", thumbnail(privateTab, private = false))
     }
 
     private companion object {
