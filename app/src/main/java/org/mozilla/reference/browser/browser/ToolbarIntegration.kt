@@ -12,6 +12,7 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import android.widget.Toast
 import android.window.OnBackInvokedCallback
 import android.window.OnBackInvokedDispatcher
 import androidx.annotation.DrawableRes
@@ -146,7 +147,7 @@ class ToolbarIntegration(
 
     /**
      * The feature loads anything that looks like an address, but an address of a scheme nothing can open ("re:invent")
-     * loaded nothing without a word.
+     * loaded nothing, and one the engine refuses (file://) was dropped: both without a word.
      */
     private fun commit(text: String, load: (String) -> Boolean): Boolean {
         val url = text.trim().takeIf { it.isUrl() }?.toNormalizedUrl() ?: return load(text)
@@ -159,6 +160,11 @@ class ToolbarIntegration(
             TypedAddress.SEARCH -> {
                 search(text)
                 true
+            }
+            TypedAddress.REFUSE -> {
+                Toast.makeText(context, R.string.archwave_address_refused, Toast.LENGTH_LONG).show()
+                // The editor stays open with the address in it.
+                false
             }
         }
     }

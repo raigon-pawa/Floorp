@@ -10,22 +10,26 @@ enum class TypedAddress {
     LOAD,
 
     /** Nothing can open it ("re:invent", "ac:dc"): it is searched for, as in Firefox. */
-    SEARCH;
+    SEARCH,
+
+    /** The engine refuses to load it (GeckoEngineSession aborts the load without a word). */
+    REFUSE;
 
     companion object {
-        // AppLinksUseCases.ENGINE_SUPPORTED_SCHEMES.
+        // GeckoEngineSession.BLOCKED_SCHEMES.
+        private val refusedSchemes = setOf("file", "resource", "fido", "javascript")
+
+        // AppLinksUseCases.ENGINE_SUPPORTED_SCHEMES, less the refused ones.
         private val engineSchemes =
             setOf(
                 "about",
                 "blob",
                 "data",
-                "file",
                 "ftp",
                 "http",
                 "https",
                 "moz-extension",
                 "moz-safe-about",
-                "resource",
                 "view-source",
                 "ws",
                 "wss",
@@ -44,6 +48,7 @@ enum class TypedAddress {
         fun of(url: String, opensInApp: () -> Boolean): TypedAddress {
             val scheme = scheme.find(url)?.groupValues?.get(1)?.lowercase()
             return when {
+                scheme in refusedSchemes -> REFUSE
                 scheme == null || scheme in engineSchemes || hostAndPort.containsMatchIn(url) -> LOAD
                 opensInApp() -> LOAD
                 else -> SEARCH

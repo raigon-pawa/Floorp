@@ -37,4 +37,12 @@ class TypedAddressTest {
             )
             .forEach { assertEquals(it, TypedAddress.LOAD, TypedAddress.of(it, asked)) }
     }
+
+    @Test
+    fun `addresses the engine refuses are refused before anything else`() {
+        val asked = { error("must not be asked") }
+        listOf("file:///sdcard/", "FILE:///sdcard/", "resource://gre/", "javascript:alert(1)", "fido:x").forEach {
+            assertEquals(it, TypedAddress.REFUSE, TypedAddress.of(it, asked))
+        }
+    }
 }
