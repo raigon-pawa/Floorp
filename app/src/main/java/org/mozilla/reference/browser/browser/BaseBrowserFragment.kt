@@ -69,6 +69,7 @@ import mozilla.components.ui.widgets.behavior.EngineViewScrollingGesturesBehavio
 import org.mozilla.geckoview.BasicSelectionActionDelegate
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.reference.browser.BuildConfig
+import org.mozilla.reference.browser.EngineProvider
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.addons.WebExtensionPromptFeature
 import org.mozilla.reference.browser.downloads.AskFirstDownloadManager
@@ -166,6 +167,12 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                         .toIntArray()
                 sitePermissionFeature.withFeature {
                     it.onPermissionsResult(permissions, grantResults)
+                }
+                if (isLocationRefused(results)) {
+                    requireComponents.core.store.state.findTabOrCustomTabOrSelectedTab(sessionId)?.let { tab ->
+                        val runtime = EngineProvider.getOrCreateRuntime(requireContext())
+                        forgetLocationBlock(runtime, tab.content.url, tab.content.private)
+                    }
                 }
             }
 
