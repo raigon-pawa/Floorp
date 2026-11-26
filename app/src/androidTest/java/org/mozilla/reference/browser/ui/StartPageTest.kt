@@ -19,6 +19,7 @@ import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.TestAssetHelper
+import org.mozilla.reference.browser.helpers.TestHelper
 import org.mozilla.reference.browser.helpers.TestHelper.packageName
 import org.mozilla.reference.browser.ui.robots.browser
 import org.mozilla.reference.browser.ui.robots.mDevice
@@ -59,6 +60,7 @@ class StartPageTest {
     // Needs the network: the tile's site is real.
     @Test
     fun tileOpensSiteTest() {
+        TestHelper.assumeValidatedNetwork("the DuckDuckGo tile needs the network")
         startPage {}
             .clickTile("DuckDuckGo") {
                 verifyUrl("duckduckgo.com")
