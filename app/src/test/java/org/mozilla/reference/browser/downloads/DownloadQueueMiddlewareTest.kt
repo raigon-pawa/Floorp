@@ -63,4 +63,28 @@ class DownloadQueueMiddlewareTest {
         store.dispatch(ContentAction.ConsumeDownloadAction("t", "d5"))
         assertNull(store.download)
     }
+
+    @Test
+    fun `an empty tab a page opened for a download closes once it is answered and shows its opener`() {
+        val store = store()
+        store.dispatch(TabListAction.AddTabAction(createTab("about:blank", id = "blank", parent = store.state.tabs[0])))
+        store.dispatch(TabListAction.SelectTabAction("blank"))
+        store.dispatch(ContentAction.UpdateDownloadAction("blank", download(0)))
+        store.dispatch(ContentAction.ConsumeDownloadAction("blank", "d0"))
+        assertEquals(listOf("t"), store.state.tabs.map { it.id })
+        assertEquals("t", store.state.selectedTabId)
+    }
+
+    @Test
+    fun `a tab that shows a page, or that the user opened, stays`() {
+        val store = store()
+        val parent = store.state.tabs[0]
+        store.dispatch(TabListAction.AddTabAction(createTab("https://example.org/f", id = "page", parent = parent)))
+        store.dispatch(TabListAction.AddTabAction(createTab("about:blank", id = "own")))
+        listOf("page", "own").forEachIndexed { n, id ->
+            store.dispatch(ContentAction.UpdateDownloadAction(id, download(n)))
+            store.dispatch(ContentAction.CancelDownloadAction(id, "d$n"))
+        }
+        assertEquals(listOf("t", "page", "own"), store.state.tabs.map { it.id })
+    }
 }

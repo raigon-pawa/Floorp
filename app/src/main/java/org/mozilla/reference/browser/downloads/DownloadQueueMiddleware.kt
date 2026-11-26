@@ -10,8 +10,10 @@ import mozilla.components.browser.state.action.BrowserAction
 import mozilla.components.browser.state.action.ContentAction
 import mozilla.components.browser.state.action.CustomTabListAction
 import mozilla.components.browser.state.action.TabListAction
+import mozilla.components.browser.state.selector.findTab
 import mozilla.components.browser.state.selector.findTabOrCustomTab
 import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
@@ -20,6 +22,9 @@ import mozilla.components.lib.state.Store
  * A tab holds one download request at a time, and a page that starts several downloads at once replaced the first with
  * each next one: one dialog, one file, the rest gone without a word. Queue the requests that arrive while one is
  * waiting for the user and offer the next once it is answered. A page left for another one drops its queue.
+ *
+ * A link with target=_blank or window.open() to a download opens a tab whose only navigation becomes that download. As
+ * in desktop Firefox, that empty tab is closed once the download is answered, and its opener is shown again.
  */
 class DownloadQueueMiddleware(
     // shortcut: the answered dialog is still being dismissed, and the downloads feature shows no dialog while one is
@@ -55,10 +60,17 @@ class DownloadQueueMiddleware(
     }
 
     private fun offerNext(store: Store<BrowserState, BrowserAction>, sessionId: String) {
-        queues[sessionId]?.removeFirstOrNull()?.let {
-            later { store.dispatch(ContentAction.UpdateDownloadAction(sessionId, it)) }
+        val next = queues[sessionId]?.removeFirstOrNull()
+        if (next != null) {
+            later { store.dispatch(ContentAction.UpdateDownloadAction(sessionId, next)) }
+        } else if (store.state.findTab(sessionId)?.isEmptyOpenedTab() == true) {
+            store.dispatch(TabListAction.RemoveTabAction(sessionId, selectParentIfExists = true))
         }
     }
+
+    // Opened by a page (the user's own new tabs have no parent) and never showed anything.
+    private fun TabSessionState.isEmptyOpenedTab() =
+        parentId != null && content.url == "about:blank" && !content.canGoBack && !content.loading
 
     private fun drop(sessionId: String) {
         queues.remove(sessionId)?.forEach { it.response?.close() }
