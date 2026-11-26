@@ -37,6 +37,7 @@ import mozilla.components.feature.addons.AddonManagerException
 import mozilla.components.feature.addons.ui.AddonFilePicker
 import mozilla.components.feature.addons.ui.AddonsManagerAdapter
 import mozilla.components.feature.addons.ui.AddonsManagerAdapterDelegate
+import mozilla.components.feature.addons.ui.displayName
 import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.base.log.logger.Logger
@@ -148,7 +149,7 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
                         null
                     }
                 // The spinner stays until the list shows, so the screen is never blank while the catalogue loads.
-                val listed = addons?.let { withCatalogueData(it) }
+                val listed = addons?.let { withCatalogueData(it) }?.installedByName { it.displayName(requireContext()) }
                 loading.isVisible = false
                 // The manager hides catalogue errors and returns the installed add-ons alone.
                 // shortcut: also shown if every recommended add-on is installed; fine while the collection is large.
@@ -291,4 +292,13 @@ class AddonsFragment : Fragment(), AddonsManagerAdapterDelegate, MenuProvider {
 class InstallState : ViewModel() {
     /** The running install operation. */
     val operation = MutableStateFlow<CancellableOperation?>(null)
+}
+
+/**
+ * Installed add-ons sorted by [name], as the menu's Extensions submenu lists them, so the order no longer changes after
+ * an update or reinstall; the recommended ones keep the catalogue's order.
+ */
+internal fun List<Addon>.installedByName(name: (Addon) -> String): List<Addon> {
+    val (installed, others) = partition { it.isInstalled() }
+    return installed.sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER, name)) + others
 }

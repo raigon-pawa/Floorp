@@ -5,12 +5,14 @@
 package org.mozilla.reference.browser
 
 import android.app.Activity
+import android.app.ActivityManager
 import android.app.SearchManager
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.os.Process
 import android.provider.Browser
+import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import mozilla.components.browser.state.state.selectedOrDefaultSearchEngine
 import mozilla.components.feature.intent.ext.EXTRA_SESSION_ID
@@ -34,6 +36,20 @@ class IntentReceiverActivity : Activity() {
         val intent = (intent?.let { Intent(it) } ?: Intent()).sanitize()
         intent.removeUnreadableExtras()
         restrictToWhatOtherAppsMaySend(intent)
+
+        // The launcher icon brings the browser back as it was left, as Recents does. Starting the singleTask
+        // BrowserActivity would close the screens above it: Settings, the add-on pages, an extension popup.
+        if (intent.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_LAUNCHER)) {
+            val browserTask =
+                getSystemService<ActivityManager>()?.appTasks?.firstOrNull {
+                    BrowserActivity.isBrowserTask(it.taskInfo?.baseIntent)
+                }
+            if (browserTask != null) {
+                browserTask.moveToFront()
+                finish()
+                return
+            }
+        }
 
         // Tapping the media notification brings back the tab that plays.
         if (intent.action == AbstractMediaSessionService.ACTION_SWITCH_TAB && isFromThisApp()) {

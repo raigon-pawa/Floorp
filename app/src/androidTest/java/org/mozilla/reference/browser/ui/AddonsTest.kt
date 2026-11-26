@@ -4,15 +4,12 @@
 
 package org.mozilla.reference.browser.ui
 
-import android.net.ConnectivityManager
-import android.net.NetworkCapabilities
-import androidx.test.platform.app.InstrumentationRegistry
 import mozilla.components.feature.addons.R as addonsR
-import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
+import org.mozilla.reference.browser.helpers.TestHelper
 import org.mozilla.reference.browser.ui.robots.navigationToolbar
 
 /**
@@ -23,16 +20,7 @@ import org.mozilla.reference.browser.ui.robots.navigationToolbar
 class AddonsTest {
     @get:Rule val activityTestRule = BrowserActivityTestRule()
 
-    @Before
-    fun requireNetwork() {
-        val connectivity =
-            InstrumentationRegistry.getInstrumentation().targetContext.getSystemService(ConnectivityManager::class.java)
-        val capabilities = connectivity.getNetworkCapabilities(connectivity.activeNetwork)
-        assumeTrue(
-            "AddonsTest needs addons.mozilla.org",
-            capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true,
-        )
-    }
+    @Before fun requireNetwork() = TestHelper.assumeValidatedNetwork("AddonsTest needs addons.mozilla.org")
 
     @Test
     fun addonsListingPageTest() {

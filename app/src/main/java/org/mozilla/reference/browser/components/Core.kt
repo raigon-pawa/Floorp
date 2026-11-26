@@ -49,7 +49,6 @@ import mozilla.components.feature.session.HistoryDelegate
 import mozilla.components.feature.session.middleware.LastAccessMiddleware
 import mozilla.components.feature.session.middleware.undo.UndoMiddleware
 import mozilla.components.feature.sitepermissions.OnDiskSitePermissionsStorage
-import mozilla.components.feature.webnotifications.WebNotificationFeature
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.lib.dataprotect.SecureAbove22Preferences
 import mozilla.components.service.location.LocationService
@@ -57,10 +56,10 @@ import mozilla.components.service.sync.logins.SyncableLoginsStorage
 import mozilla.components.support.base.worker.Frequency
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import org.mozilla.reference.browser.AppRequestInterceptor
-import org.mozilla.reference.browser.BrowserActivity
 import org.mozilla.reference.browser.EngineProvider
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.R.string.pref_key_remote_debugging
+import org.mozilla.reference.browser.WebNotificationsFeature
 import org.mozilla.reference.browser.browser.CrashedTabMiddleware
 import org.mozilla.reference.browser.browser.KeepTitleMiddleware
 import org.mozilla.reference.browser.browser.ReaderSecurityMiddleware
@@ -173,13 +172,12 @@ class Core(
             .apply {
                 icons.install(engine, this)
 
-                WebNotificationFeature(
+                WebNotificationsFeature(
                     context,
                     engine,
                     icons,
                     R.drawable.ic_notification,
                     geckoSitePermissionsStorage,
-                    BrowserActivity::class.java,
                     notificationsDelegate = context.components.notificationsDelegate,
                 )
 

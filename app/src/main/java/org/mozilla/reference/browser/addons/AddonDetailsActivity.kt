@@ -18,9 +18,9 @@ import java.util.Locale
 import java.util.TimeZone
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.R as addonsR
+import mozilla.components.feature.addons.ui.summary
 import mozilla.components.feature.addons.ui.translateDescription
 import mozilla.components.feature.addons.ui.translateName
-import mozilla.components.feature.addons.ui.translateSummary
 import mozilla.components.support.utils.ext.getParcelableExtraCompat
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.enableEdgeToEdgeFromAndroid13
@@ -110,8 +110,10 @@ class AddonDetailsActivity : AppCompatActivity() {
 
     private fun bindDetails(addon: Addon) {
         val detailsView = findViewById<TextView>(R.id.details)
-        // Installed add-ons have only their manifest's short description, which the engine passes as the summary.
-        val detailsText = addon.translateDescription(this).ifBlank { addon.translateSummary(this) }
+        // Installed add-ons have only their manifest's short description, which the engine passes as the summary, and
+        // some catalogue entries have no description. The library would show its missing-translation message instead.
+        val description = if (addon.translatableDescription.isEmpty()) "" else addon.translateDescription(this)
+        val detailsText = description.ifBlank { addon.summary(this).orEmpty() }
 
         val parsedText = detailsText.replace("\n", "<br/>")
         val text = HtmlCompat.fromHtml(parsedText, HtmlCompat.FROM_HTML_MODE_COMPACT).withLinksInBrowserTabs()

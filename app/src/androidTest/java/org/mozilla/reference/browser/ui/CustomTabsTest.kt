@@ -4,14 +4,19 @@
 
 package org.mozilla.reference.browser.ui
 
+import android.app.ActivityManager
 import android.content.ComponentName
 import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import mockwebserver3.MockWebServer
 import org.junit.After
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.reference.browser.BrowserActivity
+import org.mozilla.reference.browser.ExternalAppBrowserActivity
 import org.mozilla.reference.browser.IntentReceiverActivity
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
@@ -155,6 +160,24 @@ class CustomTabsTest {
                 .clickOpenInBrowserButton {
                     verifyUrl(customTabPage.url.toString())
                 }
+        }
+    }
+
+    // Closing a custom tab removes its task. Only the removal of the browser's own task may end private browsing.
+    @Test
+    fun customTabTaskIsNotTheBrowserTaskTest() {
+        val customTabPage = TestAssetHelper.getGenericAsset(mockWebServer, 1)
+
+        launchCustomTab(customTabPage.url.toString()).use {
+            customTabScreen { verifyPageTitle(customTabPage.title) }
+            val context = InstrumentationRegistry.getInstrumentation().targetContext
+            val tasks = context.getSystemService(ActivityManager::class.java).appTasks.mapNotNull { it.taskInfo }
+            val customTabTask = tasks.single {
+                it.topActivity?.className == ExternalAppBrowserActivity::class.java.name
+            }
+            val browserTask = tasks.single { it.topActivity?.className == BrowserActivity::class.java.name }
+            assertFalse(BrowserActivity.isBrowserTask(customTabTask.baseIntent))
+            assertTrue(BrowserActivity.isBrowserTask(browserTask.baseIntent))
         }
     }
 }

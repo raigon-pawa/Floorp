@@ -6,7 +6,6 @@ package org.mozilla.reference.browser.ui.robots
 
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
 
@@ -38,20 +37,6 @@ class NotificationRobot {
         }
         assertTrue(notificationFound)
         assertTrue(downloadFilename.exists())
-    }
-
-    fun verifyDownloadNotificationDoesNotExist(
-        notificationMessage: String,
-        fileName: String,
-    ) {
-        val notification = UiSelector().text(notificationMessage)
-        val notificationFound = mDevice.findObject(notification).waitForExists(waitingTime)
-        val downloadFilename = mDevice.findObject(UiSelector().text(fileName))
-
-        notificationTray.swipeUp(2)
-
-        assertFalse(notificationFound)
-        assertFalse(downloadFilename.exists())
     }
 
     class Transition {

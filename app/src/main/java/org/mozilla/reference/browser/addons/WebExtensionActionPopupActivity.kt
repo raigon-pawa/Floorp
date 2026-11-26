@@ -12,6 +12,7 @@ import android.util.AttributeSet
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.WindowManager
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -47,6 +48,11 @@ class WebExtensionActionPopupActivity : AppCompatActivity() {
         setContentView(R.layout.activity_add_on_settings)
         super.onCreate(savedInstanceState)
         enableEdgeToEdgeFromAndroid13()
+        // The popup shows the private tab's site (and works with it), so like that tab it may not be captured, nor
+        // leave a Recents picture behind. Its tab is private when the selected tab is, see showPopup.
+        if (components.core.store.state.selectedTab?.content?.private == true) {
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
 
         webExtensionId = requireNotNull(intent.getStringExtra("web_extension_id"))
         intent.getStringExtra("web_extension_name")?.let {

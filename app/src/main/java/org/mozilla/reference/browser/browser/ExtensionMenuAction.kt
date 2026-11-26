@@ -25,7 +25,7 @@ data class ExtensionMenuAction(val name: String, val shown: Action, val onClick:
 fun extensionMenuActions(extensions: Collection<WebExtensionState>, tab: SessionState?): List<ExtensionMenuAction> =
     extensions
         .filter { it.enabled && (tab?.content?.private != true || it.allowedInPrivateBrowsing) }
-        .sortedBy { it.name }
+        .sortedWith(compareBy(String.CASE_INSENSITIVE_ORDER) { it.name.orEmpty() })
         .flatMap { extension ->
             val overrides = tab?.extensionState?.get(extension.id)
             val browserAction = extension.browserAction?.let { it to it.copyWithOverride(overrides?.browserAction) }

@@ -107,7 +107,7 @@ open class BrowserActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             // Not when the system replays the intent of a task reopened from recents.
             if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) {
-                NotificationManager.onWebNotificationTapped(components, intent)
+                NotificationManager.onWebNotificationTapped(this, intent)
             }
             supportFragmentManager.beginTransaction().apply {
                 replace(R.id.container, createBrowserFragment(sessionId))
@@ -201,7 +201,7 @@ open class BrowserActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().replace(R.id.container, BrowserFragment.create()).commit()
         }
         // Everything else that arrives here was already handled by the intent processors before it was sent.
-        NotificationManager.onWebNotificationTapped(components, intent)
+        NotificationManager.onWebNotificationTapped(this, intent)
     }
 
     @Suppress("DEPRECATION") // ComponentActivity wants us to use registerForActivityResult
@@ -396,11 +396,15 @@ open class BrowserActivity : AppCompatActivity() {
         startActivity(intent)
     }
 
-    private companion object {
-        const val PREF_LAST_CRASH_CHECK = "archwave.last_crash_check"
+    /** Tells the browser's task apart from those of custom tabs and web apps. */
+    companion object {
+        private const val PREF_LAST_CRASH_CHECK = "archwave.last_crash_check"
 
         // shortcut: FRAGMENT_TAG of feature-prompts' PromptFeature (Android Components 160) is internal; if a library
         // update renames it, stale prompts other than the pickers are left to the library again.
-        const val PROMPT_FRAGMENT_TAG = "mozac_feature_prompt_dialog"
+        private const val PROMPT_FRAGMENT_TAG = "mozac_feature_prompt_dialog"
+
+        /** Whether a task, given by its root (base) intent, is the main browser's task. */
+        fun isBrowserTask(rootIntent: Intent?) = rootIntent?.component?.className == BrowserActivity::class.java.name
     }
 }

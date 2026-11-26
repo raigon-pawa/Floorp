@@ -30,6 +30,12 @@ class ExtensionMenuActionsTest {
     }
 
     @Test
+    fun `names are sorted ignoring case`() {
+        val lower = WebExtensionState("lower", name = "aardvark", browserAction = action("aardvark"))
+        assertEquals(listOf("aardvark", "Blocker", "Reader"), titles(listOf(reader, blocker, lower)))
+    }
+
+    @Test
     fun `a private tab lists only extensions allowed in private browsing`() {
         assertEquals(listOf("Reader"), titles(listOf(blocker, reader), private = true))
         assertEquals(emptyList<String>(), titles(listOf(blocker), private = true))

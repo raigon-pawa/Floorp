@@ -10,6 +10,8 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import android.net.Uri
 import android.os.Build
 import androidx.browser.customtabs.CustomTabsIntent
@@ -22,6 +24,7 @@ import mozilla.components.support.ktx.android.content.appName
 import org.junit.Assert
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assume.assumeTrue
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.reference.browser.ui.robots.mDevice
@@ -30,6 +33,13 @@ object TestHelper {
     val packageName = InstrumentationRegistry.getInstrumentation().targetContext.packageName
     val appContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
     val appName = appContext.appName
+
+    /** Skips the test (instead of failing it) without a validated network connection, for tests of live sites. */
+    fun assumeValidatedNetwork(reason: String) {
+        val connectivity = appContext.getSystemService(ConnectivityManager::class.java)
+        val capabilities = connectivity.getNetworkCapabilities(connectivity.activeNetwork)
+        assumeTrue(reason, capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true)
+    }
 
     fun scrollToElementByText(text: String): UiScrollable {
         val appView = UiScrollable(UiSelector().scrollable(true))
