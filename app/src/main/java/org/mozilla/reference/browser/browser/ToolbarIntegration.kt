@@ -428,6 +428,13 @@ class ToolbarIntegration(
     init {
         toolbar.display.apply {
             indicators = pageIndicators
+            // They used to fall through to the address and open the editor.
+            val openSiteInfo = {
+                store.state.findTabOrCustomTabOrSelectedTab(sessionId)?.let { showSiteInfo(context, scope, it) }
+                Unit
+            }
+            setOnSiteInfoClickedListener(openSiteInfo)
+            setOnTrackingProtectionClickedListener(openSiteInfo)
             displayIndicatorSeparator = true
             menuController = browserMenuController
             hint = context.getString(R.string.toolbar_hint)

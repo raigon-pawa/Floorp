@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This Source Code Form is subject to the terms of the Mozilla Public
+   - License, v. 2.0. If a copy of the MPL was not distributed with this
+   - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
+<resources>
+    <!-- Site information panel, opened from the shield or lock in the address bar. Its title is the site's host. -->
+    <string name="archwave_site_info_secure">Connection is secure</string>
+    <string name="archwave_site_info_insecure">Connection is not secure</string>
+    <!-- %1$s is the certificate issuer's name. -->
+    <string name="archwave_site_info_issuer">Verified by %1$s</string>
+    <!-- A switch: on while tracking protection applies to this site, off while the site is an exception. -->
+    <string name="archwave_site_info_tracking">Tracking protection for this site</string>
+    <plurals name="archwave_site_info_trackers_blocked">
+        <item quantity="one">%1$d tracker blocked on this page</item>
+        <item quantity="other">%1$d trackers blocked on this page</item>
+    </plurals>
+    <string name="archwave_site_info_tracking_off_for_site">Off for this site: trackers are not blocked here</string>
+    <string name="archwave_site_info_tracking_off">Tracking protection is off in Settings</string>
+    <string name="archwave_site_info_permissions">Permissions</string>
+    <string name="archwave_site_info_no_permissions">No decisions remembered for this site</string>
+    <!-- One remembered decision, e.g. "Location: Allowed". -->
+    <string name="archwave_site_info_permission">%1$s: %2$s</string>
+    <string name="archwave_site_info_allowed">Allowed</string>
+    <string name="archwave_site_info_blocked">Blocked</string>
+    <string name="archwave_site_info_location">Location</string>
+    <string name="archwave_site_info_notification">Notifications</string>
+    <string name="archwave_site_info_camera">Camera</string>
+    <string name="archwave_site_info_microphone">Microphone</string>
+    <string name="archwave_site_info_storage">Persistent storage</string>
+    <string name="archwave_site_info_drm">DRM-controlled content</string>
+    <string name="archwave_site_info_cross_site_cookies">Cross-site cookies</string>
+    <string name="archwave_site_info_local_device">Apps on this device</string>
+    <string name="archwave_site_info_local_network">Devices on the local network</string>
+    <!-- Button: forgets this site's remembered decisions, so it asks again. -->
+    <string name="archwave_site_info_reset_permissions">Reset permissions</string>
+    <string name="archwave_site_info_permissions_reset">The site will ask again</string>
+    <string name="archwave_site_info_done">Done</string>
+</resources>
