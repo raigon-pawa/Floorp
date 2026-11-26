@@ -243,8 +243,9 @@ class ToolbarIntegration(
             ) { checked ->
                 sessionUseCases.requestDesktopSite.invoke(checked, tab.id)
             },
-            // Only a web page can be pinned, and only where the launcher supports it.
-            if (webAppUseCases.isPinningSupported() && tab.content.url.startsWith("http")) {
+            // Only a web page can be pinned, and only where the launcher supports it. Not from a private tab: the
+            // launcher keeps the shortcut (and the app its manifest), and it opens the site outside private browsing.
+            if (webAppUseCases.isPinningSupported() && tab.content.url.startsWith("http") && !tab.content.private) {
                 TextMenuCandidate(context.getString(R.string.menu_add_to_home_screen)) {
                     scope.launch { webAppUseCases.addToHomescreen() }
                 }
