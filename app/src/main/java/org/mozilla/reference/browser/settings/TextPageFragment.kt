@@ -46,7 +46,8 @@ class TextPageFragment : Fragment() {
             val content =
                 text
                     ?: withContext(Dispatchers.IO) {
-                        context.assets.open(asset!!).bufferedReader().use { it.readText() }
+                        val raw = context.assets.open(asset!!).bufferedReader().use { it.readText() }
+                        if (asset.endsWith(".md")) MarkdownText.toPlainText(raw) else raw
                     }
             list.adapter = ParagraphAdapter(content.split(PARAGRAPH_BREAK), padding)
         }
