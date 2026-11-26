@@ -14,8 +14,11 @@ import android.widget.CompoundButton
 import android.widget.RelativeLayout
 import android.widget.TextView
 import androidx.annotation.VisibleForTesting
+import androidx.browser.customtabs.CustomTabsIntent
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
+import java.lang.ref.WeakReference
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -40,6 +43,7 @@ import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.geckoview.BuildConfig.MOZ_APP_VERSION
+import org.mozilla.reference.browser.IntentReceiverActivity
 import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
 
@@ -237,7 +241,7 @@ class WebExtensionPromptFeature(
         dataCollectionPermissions: List<String> = emptyList(),
         forOptionalPermissions: Boolean = false,
     ) {
-        if (!isInstallationInProgress && !hasExistingPermissionDialogFragment()) {
+        if (!isInstallationInProgress && !hasExistingPermissionDialogFragment() && !shownOnAnotherScreen()) {
             val dialog =
                 PermissionsDialogFragment.newInstance(
                     addon = addon,
@@ -276,8 +280,16 @@ class WebExtensionPromptFeature(
                 fragmentManager,
                 PERMISSIONS_DIALOG_FRAGMENT_TAG,
             )
+            permissionsShownIn = WeakReference(fragmentManager)
         }
     }
+
+    // Every screen with this feature sees the pending request. The help page opened by "Learn more" is such a screen,
+    // and showed the prompt a second time over the page; dismissing that one to read it cancelled the install.
+    private fun shownOnAnotherScreen(): Boolean =
+        permissionsShownIn?.get()?.let {
+            it !== fragmentManager && !it.isDestroyed && it.findFragmentByTag(PERMISSIONS_DIALOG_FRAGMENT_TAG) != null
+        } == true
 
     private fun tryToReAttachButtonHandlersToPreviousDialog() {
         // A prompt restored after the process died has no request behind it any more (the engine forgot the install),
@@ -324,8 +336,14 @@ class WebExtensionPromptFeature(
         }
     }
 
-    // The prompt stays up behind the new tab, so the user can come back and answer it.
-    private fun openLearnMore() = context.openInBrowserTab(PERMISSIONS_LEARN_MORE_URL)
+    // A custom tab above the screen that shows the prompt. A browser tab would bring the singleTask BrowserActivity
+    // forward, which closes the add-on manager with its dialog, and the prompt then came back over the help page where
+    // dismissing it to read the page cancelled the install. Closing the custom tab returns to the prompt.
+    private fun openLearnMore() =
+        CustomTabsIntent.Builder()
+            .build()
+            .apply { intent.setClass(context, IntentReceiverActivity::class.java) }
+            .launchUrl(context, PERMISSIONS_LEARN_MORE_URL.toUri())
 
     private fun handlePermissions(
         promptRequest: WebExtensionPromptRequest,
@@ -462,6 +480,9 @@ class WebExtensionPromptFeature(
     }
 
     companion object {
+        // The screen whose permission prompt is up, held weakly. Only touched on the main thread.
+        private var permissionsShownIn: WeakReference<FragmentManager>? = null
+
         private const val PERMISSIONS_DIALOG_FRAGMENT_TAG = "ADDONS_PERMISSIONS_DIALOG_FRAGMENT"
         private const val POST_INSTALLATION_DIALOG_FRAGMENT_TAG = "ADDONS_INSTALLATION_DIALOG_FRAGMENT"
         private const val INSTALL_ERROR_DIALOG_FRAGMENT_TAG = "ARCHWAVE_INSTALL_ERROR_DIALOG_FRAGMENT"
