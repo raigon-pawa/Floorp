@@ -18,6 +18,7 @@ import mozilla.components.feature.downloads.filewriter.DownloadFileWriter
 import mozilla.components.support.base.android.NotificationsDelegate
 import mozilla.components.support.utils.DefaultDownloadFileUtils
 import mozilla.components.support.utils.DownloadFileUtils
+import org.mozilla.reference.browser.BrowserActivity
 import org.mozilla.reference.browser.ext.components
 
 /** Runs downloads in a foreground service so they continue after the user leaves the app. */
@@ -53,13 +54,18 @@ class DownloadService : AbstractFetchDownloadService() {
     // The base class stops the service when the app is swiped away from recents, which cancelled running downloads
     // and deleted their partial files without a word. A download in progress keeps going in this foreground service.
     // That keeps the process alive, so end private browsing here as the process death would have: the private tabs
-    // (and with them their downloads) go. A paused download does not hold the process.
+    // (and with them their downloads) go. A paused download does not hold the process. Custom tabs and web apps run in
+    // tasks of their own: closing one of them leaves the browser and its private tabs alone.
     override fun onTaskRemoved(rootIntent: Intent?) {
+        if (!isBrowserTask(rootIntent)) return
         components.useCases.tabsUseCases.removePrivateTabs()
         if (store.state.downloads.values.none { !it.private && it.status in RUNNING }) super.onTaskRemoved(rootIntent)
     }
 
-    private companion object {
-        val RUNNING = setOf(Status.INITIATED, Status.DOWNLOADING)
+    internal companion object {
+        private val RUNNING = setOf(Status.INITIATED, Status.DOWNLOADING)
+
+        /** Whether the removed task, given by its root intent, is the main browser's. */
+        fun isBrowserTask(rootIntent: Intent?) = rootIntent?.component?.className == BrowserActivity::class.java.name
     }
 }
