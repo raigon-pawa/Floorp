@@ -19,10 +19,12 @@ import androidx.preference.PreferenceManager
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.engine.Engine.BrowsingData
+import mozilla.components.lib.state.ext.flow
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
@@ -138,8 +140,12 @@ object BrowsingDataCleaner {
         items: Set<ClearableData>,
     ) {
         // Closed first, so that no open page writes cookies, storage or history back while the rest is cleared.
-        // EnsureTabFeature opens the start-page tab that replaces them; a second add here could make it two.
-        if (ClearableData.TABS in items) components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
+        // EnsureTabFeature opens the start-page tab that replaces them; a second add here could make it two. Right
+        // after a cold start (the offer to finish an interrupted clear) the saved tabs may still be on their way in.
+        if (ClearableData.TABS in items) {
+            components.core.store.flow().first { it.restoreComplete }
+            components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
+        }
         clearData(context, components, items)
     }
 
