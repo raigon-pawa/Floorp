@@ -19,13 +19,10 @@ import org.junit.Test
 class PendingDownloadFilesTest {
     private val context = InstrumentationRegistry.getInstrumentation().targetContext
     private val downloads = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path
-    private val fileUtils =
-        PendingAwareDownloadFileUtils(context, DefaultDownloadFileUtils(context, downloadLocation = { downloads }))
+    private val published = DefaultDownloadFileUtils(context, downloadLocation = { downloads })
+    private val fileUtils = PendingAwareDownloadFileUtils(context, published)
 
-    @Test
-    fun aPartialDownloadCanBeDeleted() {
-        assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
-        val name = "aw-partial-${SystemClock.uptimeMillis()}.bin"
+    private fun write(name: String, bytes: Int) {
         val download =
             DownloadState(
                 url = "https://example.org/$name",
@@ -33,14 +30,31 @@ class PendingDownloadFilesTest {
                 directoryPath = downloads,
                 contentLength = 100,
             )
-        // Half of it written, as when a download is cancelled or interrupted: the entry stays pending.
         PendingUntilCompleteFileWriter(context, fileUtils) { false }
             .useFileStream(download, append = true, shouldUseScopedStorage = true, onUpdateState = {}) {
-                it.write(ByteArray(50))
+                it.write(ByteArray(bytes))
             }
-        assertTrue(fileUtils.fileExists(downloads, name))
+    }
+
+    @Test
+    fun aPartialDownloadIsHiddenAndCanBeDeleted() {
+        assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+        val name = "aw-partial-${SystemClock.uptimeMillis()}.bin"
+        // Half of it written, as when a download is paused, cancelled or interrupted: the entry stays pending.
+        write(name, bytes = 50)
+        assertFalse("a partial download shows in Downloads", published.fileExists(downloads, name))
+        assertTrue("a paused download could not resume", fileUtils.fileExists(downloads, name))
 
         assertTrue(fileUtils.deleteMediaFile(context.contentResolver, name, downloads))
         assertFalse(fileUtils.fileExists(downloads, name))
+    }
+
+    @Test
+    fun aFinishedDownloadIsPublished() {
+        assumeTrue(Build.VERSION.SDK_INT >= Build.VERSION_CODES.R)
+        val name = "aw-finished-${SystemClock.uptimeMillis()}.bin"
+        write(name, bytes = 100)
+        assertTrue("a finished download is hidden", published.fileExists(downloads, name))
+        assertTrue(fileUtils.deleteMediaFile(context.contentResolver, name, downloads))
     }
 }
