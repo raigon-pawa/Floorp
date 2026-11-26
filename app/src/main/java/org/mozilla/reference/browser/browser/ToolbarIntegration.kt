@@ -53,6 +53,7 @@ import mozilla.components.concept.menu.candidate.SmallMenuCandidate
 import mozilla.components.concept.menu.candidate.TextMenuCandidate
 import mozilla.components.concept.menu.candidate.TextStyle
 import mozilla.components.concept.toolbar.Toolbar
+import mozilla.components.feature.app.links.AppLinksUseCases
 import mozilla.components.feature.pwa.WebAppUseCases
 import mozilla.components.feature.session.SessionUseCases
 import mozilla.components.feature.tabs.TabsUseCases
@@ -63,6 +64,8 @@ import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.ktx.android.view.ImeInsetsSynchronizer
 import mozilla.components.support.ktx.android.view.hideKeyboard
+import mozilla.components.support.ktx.kotlin.isUrl
+import mozilla.components.support.ktx.kotlin.toNormalizedUrl
 import mozilla.components.support.ktx.kotlinx.coroutines.flow.ifAnyChanged
 import mozilla.components.support.webextensions.WebExtensionSupport
 import mozilla.components.ui.autocomplete.InlineAutocompleteEditText
@@ -137,9 +140,36 @@ class ToolbarIntegration(
             // Enter on an empty field only leaves edit mode; it searched for nothing.
             override fun setOnUrlCommitListener(listener: (String) -> Boolean) =
                 toolbar.setOnUrlCommitListener { text ->
-                    text.isBlank() || listener(text)
+                    text.isBlank() || commit(text, listener)
                 }
         }
+
+    /**
+     * The feature loads anything that looks like an address, but an address of a scheme nothing can open ("re:invent")
+     * loaded nothing without a word.
+     */
+    private fun commit(text: String, load: (String) -> Boolean): Boolean {
+        val url = text.trim().takeIf { it.isUrl() }?.toNormalizedUrl() ?: return load(text)
+        val action =
+            TypedAddress.of(url) {
+                AppLinksUseCases(context).interceptedAppLinkRedirect(url).isRedirect()
+            }
+        return when (action) {
+            TypedAddress.LOAD -> load(text)
+            TypedAddress.SEARCH -> {
+                search(text)
+                true
+            }
+        }
+    }
+
+    private fun search(terms: String) {
+        context.components.useCases.searchUseCases.defaultSearch.invoke(
+            searchTerms = terms,
+            searchEngine = null,
+            parentSessionId = null,
+        )
+    }
 
     private val pageIndicators =
         listOf(DisplayToolbar.Indicators.SECURITY, DisplayToolbar.Indicators.TRACKING_PROTECTION)
@@ -530,13 +560,7 @@ class ToolbarIntegration(
             featureToolbar,
             context.components.core.store,
             context.components.useCases.sessionUseCases.loadUrl,
-            { searchTerms ->
-                context.components.useCases.searchUseCases.defaultSearch.invoke(
-                    searchTerms = searchTerms,
-                    searchEngine = null,
-                    parentSessionId = null,
-                )
-            },
+            ::search,
             sessionId,
         )
 
