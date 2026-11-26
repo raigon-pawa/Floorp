@@ -7,16 +7,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <org.mozilla.reference.browser.settings.WrappingPreferenceCategory
+        app:iconSpaceReserved="false"
         android:title="@string/tracker_category"
         android:summary="@string/preferences_tracking_protection_summary">
 
         <androidx.preference.SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
         app:singleLineTitle="false"
             android:defaultValue="@bool/pref_default_tracking_protection_normal"
             android:title="@string/preferences_tracking_protection_normal"
             android:key="@string/pref_key_tracking_protection_normal"/>
 
         <androidx.preference.SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
         app:singleLineTitle="false"
             android:defaultValue="@bool/pref_default_tracking_protection_private"
             android:title="@string/preferences_tracking_protection_private"
@@ -25,6 +28,7 @@
     </org.mozilla.reference.browser.settings.WrappingPreferenceCategory>
 
     <androidx.preference.SwitchPreferenceCompat
+        app:iconSpaceReserved="false"
         app:singleLineTitle="false"
         android:defaultValue="@bool/pref_default_https_only"
         android:title="@string/preferences_https_only"
@@ -32,6 +36,7 @@
         android:key="@string/pref_key_https_only"/>
 
     <androidx.preference.ListPreference
+        app:iconSpaceReserved="false"
         app:singleLineTitle="false"
         android:defaultValue="@string/pref_default_doh_provider"
         android:title="@string/preferences_doh"
@@ -41,6 +46,7 @@
         app:useSimpleSummaryProvider="true"/>
 
     <androidx.preference.SwitchPreferenceCompat
+        app:iconSpaceReserved="false"
         app:singleLineTitle="false"
         android:defaultValue="@bool/pref_default_global_privacy_control"
         android:title="@string/preferences_global_privacy_control"
@@ -48,6 +54,7 @@
         android:key="@string/pref_key_global_privacy_control"/>
 
     <androidx.preference.SwitchPreferenceCompat
+        app:iconSpaceReserved="false"
         app:singleLineTitle="false"
         android:defaultValue="@bool/pref_default_search_suggestions"
         android:title="@string/preferences_search_suggestions"

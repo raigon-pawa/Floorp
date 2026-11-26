@@ -8,10 +8,13 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory
+        app:iconSpaceReserved="false"
         android:title="@string/archwave_settings_general_category">
 
         <!-- Filled from the browser store; the search middleware persists the choice, so this row stores nothing. -->
         <androidx.preference.ListPreference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
             android:key="@string/pref_key_search_engine"
             android:title="@string/archwave_settings_search_engine"
             android:summary="@string/archwave_settings_search_engine_loading"
@@ -19,54 +22,72 @@
             android:persistent="false" />
 
         <androidx.preference.SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
             android:key="@string/pref_key_launch_external_app"
             android:defaultValue="false"
             android:title="@string/open_links_in_apps" />
 
         <androidx.preference.Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
             android:key="@string/pref_key_make_default_browser"
             android:title="@string/preferences_make_default_browser"/>
 
         <androidx.preference.SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
             android:key="@string/pref_key_open_links_in_private"
             android:defaultValue="@bool/pref_default_open_links_in_private"
-            android:title="@string/archwave_settings_open_links_in_private"
-            app:singleLineTitle="false" />
+            android:title="@string/archwave_settings_open_links_in_private" />
 
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:iconSpaceReserved="false"
         android:title="@string/archwave_settings_privacy_category">
 
         <androidx.preference.Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
             android:key="@string/pref_key_privacy"
             android:title="@string/privacy"
             android:summary="@string/preferences_privacy_summary"/>
 
         <androidx.preference.Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
             android:key="@string/pref_key_clear_browsing_data"
             android:title="@string/archwave_settings_clear_data"/>
 
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:iconSpaceReserved="false"
         android:title="@string/developer_tools_category">
 
         <androidx.preference.SwitchPreferenceCompat
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
             android:key="@string/pref_key_remote_debugging"
             android:defaultValue="false"
             android:title="@string/preferences_remote_debugging" />
 
         <androidx.preference.Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
             android:key="@string/pref_key_override_amo_collection"
             android:title="@string/preferences_customize_amo_collection"/>
 
     </PreferenceCategory>
 
     <PreferenceCategory
+        app:iconSpaceReserved="false"
         android:title="@string/mozilla_category">
 
         <androidx.preference.Preference
+            app:iconSpaceReserved="false"
+            app:singleLineTitle="false"
             android:key="@string/pref_key_about_page"
             android:title="@string/preferences_about_page" />
 
