@@ -79,12 +79,12 @@ object NotificationManager {
                 val origin = tab?.content?.url?.getOrigin()?.let { it to tab.content.private }
                 delegate.requestNotificationPermission(
                     onPermissionGranted = { dismiss() },
-                    // True right after a "no" in the prompt; false when Android refused without asking.
                     onPermissionRejected = {
-                        if (host.get()?.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS) == true) {
-                            dismiss()
-                            forgetNotificationGrant(activity.components, origin)
-                        }
+                        // True right after a "no" in the prompt; false when Android refused without asking, and the
+                        // offer of the settings stays. Either way the app cannot post now, so the site keeps no grant
+                        // (it asks again once the app may notify), also when the offer is cancelled.
+                        if (host.get()?.shouldShowRequestPermissionRationale(POST_NOTIFICATIONS) == true) dismiss()
+                        forgetNotificationGrant(activity.components, origin)
                     },
                 )
             }
