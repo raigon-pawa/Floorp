@@ -208,7 +208,6 @@ dependencies {
     implementation libs.androidx.core.ktx
     implementation libs.androidx.fragment
     implementation libs.androidx.lifecycle.common
-    implementation libs.androidx.lifecycle.compose
     implementation libs.androidx.lifecycle.process
     implementation libs.androidx.lifecycle.viewmodel
     implementation libs.androidx.preference.ktx

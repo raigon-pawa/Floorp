@@ -69,9 +69,6 @@ class BrowserFragment : BaseBrowserFragment(), UserInteractionHandler {
     private val readerViewAppearanceButton: FloatingActionButton
         get() = requireView().findViewById(R.id.readerViewAppearanceButton)
 
-    // The Settings switch is gone; ignore a value a profile may still have stored from before.
-    override val shouldUseComposeUI: Boolean = false
-
     override fun onViewCreated(
         view: View,
         savedInstanceState: Bundle?,

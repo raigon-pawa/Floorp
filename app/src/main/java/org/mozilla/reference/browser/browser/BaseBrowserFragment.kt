@@ -18,7 +18,6 @@ import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.CallSuper
-import androidx.compose.ui.platform.ComposeView
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.isVisible
@@ -32,7 +31,6 @@ import com.google.android.material.snackbar.Snackbar.LENGTH_LONG
 import mozilla.components.browser.state.selector.findTabOrCustomTabOrSelectedTab
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.browser.toolbar.BrowserToolbar
-import mozilla.components.compose.browser.toolbar.BrowserToolbar
 import mozilla.components.concept.engine.EngineView
 import mozilla.components.feature.app.links.AppLinksFeature
 import mozilla.components.feature.downloads.DownloadDialogFragment
@@ -194,8 +192,6 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
         savedInstanceState: Bundle?,
     ): View = inflater.inflate(R.layout.fragment_browser, container, false)
 
-    abstract val shouldUseComposeUI: Boolean
-
     @CallSuper
     override fun onViewCreated(
         view: View,
@@ -258,16 +254,6 @@ abstract class BaseBrowserFragment : Fragment(), UserInteractionHandler, Activit
                     requireComponents.core.store.state.selectedTabId
                 },
             )
-        }
-
-        val composeView = view.findViewById<ComposeView>(R.id.compose_view)
-        if (shouldUseComposeUI) {
-            composeView.visibility = View.VISIBLE
-            composeView.setContent { BrowserToolbar() }
-
-            val params = swipeRefresh.layoutParams as CoordinatorLayout.LayoutParams
-            params.topMargin = resources.getDimensionPixelSize(R.dimen.browser_toolbar_height)
-            swipeRefresh.layoutParams = params
         }
     }
 
