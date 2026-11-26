@@ -4,12 +4,15 @@
 
 package org.mozilla.reference.browser.ui
 
+import android.content.Intent
 import android.view.WindowManager
+import androidx.test.core.app.ActivityScenario
 import androidx.test.platform.app.InstrumentationRegistry
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.reference.browser.addons.WebExtensionActionPopupActivity
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
 import org.mozilla.reference.browser.helpers.TestHelper
@@ -71,6 +74,32 @@ class PrivateWindowSecureTest {
                 openRegularBrowsing()
             }
         assertSecure(false)
+    }
+
+    // An extension popup shows the selected tab's site, so it follows that tab.
+    @Test
+    fun extensionPopupOverPrivateTabIsSecure() {
+        InstrumentationRegistry.getInstrumentation().runOnMainSync {
+            tabsUseCases.addTab("about:blank", selectTab = true, private = true)
+        }
+        assertPopupSecure(true)
+    }
+
+    @Test
+    fun extensionPopupOverNormalTabIsNotSecure() {
+        assertPopupSecure(false)
+    }
+
+    private fun assertPopupSecure(expected: Boolean) {
+        mDevice.waitForIdle()
+        val intent =
+            Intent(TestHelper.appContext, WebExtensionActionPopupActivity::class.java)
+                .putExtra("web_extension_id", "no-such-extension@test")
+        ActivityScenario.launch<WebExtensionActionPopupActivity>(intent).use { scenario ->
+            scenario.onActivity {
+                assertEquals(expected, it.window.attributes.flags and WindowManager.LayoutParams.FLAG_SECURE != 0)
+            }
+        }
     }
 
     private companion object {
