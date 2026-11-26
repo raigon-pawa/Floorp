@@ -23,8 +23,8 @@ Usage: tools/emu.py [-s SERIAL] [-p PACKAGE] <command> [args]
   capture-stop <file.pcap>     stop it and save the capture; read it with tools/netaudit.py
 
 <query> matches, case-insensitively, a node's text, content description or resource id (the part
-after ":id/"). An exact match wins over a substring match. SERIAL defaults to $ANDROID_SERIAL or
-emulator-5554; PACKAGE to $ARCHWAVE_PKG or the debug build's application id.
+after ":id/"). An exact match wins over a substring match. SERIAL defaults to $ANDROID_SERIAL, or to the
+only connected device (with several connected, one must be named); PACKAGE to $ARCHWAVE_PKG or the debug build's application id.
 """
 
 import argparse
@@ -128,6 +128,15 @@ def pick(device, query, nth):
     return matches[nth]
 
 
+def only_device():
+    """The serial of the single connected device; refuses to guess when there are several."""
+    listing = subprocess.run([adb_path(), "devices"], capture_output=True, text=True, timeout=30).stdout
+    serials = [line.split()[0] for line in listing.splitlines()[1:] if line.strip().endswith("device")]
+    if len(serials) != 1:
+        sys.exit(f"Pass -s SERIAL or set ANDROID_SERIAL: {len(serials)} devices connected ({', '.join(serials)})")
+    return serials[0]
+
+
 def escape_input_text(value):
     # `input text` takes %s for a space; everything else is quoted for the device shell.
     return shlex.quote(value.replace("%", "%%").replace(" ", "%s"))
@@ -135,7 +144,7 @@ def escape_input_text(value):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("-s", "--serial", default=os.environ.get("ANDROID_SERIAL", "emulator-5554"))
+    parser.add_argument("-s", "--serial", default=os.environ.get("ANDROID_SERIAL"))
     parser.add_argument("-p", "--package", default=os.environ.get("ARCHWAVE_PKG", DEFAULT_PACKAGE))
     parser.add_argument("command")
     parser.add_argument("args", nargs="*")
@@ -147,6 +156,8 @@ def main():
     parser.add_argument("--dist", type=int, default=900, help="swipe: distance in pixels")
     parser.add_argument("--at", default=None, help="swipe: start point as X,Y")
     options = parser.parse_args()
+    if not options.serial:
+        options.serial = only_device()
     device = Device(options.serial, options.package)
     command, args = options.command, options.args
 
