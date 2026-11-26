@@ -4,13 +4,11 @@
 
 package org.mozilla.reference.browser.ui.robots
 
+import android.os.SystemClock
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiSelector
-import androidx.test.uiautomator.Until
-import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTime
-import org.mozilla.reference.browser.helpers.TestAssetHelper.waitingTimeShort
 
 /** Implementation of Robot Pattern for any non-Reference Browser (external) apps. */
 class ExternalAppsRobot {
@@ -24,10 +22,16 @@ class ExternalAppsRobot {
 }
 
 private fun assertDefaultAppsLayout() {
-    // The title is the collapsing toolbar's description on Android 16, plain text on older versions.
-    val title = mDevice.wait(Until.findObject(By.desc("Default apps")), waitingTimeShort)
-    assertNotNull(title ?: mDevice.wait(Until.findObject(By.text("Default apps")), waitingTimeShort))
+    // The title is the collapsing toolbar's description on Android 16, plain text on older versions. A cold Settings
+    // app
+    // can take more than a few seconds to open on the emulator, so wait the full time for either.
+    fun shown() = mDevice.hasObject(By.desc("Default apps")) || mDevice.hasObject(By.text("Default apps"))
+    val deadline = SystemClock.uptimeMillis() + waitingTime
+    while (!shown() && SystemClock.uptimeMillis() < deadline) SystemClock.sleep(POLL_MS)
+    assertTrue("Default apps did not open", shown())
 }
+
+private const val POLL_MS = 250L
 
 private fun assertYouTubeApp() {
     try {
