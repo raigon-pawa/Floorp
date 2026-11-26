@@ -11,6 +11,7 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
 import mockwebserver3.MockWebServer
 import mozilla.components.browser.state.state.content.DownloadState
+import mozilla.components.feature.downloads.R as DownloadsR
 import org.junit.After
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -18,6 +19,7 @@ import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.reference.browser.R
 import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.helpers.AndroidAssetDispatcher
 import org.mozilla.reference.browser.helpers.BrowserActivityTestRule
@@ -56,12 +58,25 @@ class AskFirstDownloadTest {
 
     @Test fun downloadStartsAfterNotificationsAreAllowed() = downloadAnswering("permission_allow_button")
 
-    @Test fun downloadStartsAfterNotificationsAreDenied() = downloadAnswering("permission_deny_button")
+    // Without notifications the finished download is announced in the browser, with Open.
+    @Test
+    fun downloadStartsAfterNotificationsAreDenied() {
+        downloadAnswering("permission_deny_button")
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val fileName = store.state.downloads.values.first { it.isCompletedTestFile() }.fileName
+        val announced = context.getString(R.string.archwave_download_completed, fileName)
+        assertNotNull(
+            "no snackbar for the finished download",
+            mDevice.wait(Until.findObject(By.text(announced)), waitingTime),
+        )
+        val open = context.getString(DownloadsR.string.mozac_feature_downloads_button_open)
+        assertNotNull("the snackbar has no Open action", mDevice.findObject(By.text(open)))
+    }
 
-    private fun completed() =
-        store.state.downloads.values.any {
-            it.fileName?.startsWith(FILE_PREFIX) == true && it.status == DownloadState.Status.COMPLETED
-        }
+    private fun DownloadState.isCompletedTestFile() =
+        fileName?.startsWith(FILE_PREFIX) == true && status == DownloadState.Status.COMPLETED
+
+    private fun completed() = store.state.downloads.values.any { it.isCompletedTestFile() }
 
     private fun downloadAnswering(button: String) {
         navigationToolbar {}.enterUrlAndEnterToBrowser(TestAssetHelper.getDownloadAsset(mockWebServer).url) {}
