@@ -111,7 +111,9 @@ private fun ContentResolver.findDownload(fileName: String): Uri? {
 
 /**
  * Resuming a paused download first checks that its file exists, and the library looks only for published entries, so a
- * download kept pending by [PendingUntilCompleteFileWriter] would fail to resume. Finds pending ones as well.
+ * download kept pending by [PendingUntilCompleteFileWriter] would fail to resume. Finds pending ones as well, and
+ * deletes them: cancelling a download, or restarting one whose server ignored the resume range, deletes its partial
+ * file, which would otherwise stay hidden in Downloads until MediaStore expires it (and the restart failed every time).
  */
 class PendingAwareDownloadFileUtils(
     private val context: Context,
@@ -122,4 +124,11 @@ class PendingAwareDownloadFileUtils(
             (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
                 fileName != null &&
                 context.contentResolver.findDownload(fileName) != null)
+
+    override fun deleteMediaFile(contentResolver: ContentResolver, fileName: String?, directoryPath: String): Boolean =
+        delegate.deleteMediaFile(contentResolver, fileName, directoryPath) ||
+            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R &&
+                fileName != null &&
+                directoryPath == publicDownloads() &&
+                contentResolver.findDownload(fileName)?.let { contentResolver.delete(it, null, null) > 0 } == true)
 }
