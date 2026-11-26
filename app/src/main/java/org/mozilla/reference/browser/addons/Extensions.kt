@@ -42,14 +42,18 @@ internal fun isWebUrl(url: String?): Boolean = url != null && (url.startsWith("h
 /**
  * Opens [url] in a new normal tab of this app and brings the browser to the front, closing the add-on screens above it.
  * A normal current tab becomes the parent, so Back from the new tab returns to it; a private one does not, so closing
- * the new tab cannot lead into private browsing.
+ * the new tab cannot lead into private browsing. The page is not loaded as if the parent opened it: a web page or the
+ * start page may not link to about:license, which then showed "Cannot Complete Request".
  */
 internal fun Context.openInBrowserTab(url: String) {
-    components.useCases.tabsUseCases.addTab(
-        url,
-        selectTab = true,
-        parentId = components.core.store.state.selectedTab?.takeUnless { it.content.private }?.id,
-    )
+    val tabId =
+        components.useCases.tabsUseCases.addTab(
+            url,
+            selectTab = true,
+            startLoading = false,
+            parentId = components.core.store.state.selectedTab?.takeUnless { it.content.private }?.id,
+        )
+    components.useCases.sessionUseCases.loadUrl(url, sessionId = tabId)
     startActivity(Intent(this, BrowserActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
 }
 
