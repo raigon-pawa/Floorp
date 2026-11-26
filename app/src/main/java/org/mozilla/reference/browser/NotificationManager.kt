@@ -6,6 +6,7 @@ package org.mozilla.reference.browser
 
 import android.Manifest.permission.POST_NOTIFICATIONS
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager as AndroidNotificationManager
@@ -107,15 +108,17 @@ object NotificationManager {
     }
 
     /**
-     * Passes a tap on a web notification to the page and brings its site forward: the tab that shows it, or a new tab
-     * when there is none. Only call it from [BrowserActivity], which is not exported: the notification can then only
-     * come from this app's own PendingIntent.
+     * Passes a tap on a web notification to the page and brings its site forward: the tab or custom tab that shows it,
+     * else a tab of the site, else a new tab. Only call it from [BrowserActivity], which is not exported: the
+     * notification can then only come from this app's own PendingIntent.
      */
-    fun onWebNotificationTapped(components: Components, intent: Intent) {
+    fun onWebNotificationTapped(activity: Activity, intent: Intent) {
+        val components = activity.components
         if (!WebNotificationIntentProcessor(components.core.engine).process(intent)) return
         val notification = intent.getParcelableExtraCompat(EXTRA_WEB_NOTIFICATION, WebNotification::class.java)
         // Null for notifications of extensions.
         val source = notification?.source ?: return
+        val appContext = activity.applicationContext
         // Right after a cold start the tabs are still being restored.
         components.applicationScope.launch(Dispatchers.Main) {
             val state = components.core.store.flow().first { it.restoreComplete }
@@ -123,8 +126,20 @@ object NotificationManager {
                 state.tabs.filter {
                     it.content.private == notification.privateBrowsing && it.content.url.isSameOriginAs(source)
                 }
-            // The page that showed it, when it is still open.
-            val tab = sameSite.firstOrNull { it.content.url == source } ?: sameSite.firstOrNull()
+            // The page that showed it, when it is still open: in a tab, or in a custom tab of its own task.
+            val shownIn = sameSite.firstOrNull { it.content.url == source }
+            val customTab =
+                state.customTabs.firstOrNull {
+                    it.content.private == notification.privateBrowsing && it.content.url == source
+                }
+            if (
+                shownIn == null &&
+                    customTab != null &&
+                    ExternalAppBrowserActivity.bringToFront(appContext, customTab.id)
+            ) {
+                return@launch
+            }
+            val tab = shownIn ?: sameSite.firstOrNull()
             val tabsUseCases = components.useCases.tabsUseCases
             if (tab != null) {
                 tabsUseCases.selectTab(tab.id)

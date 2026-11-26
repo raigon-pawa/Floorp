@@ -105,7 +105,7 @@ open class BrowserActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             // Not when the system replays the intent of a task reopened from recents.
             if (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY == 0) {
-                NotificationManager.onWebNotificationTapped(components, intent)
+                NotificationManager.onWebNotificationTapped(this, intent)
             }
             supportFragmentManager.beginTransaction().apply {
                 replace(R.id.container, createBrowserFragment(sessionId))
@@ -199,7 +199,7 @@ open class BrowserActivity : AppCompatActivity() {
             supportFragmentManager.beginTransaction().replace(R.id.container, BrowserFragment.create()).commit()
         }
         // Everything else that arrives here was already handled by the intent processors before it was sent.
-        NotificationManager.onWebNotificationTapped(components, intent)
+        NotificationManager.onWebNotificationTapped(this, intent)
     }
 
     @Suppress("DEPRECATION") // ComponentActivity wants us to use registerForActivityResult
