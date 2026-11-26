@@ -6,6 +6,7 @@ package org.mozilla.reference.browser.browser
 
 import android.content.Context
 import android.view.LayoutInflater
+import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
@@ -15,7 +16,9 @@ import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import mozilla.components.browser.state.state.SecurityInfo
 import mozilla.components.browser.state.state.SessionState
+import mozilla.components.browser.state.state.TrackingProtectionState
 import mozilla.components.concept.engine.permission.SitePermissions
 import mozilla.components.feature.session.TrackingProtectionUseCases
 import mozilla.components.support.ktx.kotlin.getOrigin
@@ -57,46 +60,13 @@ fun showSiteInfo(context: Context, scope: CoroutineScope, tab: SessionState) {
         val remembered = rememberedPermissions(permissions)
         val view = LayoutInflater.from(context).inflate(R.layout.archwave_site_info, null)
 
-        val security = tab.content.securityInfo
-        view
-            .findViewById<TextView>(R.id.site_info_security)
-            .setText(
-                if (security.isSecure) R.string.archwave_site_info_secure else R.string.archwave_site_info_insecure
-            )
-        view.findViewById<TextView>(R.id.site_info_issuer).apply {
-            isVisible = security.isSecure && security.issuer.isNotBlank()
-            text = context.getString(R.string.archwave_site_info_issuer, security.issuer)
-        }
-
+        bindSecurity(view, tab.content.securityInfo)
         val protection = tab.trackingProtection
-        val exception = protection.ignoredOnTrackingProtection
         val tracking = view.findViewById<SwitchCompat>(R.id.site_info_tracking)
-        tracking.isVisible = protection.enabled || exception
-        tracking.isChecked = !exception
-        view.findViewById<TextView>(R.id.site_info_trackers).text =
-            when {
-                exception -> context.getString(R.string.archwave_site_info_tracking_off_for_site)
-                !protection.enabled -> context.getString(R.string.archwave_site_info_tracking_off)
-                else ->
-                    protection.blockedTrackers.size.let {
-                        context.resources.getQuantityString(R.plurals.archwave_site_info_trackers_blocked, it, it)
-                    }
-            }
-
-        view.findViewById<TextView>(R.id.site_info_permissions).text =
-            if (remembered.isEmpty()) {
-                context.getString(R.string.archwave_site_info_no_permissions)
-            } else {
-                remembered.joinToString("\n") { (label, allowed) ->
-                    context.getString(
-                        R.string.archwave_site_info_permission,
-                        context.getString(label),
-                        context.getString(
-                            if (allowed) R.string.archwave_site_info_allowed else R.string.archwave_site_info_blocked
-                        ),
-                    )
-                }
-            }
+        tracking.isVisible = protection.enabled || protection.ignoredOnTrackingProtection
+        tracking.isChecked = !protection.ignoredOnTrackingProtection
+        view.findViewById<TextView>(R.id.site_info_trackers).text = trackersText(context, protection)
+        view.findViewById<TextView>(R.id.site_info_permissions).text = permissionsText(context, remembered)
 
         val dialog =
             AlertDialog.Builder(context)
@@ -133,3 +103,38 @@ fun showSiteInfo(context: Context, scope: CoroutineScope, tab: SessionState) {
         dialog.show()
     }
 }
+
+private fun bindSecurity(view: View, security: SecurityInfo) {
+    view
+        .findViewById<TextView>(R.id.site_info_security)
+        .setText(if (security.isSecure) R.string.archwave_site_info_secure else R.string.archwave_site_info_insecure)
+    view.findViewById<TextView>(R.id.site_info_issuer).apply {
+        isVisible = security.isSecure && security.issuer.isNotBlank()
+        text = context.getString(R.string.archwave_site_info_issuer, security.issuer)
+    }
+}
+
+private fun trackersText(context: Context, protection: TrackingProtectionState): String =
+    when {
+        protection.ignoredOnTrackingProtection -> context.getString(R.string.archwave_site_info_tracking_off_for_site)
+        !protection.enabled -> context.getString(R.string.archwave_site_info_tracking_off)
+        else ->
+            protection.blockedTrackers.size.let {
+                context.resources.getQuantityString(R.plurals.archwave_site_info_trackers_blocked, it, it)
+            }
+    }
+
+private fun permissionsText(context: Context, remembered: List<Pair<Int, Boolean>>): String =
+    if (remembered.isEmpty()) {
+        context.getString(R.string.archwave_site_info_no_permissions)
+    } else {
+        remembered.joinToString("\n") { (label, allowed) ->
+            context.getString(
+                R.string.archwave_site_info_permission,
+                context.getString(label),
+                context.getString(
+                    if (allowed) R.string.archwave_site_info_allowed else R.string.archwave_site_info_blocked
+                ),
+            )
+        }
+    }

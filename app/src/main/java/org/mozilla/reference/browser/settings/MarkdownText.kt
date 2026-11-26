@@ -25,32 +25,24 @@ object MarkdownText {
 
     /** The plain text of [markdown], with blank lines between paragraphs. */
     fun toPlainText(markdown: String): String {
+        val converter = Converter()
+        markdown.lines().forEach(converter::add)
+        return converter.out.toString().trim()
+    }
+
+    private class Converter {
         val out = StringBuilder()
-        var inFence = false
-        var inProse = false
-        var fenceIndent = -1
-        fun breakParagraph() {
-            if (out.isNotEmpty() && !out.endsWith("\n\n")) out.append(if (out.endsWith("\n")) "\n" else "\n\n")
-            inProse = false
-        }
-        for (line in markdown.lines()) {
+        private var inFence = false
+        private var inProse = false
+        private var fenceIndent = -1
+
+        fun add(line: String) {
             when {
                 fence.containsMatchIn(line) -> {
                     breakParagraph()
                     inFence = !inFence
                 }
-                inFence -> {
-                    val indent = line.length - line.trimStart().length
-                    if (line.isNotBlank() && indent == fenceIndent && !newLine.containsMatchIn(line)) {
-                        // A wrapped line of the same paragraph: the screen wraps it where it fits.
-                        out.setLength(out.length - 1)
-                        out.append(' ').append(line.trim()).append('\n')
-                    } else {
-                        out.append(line).append('\n')
-                        // Nothing is joined onto a copyright line either.
-                        fenceIndent = if (line.isBlank() || copyright.containsMatchIn(line)) -1 else indent
-                    }
-                }
+                inFence -> addLicenceLine(line)
                 htmlAnchor.matches(line) -> Unit
                 line.isBlank() || rule.matches(line) -> breakParagraph()
                 heading.matches(line) -> {
@@ -59,20 +51,38 @@ object MarkdownText {
                 }
                 listItem.matches(line) -> {
                     if (inProse) breakParagraph()
-                    out.append("• ").append(inline(listItem.find(line)!!.groupValues[1])).append('\n')
+                    out.append("\u2022 ").append(inline(listItem.find(line)!!.groupValues[1])).append('\n')
                 }
-                inProse -> {
-                    // Onto the line before, in place of its line break.
-                    out.setLength(out.length - 1)
-                    out.append(' ').append(inline(line.trim())).append('\n')
-                }
+                inProse -> joinLine(inline(line.trim()))
                 else -> {
                     out.append(inline(line.trim())).append('\n')
                     inProse = true
                 }
             }
         }
-        return out.toString().trim()
+
+        private fun addLicenceLine(line: String) {
+            val indent = line.length - line.trimStart().length
+            if (line.isNotBlank() && indent == fenceIndent && !newLine.containsMatchIn(line)) {
+                // A wrapped line of the same paragraph: the screen wraps it where it fits.
+                joinLine(line.trim())
+            } else {
+                out.append(line).append('\n')
+                // Nothing is joined onto a copyright line either.
+                fenceIndent = if (line.isBlank() || copyright.containsMatchIn(line)) -1 else indent
+            }
+        }
+
+        // Onto the line before, in place of its line break.
+        private fun joinLine(text: String) {
+            out.setLength(out.length - 1)
+            out.append(' ').append(text).append('\n')
+        }
+
+        private fun breakParagraph() {
+            if (out.isNotEmpty() && !out.endsWith("\n\n")) out.append(if (out.endsWith("\n")) "\n" else "\n\n")
+            inProse = false
+        }
     }
 
     private fun inline(text: String) = link.replace(anchorLink.replace(text, "$1"), "$1 ($2)")

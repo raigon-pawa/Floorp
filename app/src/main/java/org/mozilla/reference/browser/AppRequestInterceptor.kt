@@ -66,14 +66,17 @@ class AppRequestInterceptor(private val context: Context) : RequestInterceptor {
      * address bar named the extension. The load is refused and the user told why.
      */
     private fun blockedInPrivateTab(engineSession: EngineSession, uri: String): Boolean {
-        if (!uri.startsWith("moz-extension://")) return false
-        if (context.components.core.store.state.findTabOrCustomTab(engineSession)?.content?.private != true)
-            return false
         val extension =
-            WebExtensionSupport.installedExtensions.values.firstOrNull { extension ->
-                extension.getMetadata()?.baseUrl?.let(uri::startsWith) == true
-            } ?: return false
-        if (extension.isAllowedInPrivateBrowsing()) return false
+            uri.takeIf {
+                    it.startsWith("moz-extension://") &&
+                        context.components.core.store.state.findTabOrCustomTab(engineSession)?.content?.private == true
+                }
+                ?.let {
+                    WebExtensionSupport.installedExtensions.values.firstOrNull { e ->
+                        e.getMetadata()?.baseUrl?.let(uri::startsWith) == true
+                    }
+                }
+        if (extension == null || extension.isAllowedInPrivateBrowsing()) return false
         val name = extension.getMetadata()?.name?.takeIf { it.isNotBlank() } ?: extension.id
         Toast.makeText(context, context.getString(R.string.archwave_extension_not_in_private, name), Toast.LENGTH_LONG)
             .show()

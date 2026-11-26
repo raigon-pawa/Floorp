@@ -4,6 +4,7 @@
    - file, You can obtain one at http://mozilla.org/MPL/2.0/. -->
 <!-- The site information panel: connection, tracking protection for the site, the site's remembered permissions. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
@@ -51,6 +52,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
             android:accessibilityHeading="true"
+            tools:targetApi="p"
             android:text="@string/archwave_site_info_permissions"
             android:textAppearance="?attr/textAppearanceBodyLarge"
             android:textColor="@color/aw_text_1" />

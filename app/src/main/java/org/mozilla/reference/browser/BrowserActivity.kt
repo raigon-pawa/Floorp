@@ -336,10 +336,8 @@ open class BrowserActivity : AppCompatActivity() {
             .filter { it.isAdded }
             .flatMap { listOfNotNull((it as? DialogFragment)?.dialog?.window) + dialogWindows(it.childFragmentManager) }
 
-    private fun Window.setSecure(secure: Boolean) {
-        if (secure) addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-        else clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-    }
+    private fun Window.setSecure(secure: Boolean) =
+        setFlags(if (secure) WindowManager.LayoutParams.FLAG_SECURE else 0, WindowManager.LayoutParams.FLAG_SECURE)
 
     /**
      * Options pages requested by extensions open in a tab. That observer runs for the whole life of the activity, not
