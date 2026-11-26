@@ -404,14 +404,15 @@ class ToolbarIntegration(
         }
     }
 
-    /** An extension's own page is shown by the extension's name, not by its moz-extension://<uuid> address. */
+    /** An extension's own page is shown as its page by name, not by its moz-extension://<uuid> address. */
     private fun extensionPageName(url: String): String? {
         if (!url.startsWith(EXTENSION_SCHEME)) return null
         val metadata =
             WebExtensionSupport.installedExtensions.values
                 .mapNotNull { it.getMetadata() }
                 .firstOrNull { url.startsWith(it.baseUrl) }
-        return metadata?.name?.takeIf { it.isNotBlank() }
+        val name = metadata?.name?.takeIf { it.isNotBlank() } ?: return null
+        return UrlDisplay.extensionPage(name, context.getString(R.string.archwave_extension_page_address))
     }
 
     /** True when a page opened the tab (window.open): it can write into the tab's blank page. */

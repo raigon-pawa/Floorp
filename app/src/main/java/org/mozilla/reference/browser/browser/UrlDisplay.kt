@@ -71,6 +71,14 @@ object UrlDisplay {
         return scheme + shortenAuthority(authority, registrableDomain) + tail
     }
 
+    /**
+     * What to show for a page of the extension [name]d so, given the [template] that marks it as an extension page: an
+     * extension may give itself any name ("accounts.google.com"), so it never stands alone in the address bar. Control
+     * and format characters (bidirectional controls among them) are dropped from it.
+     */
+    fun extensionPage(name: String, template: String): String =
+        template.format(name.filterNot { it.isISOControl() || Character.getType(it) == Character.FORMAT.toInt() })
+
     private fun shortenAuthority(authority: String, registrableDomain: (String) -> String?): String {
         val host = authority.substringBefore(':')
         val port = authority.substring(host.length)

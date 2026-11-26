@@ -149,4 +149,13 @@ class UrlDisplayTest {
         assertEquals("data:text/html,x", UrlDisplay.format("data:text/html,x", null))
         assertEquals("", UrlDisplay.format("", null))
     }
+
+    @Test
+    fun `an extension page is marked as one and its name loses control characters`() {
+        val template = "Extension: %1\$s"
+        assertEquals("Extension: accounts.google.com", UrlDisplay.extensionPage("accounts.google.com", template))
+        assertEquals("Extension: moc.elgoog", UrlDisplay.extensionPage("\u202emoc.elgoog\u202c", template))
+        assertEquals("Extension: ab", UrlDisplay.extensionPage("a\u200b\u2066\nb", template))
+        assertEquals("Extension: 100% Tabs", UrlDisplay.extensionPage("100% Tabs", template))
+    }
 }

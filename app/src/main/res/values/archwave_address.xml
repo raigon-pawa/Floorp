@@ -5,4 +5,7 @@
 <resources>
     <!-- Address bar: shown when the typed address is a local file (file://) or another kind the browser never opens. -->
     <string name="archwave_address_refused">Archwave can\'t open local files or this kind of address</string>
+    <!-- Address bar: what it shows on an extension's own page, %1$s being the extension's name. The prefix keeps an
+         extension that names itself like a website from posing as that site. -->
+    <string name="archwave_extension_page_address">Extension: %1$s</string>
 </resources>
