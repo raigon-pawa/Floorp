@@ -4,10 +4,14 @@
 
 package org.mozilla.reference.browser.ui
 
+import android.os.SystemClock
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
+import java.util.concurrent.TimeUnit
+import mockwebserver3.MockResponse
 import mockwebserver3.MockWebServer
+import mozilla.components.browser.state.selector.selectedTab
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -94,5 +98,46 @@ class StartPageTest {
         assertEquals(startTab, store.state.selectedTabId)
     }
 
+    // A site picked on the start page has no history entry until it starts to arrive: Back stops the load and stays.
+    @Test
+    fun backWhileTheFirstPageLoadsStopsItTest() {
+        val slowServer =
+            MockWebServer().apply {
+                enqueue(
+                    MockResponse.Builder().headersDelay(SLOW_RESPONSE_MS, TimeUnit.MILLISECONDS).body("slow").build()
+                )
+                start()
+            }
+        try {
+            startPage { verifyStartPage() }
+            val components = InstrumentationRegistry.getInstrumentation().targetContext.components
+            val store = components.core.store
+            val startTab = store.state.selectedTabId
+            components.useCases.sessionUseCases.loadUrl(slowServer.url("/slow").toString())
+            assertTrue("never started loading", waitFor { store.state.selectedTab?.content?.loading == true })
+
+            mDevice.pressBack()
+
+            assertTrue("Back did not stop the load", waitFor { store.state.selectedTab?.content?.loading == false })
+            assertEquals(listOf(startTab), store.state.tabs.map { it.id })
+            startPage { verifyStartPage() }
+        } finally {
+            runCatching { slowServer.close() }
+        }
+    }
+
+    private fun waitFor(condition: () -> Boolean): Boolean {
+        val end = SystemClock.uptimeMillis() + STOP_WAIT_MS
+        while (!condition() && SystemClock.uptimeMillis() < end) SystemClock.sleep(POLL_MS)
+        return condition()
+    }
+
     // Closing the last tab: TabTrayMenuTest.closeOneTabXButtonTest.
+
+    private companion object {
+        // Far longer than the wait for the stop, so a load that was not stopped is still going when it is checked.
+        const val SLOW_RESPONSE_MS = 20_000L
+        const val STOP_WAIT_MS = 3_000L
+        const val POLL_MS = 100L
+    }
 }
