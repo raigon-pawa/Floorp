@@ -13,6 +13,7 @@ import androidx.annotation.StringRes
 import androidx.annotation.VisibleForTesting
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.edit
+import androidx.core.net.toUri
 import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.FragmentManager
 import androidx.preference.PreferenceManager
@@ -29,6 +30,7 @@ import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.ContentPermission
 import org.mozilla.geckoview.GeckoSession.PermissionDelegate.PERMISSION_TRACKING
+import org.mozilla.geckoview.StorageController
 import org.mozilla.reference.browser.Components
 import org.mozilla.reference.browser.EngineProvider
 import org.mozilla.reference.browser.R
@@ -142,17 +144,29 @@ object BrowsingDataCleaner {
         // Closed first, so that no open page writes cookies, storage or history back while the rest is cleared.
         // EnsureTabFeature opens the start-page tab that replaces them; a second add here could make it two. Right
         // after a cold start (the offer to finish an interrupted clear) the saved tabs may still be on their way in.
-        if (ClearableData.TABS in items) {
-            components.core.store.flow().first { it.restoreComplete }
-            components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
-        }
-        clearData(context, components, items)
+        if (ClearableData.TABS in items) components.core.store.flow().first { it.restoreComplete }
+        // Before the tabs and history that know them go.
+        val httpHosts = if (ClearableData.PERMISSIONS in items) visitedHttpHosts(components) else emptySet()
+        if (ClearableData.TABS in items) components.useCases.tabsUseCases.removeAllTabs(recoverable = false)
+        clearData(context, components, items, httpHosts)
     }
+
+    /**
+     * The hosts of the http:// pages in history and in the open tabs: the only sites that can hold an HTTPS-only
+     * exception ("Continue to HTTP Site"). The engine lists no such exceptions, so they are cleared by host.
+     */
+    private suspend fun visitedHttpHosts(components: Components): Set<String> =
+        (components.core.historyStorage.getDetailedVisits(0).map { it.url } +
+                components.core.store.state.tabs.map { it.content.url })
+            .filter { it.startsWith("http://", ignoreCase = true) }
+            .mapNotNull { it.toUri().host }
+            .toSet()
 
     private suspend fun clearData(
         context: Context,
         components: Components,
         items: Set<ClearableData>,
+        httpHosts: Set<String>,
     ) {
         val engineFlags = engineFlags(items)
         if (engineFlags != 0) {
@@ -169,7 +183,7 @@ object BrowsingDataCleaner {
             withContext(Dispatchers.IO) { components.core.icons.clear() }
             components.core.thumbnailStorage.clearThumbnails().join()
         }
-        if (ClearableData.PERMISSIONS in items) clearSitePermissions(context, components)
+        if (ClearableData.PERMISSIONS in items) clearSitePermissions(context, components, httpHosts)
         if (ClearableData.DOWNLOADS in items) components.useCases.downloadsUseCases.removeAllDownloads()
     }
 
@@ -182,10 +196,14 @@ object BrowsingDataCleaner {
         check(history.getDetailedVisits(0, startedAt).isEmpty()) { "History was not deleted" }
     }
 
-    /** Resets every web site's permissions to "ask", in the app's records and in the engine, but not extensions'. */
+    /**
+     * Resets every web site's permissions to "ask", in the app's records and in the engine, but not extensions'; drops
+     * the HTTPS-only exceptions of [httpHosts].
+     */
     private suspend fun clearSitePermissions(
         context: Context,
         components: Components,
+        httpHosts: Set<String>,
     ) {
         val storage = components.core.geckoSitePermissionsStorage
         storage.all().filter { isWebOrigin(it.origin) }.forEach { storage.remove(it, private = false) }
@@ -204,10 +222,17 @@ object BrowsingDataCleaner {
                     }
                 controller.setPermission(permission, value)
             }
+        httpHosts.forEach { controller.clearDataFromHost(it, StorageController.ClearFlags.PERMISSIONS).awaitDone() }
     }
 
     /** Extensions (moz-extension:) and the browser's own pages keep their permissions. */
     fun isWebOrigin(uri: String): Boolean = uri.startsWith("http://") || uri.startsWith("https://")
+
+    private suspend fun GeckoResult<Void>.awaitDone() {
+        suspendCancellableCoroutine { continuation ->
+            accept({ continuation.resume(Unit) }, { continuation.resumeWithException(it ?: IllegalStateException()) })
+        }
+    }
 
     private suspend fun GeckoResult<List<ContentPermission>>.await(): List<ContentPermission> =
         suspendCancellableCoroutine { continuation ->
