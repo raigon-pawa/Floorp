@@ -33,4 +33,6 @@
     <string name="archwave_addons_engine_version">(GeckoView %1$s)</string>
     <!-- Overrides the Android Components text in the add-ons list, whose %3$s is the app version (0.1.0); compatibility is checked against the engine version, so it is left out. %1$s is the extension's name, %2$s the app name. -->
     <string name="mozac_feature_addons_status_incompatible" tools:ignore="UnusedResources">%1$s is not compatible with the engine of your version of %2$s.</string>
+    <!-- Toast: a page of the extension %1$s was opened in a private tab, where the extension may not run. A toast shows two lines at most. -->
+    <string name="archwave_extension_not_in_private">%1$s isn’t allowed to run in private tabs</string>
 </resources>
