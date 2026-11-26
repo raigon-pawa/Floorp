@@ -19,6 +19,7 @@ import androidx.fragment.app.FragmentManager
 import kotlin.system.exitProcess
 import mozilla.components.support.ktx.android.view.showKeyboard
 import org.mozilla.reference.browser.R
+import org.mozilla.reference.browser.ext.components
 import org.mozilla.reference.browser.settings.Settings as RBSettings
 
 /** Asks for the add-on collection to use instead of the default one. Survives rotation with what was typed. */
@@ -69,8 +70,9 @@ class CustomCollectionDialogFragment : DialogFragment() {
                 RBSettings.isAmoCollectionOverrideConfigured(context)
             }
         val before = collectionInUse()
-        RBSettings.setOverrideAmoUser(context, userView.text.toString())
-        RBSettings.setOverrideAmoCollection(context, collectionView.text.toString())
+        // A keyboard adds a space after a word, and the collection's address then names another collection.
+        RBSettings.setOverrideAmoUser(context, userView.text.trim().toString())
+        RBSettings.setOverrideAmoCollection(context, collectionView.text.trim().toString())
         if (collectionInUse() == before) return
 
         Toast.makeText(context, context.getString(R.string.toast_customize_addon_collection_done), Toast.LENGTH_LONG)
@@ -80,6 +82,10 @@ class CustomCollectionDialogFragment : DialogFragment() {
         Handler(Looper.getMainLooper())
             .postDelayed(
                 {
+                    // Tabs opened since the last save would go with the process. Before the restore, the state is not
+                    // yet the session and would overwrite it.
+                    val state = context.components.core.store.state
+                    if (state.restoreComplete) context.components.core.sessionStorage.save(state)
                     val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
                     launch?.component?.let { context.startActivity(Intent.makeRestartActivityTask(it)) }
                     exitProcess(0)
