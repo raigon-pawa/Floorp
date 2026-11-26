@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.util.AttributeSet
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.OnBackPressedCallback
@@ -20,6 +21,7 @@ import androidx.core.content.edit
 import androidx.core.content.getSystemService
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
+import androidx.fragment.app.DialogFragment
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentManager
 import androidx.lifecycle.DefaultLifecycleObserver
@@ -303,22 +305,40 @@ open class BrowserActivity : AppCompatActivity() {
     /**
      * While a private tab (or private custom tab) or the list of private tabs is shown, the window may not be captured:
      * no screenshots or recordings, and no Recents card picture, which the system keeps on disk after the private
-     * session ends.
+     * session ends. The same goes for the dialogs shown over it (context menu, page prompts, downloads, permissions,
+     * "Open in app?"), which are windows of their own and showed link addresses, hosts and page text.
      */
     private fun secureWhilePrivate() {
+        var secure = false
+        supportFragmentManager.registerFragmentLifecycleCallbacks(
+            object : FragmentManager.FragmentLifecycleCallbacks() {
+                override fun onFragmentStarted(fm: FragmentManager, f: Fragment) {
+                    if (secure) (f as? DialogFragment)?.dialog?.window?.setSecure(true)
+                }
+            },
+            true,
+        )
         components.core.store.flowScoped(this, Dispatchers.Main) { flow ->
             flow
                 .map { state -> (sessionId?.let(state::findCustomTab) ?: state.selectedTab)?.content?.private == true }
                 .combine(privateTabsListed) { selected, listed -> selected || listed }
                 .distinctUntilChanged()
                 .collect { private ->
-                    if (private) {
-                        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                    } else {
-                        window.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
-                    }
+                    secure = private
+                    window.setSecure(private)
+                    dialogWindows(supportFragmentManager).forEach { it.setSecure(private) }
                 }
         }
+    }
+
+    private fun dialogWindows(manager: FragmentManager): List<Window> =
+        manager.fragments
+            .filter { it.isAdded }
+            .flatMap { listOfNotNull((it as? DialogFragment)?.dialog?.window) + dialogWindows(it.childFragmentManager) }
+
+    private fun Window.setSecure(secure: Boolean) {
+        if (secure) addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        else clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
     }
 
     /**
