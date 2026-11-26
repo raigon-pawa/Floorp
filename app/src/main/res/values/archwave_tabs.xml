@@ -9,4 +9,6 @@
     <string name="tabs_tray_undo">Undo</string>
     <!-- Tabs tray: shown in the Private panel while there is no private tab. -->
     <string name="tabs_tray_no_private_tabs">No private tabs\nTap + to open one</string>
+    <!-- Tabs tray: shown in the Tabs panel while only private tabs are open. -->
+    <string name="tabs_tray_no_tabs">No tabs\nTap + to open one</string>
 </resources>

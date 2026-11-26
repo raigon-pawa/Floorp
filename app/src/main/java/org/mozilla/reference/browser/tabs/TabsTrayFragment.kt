@@ -165,9 +165,12 @@ class TabsTrayFragment : Fragment(), UserInteractionHandler {
         tabsToolbar.updateToolbar(isPrivate)
     }
 
-    // Only the Private panel can be empty for more than a moment: there is always a normal tab.
+    // The Tabs panel is empty too while only private tabs are open: there is always a tab, not always a normal one.
     private fun updateEmptyMessage() {
-        view?.findViewById<View>(R.id.tabsTrayEmpty)?.isVisible = showingPrivate && !showingTabs
+        view?.findViewById<TextView>(R.id.tabsTrayEmpty)?.apply {
+            isVisible = !showingTabs
+            setText(if (showingPrivate) R.string.tabs_tray_no_private_tabs else R.string.tabs_tray_no_tabs)
+        }
     }
 
     private fun createAndSetupTabsTray(context: Context): TabsTray {
