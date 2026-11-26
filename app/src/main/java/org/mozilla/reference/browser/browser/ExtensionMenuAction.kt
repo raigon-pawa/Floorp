@@ -9,7 +9,14 @@ import mozilla.components.browser.state.state.WebExtensionState
 import mozilla.components.concept.engine.webextension.Action
 
 /** One extension action as the menu lists it: [shown] carries the tab's overrides, [onClick] runs the action. */
-data class ExtensionMenuAction(val name: String, val shown: Action, val onClick: () -> Unit)
+data class ExtensionMenuAction(val name: String, val shown: Action, val onClick: () -> Unit) {
+    /**
+     * The row's label: the extension's name, as in Firefox's extensions panel. The action's title is its tooltip, which
+     * may not name the extension at all (FoxyProxy's reads "Disable"); it is only used when the extension has no name.
+     */
+    val label: String
+        get() = name.ifBlank { shown.title.orEmpty() }
+}
 
 /**
  * The extension actions the menu lists for [tab], sorted by extension name: browser actions, and page actions while

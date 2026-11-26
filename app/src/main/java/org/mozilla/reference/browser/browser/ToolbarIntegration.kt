@@ -288,7 +288,7 @@ class ToolbarIntegration(
         extensionIcons = mutableMapOf()
         val actions =
             extensionMenuActions(state.extensions.values, tab).map {
-                extensionActionItem(it.shown, it.name, it.onClick)
+                extensionActionItem(it.shown, it.label, it.onClick)
             }
         if (actions.isEmpty()) {
             return TextMenuCandidate(title) { startActivity(AddonsActivity::class.java) }
@@ -316,10 +316,10 @@ class ToolbarIntegration(
         )
     }
 
-    private fun extensionActionItem(action: Action, name: String, onClick: () -> Unit): MenuCandidate {
+    private fun extensionActionItem(action: Action, label: String, onClick: () -> Unit): MenuCandidate {
         val enabled = action.enabled != false
         return TextMenuCandidate(
-            text = action.title?.takeIf { it.isNotBlank() } ?: name,
+            text = label,
             start = extensionIcon(action, onClick),
             textStyle =
                 TextStyle(color = if (enabled) null else ContextCompat.getColor(context, R.color.aw_text_disabled)),

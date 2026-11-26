@@ -60,4 +60,15 @@ class ExtensionMenuActionsTest {
     fun `without a tab the global actions are listed`() {
         assertEquals(listOf("Blocker"), extensionMenuActions(listOf(blocker), null).map { it.shown.title })
     }
+
+    @Test
+    fun `rows are labelled with the extension's name, not the action's tooltip`() {
+        val proxy = WebExtensionState("proxy", name = "FoxyProxy", browserAction = action("Disable"))
+        assertEquals(
+            listOf("Blocker", "FoxyProxy"),
+            extensionMenuActions(listOf(proxy, blocker), null).map { it.label },
+        )
+        val unnamed = WebExtensionState("unnamed", name = " ", browserAction = action("Tooltip"))
+        assertEquals("Tooltip", extensionMenuActions(listOf(unnamed), null).single().label)
+    }
 }
