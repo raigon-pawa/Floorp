@@ -87,4 +87,11 @@ class DownloadQueueMiddlewareTest {
         }
         assertEquals(listOf("t", "page", "own"), store.state.tabs.map { it.id })
     }
+
+    @Test
+    fun `a download that would skip the dialog asks first too`() {
+        val store = store()
+        store.dispatch(ContentAction.UpdateDownloadAction("t", download(0).copy(skipConfirmation = true)))
+        assertEquals(false, store.download?.skipConfirmation)
+    }
 }

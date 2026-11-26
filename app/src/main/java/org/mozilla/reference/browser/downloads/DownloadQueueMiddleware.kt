@@ -37,8 +37,16 @@ class DownloadQueueMiddleware(
     override fun invoke(
         store: Store<BrowserState, BrowserAction>,
         next: (BrowserAction) -> Unit,
-        action: BrowserAction,
+        original: BrowserAction,
     ) {
+        // pdf.js asks GeckoView to save without confirmation, so its Download button wrote the file at once with only a
+        // status bar icon. Every download asks first.
+        val action =
+            if (original is ContentAction.UpdateDownloadAction && original.download.skipConfirmation) {
+                original.copy(download = original.download.copy(skipConfirmation = false))
+            } else {
+                original
+            }
         if (action is ContentAction.UpdateDownloadAction && queued(store, action)) return
         if (action is ContentAction.UpdateUrlAction) drop(action.sessionId)
         next(action)
